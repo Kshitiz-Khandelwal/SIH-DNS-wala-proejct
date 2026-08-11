@@ -24,6 +24,25 @@ Most competing teams will write a Python script that checks a domain against a s
 | **Visual Proof** | Build a stunning, real-time SOC dashboard. Judges evaluate what they can *see*. |
 | **Performance Engineering** | The problem mandates **<100ms** lookup time. Proving you architected for this matters. |
 | **Industry Alignment** | Use real-world standards (STIX/TAXII, MISP) not custom hacked-together databases. |
+| **Working Demo** | Judges specifically downgrade teams with no prototype. A live demo or QR code to a hosted version is non-negotiable. |
+
+---
+
+## ❌ 2. Why Existing Tools Are Not Enough (The Gap We Fill)
+
+Understanding why current tools fail is critical — this is what judges will ask first.
+
+| Existing Tool | What it does | Why it's not enough |
+|---|---|---|
+| **Pi-hole / AdGuard** | DNS-level blacklist blocker | Static lists only. No ML, no behavioral analysis, no DGA detection. Blind to zero-day threats. |
+| **Browser Adblockers** | Block URLs in a browser | Only covers the browser. Malware running in the OS background bypasses it entirely. |
+| **Basic Firewall** | IP/port blocking | DNS traffic (port 53) is almost always whitelisted. DNS tunnelling exploits this completely. |
+| **Cloudflare 1.1.1.1 / Google DNS** | Fast public resolvers | No custom threat intel, no enterprise-level logging, no ML, no active response. |
+| **Commercial NGFW** | Enterprise firewalls | Very expensive, black-box, no STIX/TAXII integration, no explainability, not India-specific. |
+
+**Our system fills every single gap above.** It is open, explainable, India-specific (CERT-In feeds), and actively responds to threats — not just passively logging them.
+
+---
 
 ---
 
@@ -242,3 +261,48 @@ The problem statement explicitly requires both. Here is how we handle them:
 | SIEM | Security Information and Event Management — enterprise-grade log & alert aggregation |
 | XAI | Explainable AI — ML techniques that provide human-readable reasons for model decisions |
 | SOC | Security Operations Center — a centralized team and platform for monitoring threats |
+
+---
+
+## 🎯 8. Presentation PPT Structure (Slide-by-Slide Plan)
+
+Based on what SIH judges actually evaluate, here is the exact slide structure we should follow. **Keep slides visual and minimal — no paragraph text on slides.**
+
+| Slide # | Title | What Goes On It |
+|---|---|---|
+| **1** | Title Slide | Problem ID (SIH260003), Team Name, College, ISRO logo, short one-liner |
+| **2** | The Problem & Gap | Stats on DNS-based attacks in India, why existing tools fail (use the table from Section 2) |
+| **3** | Our Solution (Overview) | One-line pitch + the 7-layer pipeline diagram (the ASCII art converted to a clean visual) |
+| **4** | Technical Architecture | Full microservices diagram — CoreDNS → Redis → Threat Intel → ML Engine → Dashboard |
+| **5** | AI/ML Deep Dive | How DGA detection works, what features we feed the model, show example output with XAI explanation |
+| **6** | The X-Factors | Honeypot Sinkholing, Dual Risk Scoring, Auto Quarantine, 3D Threat Map — visuals only |
+| **7** | Tech Stack | Table: Component → Technology → Why We Chose It (not just a logo dump) |
+| **8** | Feasibility & Phases | 6-phase execution plan, timeline bar chart, risk mitigation points |
+| **9** | Impact & Scalability | Who benefits (ISRO, CERT-In, Banks, Defence), how it scales, open-source + India-specific angle |
+| **10** | Live Demo | QR code linking to the working hosted demo. Screenshot/GIF of the SOC dashboard. |
+
+> **Design Tips:**
+> - Use a dark theme (black/deep navy + cyan/red accents) — matches the SOC/security aesthetic
+> - Every technical slide needs at least one diagram or flowchart — no walls of text
+> - Tools: Figma, Canva, or Eraser.io for clean architecture diagrams
+> - Font: Use Inter or Roboto — clean and modern
+
+---
+
+## 🖥️ 9. Demo Strategy (Non-Negotiable for Winning)
+
+Judges at SIH 2024 specifically penalized teams with no working demo. Here is our plan:
+
+### What the Demo Should Show
+1. **Live Query Resolution:** Type a domain → show it passing through each layer in real time on the dashboard.
+2. **Blocked Domain Demo:** Query a known malicious domain → show the pipeline triggering, the XAI explanation appearing, and the block being logged.
+3. **DGA Detection Demo:** Query a machine-generated domain → show ML confidence score and feature breakdown.
+4. **Passive Analysis Demo:** Upload a sample PCAP file → show historical threats being identified in the log.
+5. **3D Threat Map:** Show real-time arcs firing on the globe as blocked queries roll in.
+
+### Hosting Plan
+- Deploy the dashboard on a free-tier **Render** or **Railway** instance before the hackathon.
+- The Core DNS resolver can run on a local machine or a **DigitalOcean $6/month** droplet.
+- Have a **QR code** printed on the last slide that opens the live dashboard directly.
+- Have a **backup screen recording** (GIF/MP4) of the full demo in case internet fails at the venue.
+
