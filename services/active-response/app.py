@@ -1,17 +1,119 @@
-"""Lab-only response controller. It records rules; it never invokes host iptables/nftables."""
-import os, time
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import redis
-app=FastAPI(title="DNS Shield Lab Active Response",version="1.0.0")
-r=redis.from_url(os.getenv("REDIS_URL","redis://redis:6379/0"),decode_responses=True)
-class Quarantine(BaseModel): device_ip:str; reason:str
-@app.post("/sinkhole")
-def sinkhole(domain:str): return {"domain":domain,"sinkhole_ip":os.getenv("SINKHOLE_IP","172.28.0.250"),"scope":"dns-shield-lab Docker network only","logged_at":time.time()}
-@app.post("/quarantine")
-def quarantine(q:Quarantine): r.hset("lab:quarantine",q.device_ip,q.reason); return {"device_ip":q.device_ip,"status":"quarantined","scope":"virtual lab only","reason":q.reason}
-@app.delete("/quarantine/{ip}")
-def release(ip:str): r.hdel("lab:quarantine",ip); return {"device_ip":ip,"status":"released","scope":"virtual lab only"}
-@app.get("/quarantine")
-def list_rules(): return {"rules":r.hgetall("lab:quarantine"),"warning":"This service is intentionally non-destructive and never modifies host networking."}
+"""Active-response controller restricted to the DNS Shield virtual laboratory.
 
+It deliberately stores intent and audit evidence in Redis instead of executing
+iptables/nftables on the Docker host. A production adapter would be a separately
+reviewed network-controller integration, never a shell command in this service.
+"""
+from __future__ import annotations
+
+import json
+import os
+import time
+import uuid
+from collections import Counter
+
+import redis
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="DNS Shield Lab Active Response", version="1.1.0")
+store = redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+SINKHOLE_IP = os.getenv("SINKHOLE_IP", "172.28.0.250")
+LAB_NETWORK_PREFIXES = tuple(filter(None, os.getenv("LAB_NETWORK_PREFIXES", "172.28.,10.200.").split(",")))
+ACTION_TTL_SECONDS = int(os.getenv("RESPONSE_ACTION_TTL_SECONDS", str(30 * 24 * 3600)))
+
+
+class QuarantineRequest(BaseModel):
+    device_ip: str = Field(min_length=3, max_length=64)
+    reason: str = Field(min_length=3, max_length=1000)
+    requested_by: str = Field(default="detection-pipeline", max_length=128)
+
+
+class SinkholeObservation(BaseModel):
+    domain: str = Field(min_length=1, max_length=253)
+    device_ip: str = Field(default="unknown", max_length=64)
+    protocol: str = Field(default="http", max_length=32)
+    path: str = Field(default="/", max_length=2048)
+    user_agent: str = Field(default="", max_length=1024)
+
+
+def in_lab(device_ip: str) -> bool:
+    return device_ip == "unknown" or device_ip.startswith(LAB_NETWORK_PREFIXES)
+
+
+def audit(action: str, subject: str, details: dict) -> dict:
+    record = {"id": str(uuid.uuid4()), "at": time.time(), "action": action, "subject": subject, "scope": "dns-shield-lab-only", "details": details}
+    store.lpush("response:audit", json.dumps(record)); store.ltrim("response:audit", 0, 999); store.expire("response:audit", ACTION_TTL_SECONDS)
+    return record
+
+
+@app.post("/sinkhole", tags=["sinkhole"])
+def sinkhole(domain: str):
+    """Return the controlled decoy address for an already-blocked DNS name."""
+    domain = domain.lower().strip().rstrip(".")
+    if not domain:
+        raise HTTPException(status_code=422, detail="domain is required")
+    key = f"sinkhole:domain:{domain}"
+    existing = store.hgetall(key)
+    if existing:
+        return {"domain": domain, "sinkhole_ip": SINKHOLE_IP, "status": "already_active", "scope": "virtual-lab-only", "action_id": existing.get("action_id")}
+    action = audit("sinkhole-activated", domain, {"sinkhole_ip": SINKHOLE_IP})
+    store.hset(key, mapping={"sinkhole_ip": SINKHOLE_IP, "activated_at": str(action["at"]), "action_id": action["id"]}); store.expire(key, ACTION_TTL_SECONDS)
+    return {"domain": domain, "sinkhole_ip": SINKHOLE_IP, "status": "active", "scope": "virtual-lab-only", "action_id": action["id"]}
+
+
+@app.post("/sinkhole/observe", tags=["sinkhole"])
+def observe_sinkhole(observation: SinkholeObservation):
+    """Receive decoy telemetry only from the lab honeypot; never proxy external traffic."""
+    if not in_lab(observation.device_ip):
+        raise HTTPException(status_code=403, detail="sinkhole telemetry is accepted only from the virtual lab")
+    row = observation.model_dump() | {"at": time.time()}
+    key = f"sinkhole:telemetry:{observation.domain.lower().rstrip('.')}"
+    store.lpush(key, json.dumps(row)); store.ltrim(key, 0, 499); store.expire(key, ACTION_TTL_SECONDS)
+    audit("sinkhole-observation", observation.domain, {"device_ip": observation.device_ip, "protocol": observation.protocol, "path": observation.path})
+    return {"status": "logged", "scope": "virtual-lab-only"}
+
+
+@app.get("/sinkhole/{domain}/signatures", tags=["sinkhole"])
+def signatures(domain: str):
+    """Generate review-only signatures from recurring lab honeypot behaviour."""
+    rows = [json.loads(value) for value in store.lrange(f"sinkhole:telemetry:{domain.lower().rstrip('.')}", 0, 499)]
+    paths = Counter(row.get("path", "/") for row in rows)
+    agents = Counter(row.get("user_agent", "")[:120] for row in rows if row.get("user_agent"))
+    candidates = [{"kind": "http-path", "value": path, "observations": count, "status": "review_required"} for path, count in paths.items() if count >= 3]
+    candidates += [{"kind": "user-agent", "value": agent, "observations": count, "status": "review_required"} for agent, count in agents.items() if count >= 3]
+    return {"domain": domain, "observations": len(rows), "suggested_signatures": candidates, "warning": "Suggestions are not automatically promoted to blocking indicators."}
+
+
+@app.post("/quarantine", tags=["quarantine"])
+def quarantine(request: QuarantineRequest):
+    if not in_lab(request.device_ip):
+        raise HTTPException(status_code=403, detail="automatic quarantine is restricted to configured virtual-lab prefixes")
+    existing = store.hgetall(f"lab:quarantine:{request.device_ip}")
+    if existing:
+        return {"device_ip": request.device_ip, "status": "already_quarantined", "scope": "virtual-lab-only", "action_id": existing.get("action_id"), "reason": existing.get("reason")}
+    action = audit("quarantine-applied", request.device_ip, {"reason": request.reason, "requested_by": request.requested_by})
+    record = {"reason": request.reason, "requested_by": request.requested_by, "quarantined_at": str(action["at"]), "action_id": action["id"], "enforcement": "virtual-network-policy-state-only"}
+    store.hset(f"lab:quarantine:{request.device_ip}", mapping=record); store.expire(f"lab:quarantine:{request.device_ip}", ACTION_TTL_SECONDS); store.hset("lab:quarantine", request.device_ip, json.dumps(record))
+    return {"device_ip": request.device_ip, "status": "quarantined", "scope": "virtual-lab-only", **record}
+
+
+@app.delete("/quarantine/{ip}", tags=["quarantine"])
+def release(ip: str, requested_by: str = "dashboard"):
+    record = store.hgetall(f"lab:quarantine:{ip}")
+    if not record:
+        return {"device_ip": ip, "status": "not_quarantined", "scope": "virtual-lab-only"}
+    action = audit("quarantine-released", ip, {"requested_by": requested_by, "original_action_id": record.get("action_id")})
+    store.delete(f"lab:quarantine:{ip}"); store.hdel("lab:quarantine", ip)
+    return {"device_ip": ip, "status": "released", "scope": "virtual-lab-only", "release_action_id": action["id"]}
+
+
+@app.get("/quarantine", tags=["quarantine"])
+def list_rules():
+    rules = {ip: json.loads(raw) for ip, raw in store.hgetall("lab:quarantine").items()}
+    return {"rules": rules, "enforcement": "virtual network state only", "warning": "This service never changes host networking, iptables, nftables, or external systems."}
+
+
+@app.get("/audit", tags=["operations"])
+def audit_log(limit: int = 100):
+    return [json.loads(row) for row in reversed(store.lrange("response:audit", 0, min(max(limit, 1), 500) - 1))]
