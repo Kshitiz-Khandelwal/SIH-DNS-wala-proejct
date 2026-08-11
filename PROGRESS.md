@@ -16,6 +16,7 @@ The complete code-and-configuration baseline for Phases 1–6 is present. It has
 - Continuation: mounted `ml-training/artifacts` read-only into inference so real evaluation results can be surfaced, plus a pre-hosting security checklist.
 - Continuation: replaced the dashboard threat-globe placeholder with a Three.js visualization of blocked-event arcs.
 - Continuation: inference now loads versioned local `dga` and `typosquat` joblib artifacts when available, safely falling back to the transparent deterministic baseline otherwise.
+- Continuation: training saves lexical feature baselines and inference calculates a live relative-mean feature-drift indicator from actual recent predictions.
 
 ## Manual prerequisites
 

@@ -1,6 +1,6 @@
 """Deterministic local lexical classifier; never calls an LLM or external WHOIS in hot path."""
 import math, os, re, time, joblib
-from collections import Counter
+from collections import Counter, deque
 from pathlib import Path
 from typing import Literal
 from fastapi import FastAPI
@@ -11,6 +11,7 @@ TOP_DOMAINS = ["google.com", "youtube.com", "facebook.com", "amazon.com", "wikip
 VOWELS = set("aeiou")
 ARTIFACT_DIR = Path(os.getenv("MODEL_ARTIFACT_DIR", "/app/artifacts"))
 _models = {}
+_recent_features = deque(maxlen=1000)
 
 def artifact_probability(name: str, domain: str):
     """Load only local joblib artifacts; malformed/missing models safely use baseline logic."""
@@ -54,6 +55,7 @@ def features(domain: str, whois_age_days: int | None):
 
 def classify(request: PredictRequest):
     f = features(request.domain, request.whois_age_days)
+    _recent_features.append({"length":f["length"],"entropy":f["entropy"]})
     # Calibrated transparent fallback used until versioned artifacts are trained.
     baseline_dga = min(1.0, max(0.0, (f["entropy"]-2.8)/1.5*0.55 + (f["length"]-18)/30*0.20 + f["digit_ratio"]*0.35 + f["ngram_rarity"]*0.25))
     baseline_typo = 0.0 if request.domain.lower().rstrip(".") in TOP_DOMAINS else (0.85 if f["levenshtein_distance"] <= 2 else 0.0)
@@ -88,4 +90,11 @@ def monitoring():
     if metric_files:
         import json
         metrics=json.loads(metric_files[-1].read_text())
-    return {"model_version":"heuristic-baseline-1.0" if not metric_files else metric_files[-1].stem.replace(".metrics",""),"evaluation_metrics":metrics,"metrics_status":"not_available_until_training_run" if not metric_files else "loaded_from_training_artifact","feature_drift":"not_computed_until_training_baseline_is_saved","latency_source":"returned per /predict response"}
+    baseline_files=sorted(artifact_dir.glob("*.feature-baseline.json")) if artifact_dir.exists() else []
+    drift={"status":"not_available_until_training_and_runtime_samples_exist"}
+    if baseline_files and _recent_features:
+        import json
+        baseline=json.loads(baseline_files[-1].read_text()); observed={k:sum(x[k] for x in _recent_features)/len(_recent_features) for k in ["length","entropy"]}
+        changes={k:round(abs(observed[k]-baseline[f"{k}_mean"])/max(abs(baseline[f"{k}_mean"]),.001),4) for k in observed}
+        drift={"status":"computed","training_baseline":baseline,"recent_sample_count":len(_recent_features),"recent_means":observed,"relative_mean_change":changes,"indicator":"elevated" if max(changes.values())>.30 else "stable"}
+    return {"model_version":"heuristic-baseline-1.0" if not metric_files else metric_files[-1].stem.replace(".metrics",""),"evaluation_metrics":metrics,"metrics_status":"not_available_until_training_run" if not metric_files else "loaded_from_training_artifact","feature_drift":drift,"latency_source":"returned per /predict response"}

@@ -60,6 +60,8 @@ def domain_profile(domain:str): return requests.get(URLS["BEHAVIOR_URL"]+f"/doma
 def incidents(): return requests.get(URLS["BEHAVIOR_URL"]+"/incidents",timeout=2).json()
 @app.get("/v1/feed-health")
 def feed_health(): return requests.get(URLS["THREAT_INTEL_URL"]+"/feeds/health",timeout=2).json()
+@app.get("/v1/model-monitoring")
+def model_monitoring(): return requests.get(URLS["ML_URL"]+"/monitoring",timeout=2).json()
 @app.post("/v1/events/{event_id}/feedback")
 def feedback(event_id:str, body:Feedback): r.hset(f"feedback:{event_id}",mapping=body.model_dump()); return {"event_id":event_id,**body.model_dump(),"status":"persisted","retraining_path":"ml-training/README.md"}
 @app.post("/v1/passive/zeek")
