@@ -17,6 +17,12 @@ The complete code-and-configuration baseline for Phases 1–6 is present. It has
 - Continuation: replaced the dashboard threat-globe placeholder with a Three.js visualization of blocked-event arcs.
 - Continuation: inference now loads versioned local `dga` and `typosquat` joblib artifacts when available, safely falling back to the transparent deterministic baseline otherwise.
 - Continuation: training saves lexical feature baselines and inference calculates a live relative-mean feature-drift indicator from actual recent predictions.
+- Deepening pass: rewrote the API gateway into a documented seven-stage pipeline with bounded dependency calls, full per-stage XAI evidence, explicit graceful-degradation reasons, upload-size limits, and automatic passive replay through the same pipeline.
+- Deepening pass: rewrote threat intelligence with indicator validation, TTL-backed Redis caching, STIX 2.1 bundle export, feed run state, and documented URLhaus/OTX/CERT-In ingestion endpoints.
+- Deepening pass: rewrote behavioural analytics with risk decay, volume/tunnelling/fan-out signals, persistent device/domain profiles, event timelines, parent-domain context, and incident correlation/extension.
+- Deepening pass: rewrote active response as an explicitly lab-only controller with sinkhole lifecycle/telemetry/signature suggestions, idempotent quarantine/release flows, configured-lab validation, and audit trails.
+- Deepening pass: expanded the Go resolver with UDP/TCP DNS, RFC 8484 DoH validation, DoT TLS configuration, upstream TCP fallback, bounded gateway policy calls, and explicit resolver-level graceful degradation.
+- Deepening pass: rewrote analytics/passive forensics with structured ClickHouse JSON ingestion, filtered event/statistics queries, Zeek header parsing, PCAP/PCAPNG UDP-DNS extraction, and safe malformed-capture handling.
 
 ## Manual prerequisites
 
