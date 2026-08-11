@@ -1,0 +1,71 @@
+name: dns-shield
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    networks: [lab]
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    ports: ["8123:8123", "9000:9000"]
+    environment:
+      CLICKHOUSE_DB: dns_shield
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+    volumes: ["../services/analytics-store/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro"]
+    networks: [lab]
+  threat-intel:
+    build: ../services/threat-intel
+    env_file: ../.env
+    ports: ["8003:8003"]
+    depends_on: [redis, clickhouse]
+    networks: [lab]
+  ml-inference:
+    build: ../services/ml-inference
+    env_file: ../.env
+    ports: ["8000:8000"]
+    volumes: ["../ml-training/artifacts:/app/artifacts:ro"]
+    networks: [lab]
+  behavioral-engine:
+    build: ../services/behavioral-engine
+    env_file: ../.env
+    ports: ["8001:8001"]
+    depends_on: [redis]
+    networks: [lab]
+  geo-intel:
+    build: ../services/geo-intel
+    env_file: ../.env
+    ports: ["8002:8002"]
+    networks: [lab]
+  active-response:
+    build: ../services/active-response
+    env_file: ../.env
+    ports: ["8004:8004"]
+    networks: [lab]
+  analytics-store:
+    build: ../services/analytics-store
+    env_file: ../.env
+    ports: ["8005:8005"]
+    depends_on: [clickhouse]
+    networks: [lab]
+  api-gateway:
+    build: ../services/api-gateway
+    env_file: ../.env
+    ports: ["8080:8080"]
+    depends_on: [redis, threat-intel, ml-inference, behavioral-engine, geo-intel, active-response, analytics-store]
+    networks: [lab]
+  resolver-core:
+    build: ../services/resolver-core
+    env_file: ../.env
+    ports: ["5353:53/udp", "8443:443", "8853:853"]
+    depends_on: [api-gateway]
+    networks: [lab]
+  dashboard:
+    build: ../dashboard
+    environment: ["NEXT_PUBLIC_API_URL=http://localhost:8080"]
+    ports: ["3000:3000"]
+    depends_on: [api-gateway]
+    networks: [lab]
+networks:
+  lab:
+    name: dns-shield-lab
+    internal: false
