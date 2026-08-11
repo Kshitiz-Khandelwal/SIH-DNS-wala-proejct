@@ -15,6 +15,7 @@ The complete code-and-configuration baseline for Phases 1–6 is present. It has
 - Continuation: CORS, dashboard passive upload/feed-health/analyst-label controls, domain reputation profiles, quarantined-device escalation, and model-monitoring endpoint that only returns metrics from a real training artifact.
 - Continuation: mounted `ml-training/artifacts` read-only into inference so real evaluation results can be surfaced, plus a pre-hosting security checklist.
 - Continuation: replaced the dashboard threat-globe placeholder with a Three.js visualization of blocked-event arcs.
+- Continuation: inference now loads versioned local `dga` and `typosquat` joblib artifacts when available, safely falling back to the transparent deterministic baseline otherwise.
 
 ## Manual prerequisites
 

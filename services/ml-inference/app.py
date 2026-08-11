@@ -1,5 +1,5 @@
 """Deterministic local lexical classifier; never calls an LLM or external WHOIS in hot path."""
-import math, os, re, time
+import math, os, re, time, joblib
 from collections import Counter
 from pathlib import Path
 from typing import Literal
@@ -9,6 +9,20 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="DNS Shield ML Inference", version="1.0.0")
 TOP_DOMAINS = ["google.com", "youtube.com", "facebook.com", "amazon.com", "wikipedia.org", "isro.gov.in", "microsoft.com", "github.com"]
 VOWELS = set("aeiou")
+ARTIFACT_DIR = Path(os.getenv("MODEL_ARTIFACT_DIR", "/app/artifacts"))
+_models = {}
+
+def artifact_probability(name: str, domain: str):
+    """Load only local joblib artifacts; malformed/missing models safely use baseline logic."""
+    candidates = sorted(ARTIFACT_DIR.glob(f"{name}-v*.joblib"), reverse=True) if ARTIFACT_DIR.exists() else []
+    if not candidates: return None, None
+    path = candidates[0]
+    try:
+        model = _models.setdefault(str(path), joblib.load(path))
+        probability = float(model.predict_proba([domain])[0][1])
+        return max(0.0, min(1.0, probability)), path.stem
+    except Exception:
+        return None, None
 
 class PredictRequest(BaseModel):
     domain: str = Field(min_length=1, max_length=253)
@@ -41,8 +55,12 @@ def features(domain: str, whois_age_days: int | None):
 def classify(request: PredictRequest):
     f = features(request.domain, request.whois_age_days)
     # Calibrated transparent fallback used until versioned artifacts are trained.
-    dga = min(1.0, max(0.0, (f["entropy"]-2.8)/1.5*0.55 + (f["length"]-18)/30*0.20 + f["digit_ratio"]*0.35 + f["ngram_rarity"]*0.25))
-    typo = 0.0 if request.domain.lower().rstrip(".") in TOP_DOMAINS else (0.85 if f["levenshtein_distance"] <= 2 else 0.0)
+    baseline_dga = min(1.0, max(0.0, (f["entropy"]-2.8)/1.5*0.55 + (f["length"]-18)/30*0.20 + f["digit_ratio"]*0.35 + f["ngram_rarity"]*0.25))
+    baseline_typo = 0.0 if request.domain.lower().rstrip(".") in TOP_DOMAINS else (0.85 if f["levenshtein_distance"] <= 2 else 0.0)
+    dga, dga_version = artifact_probability("dga", request.domain)
+    typo, typo_version = artifact_probability("typosquat", request.domain)
+    dga = baseline_dga if dga is None else dga
+    typo = baseline_typo if typo is None else typo
     if request.whois_age_days is not None and request.whois_age_days < 30: dga = min(1.0, dga + .08)
     probability = round(max(dga, typo), 4)
     band: Literal["benign", "uncertain", "suspicious"] = "benign" if probability < .30 else "uncertain" if probability < .70 else "suspicious"
@@ -52,7 +70,8 @@ def classify(request: PredictRequest):
     if typo: reasons.append(f"close to {f['closest_legitimate_domain']} (edit distance {f['levenshtein_distance']})")
     if request.whois_age_days is not None and request.whois_age_days < 30: reasons.append(f"young cached registration age ({request.whois_age_days} days)")
     if not reasons: reasons.append("lexical profile is consistent with known benign domains")
-    return {"domain": request.domain, "dga_probability": round(dga,4), "typosquat_probability": round(typo,4), "probability": probability, "uncertainty_band": band, "features": f, "reasons": reasons, "model_version": "heuristic-baseline-1.0", "inference_ms": 0}
+    versions=[x for x in [dga_version, typo_version] if x]
+    return {"domain": request.domain, "dga_probability": round(dga,4), "typosquat_probability": round(typo,4), "probability": probability, "uncertainty_band": band, "features": f, "reasons": reasons, "model_version": "+".join(versions) if versions else "heuristic-baseline-1.0", "inference_mode":"trained-local-artifact" if versions else "transparent-deterministic-baseline", "inference_ms": 0}
 
 @app.post("/predict")
 def predict(request: PredictRequest):
@@ -60,7 +79,7 @@ def predict(request: PredictRequest):
 @app.post("/predict/batch")
 def batch(requests: list[PredictRequest]): return [predict(x) for x in requests]
 @app.get("/health")
-def health(): return {"status":"ok", "mode":"local-deterministic", "model_version":"heuristic-baseline-1.0"}
+def health(): return {"status":"ok", "mode":"local-deterministic", "artifact_directory":str(ARTIFACT_DIR)}
 @app.get("/monitoring")
 def monitoring():
     """Never invent quality values: return only persisted results from actual training."""
