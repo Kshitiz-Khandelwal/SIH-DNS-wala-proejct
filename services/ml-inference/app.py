@@ -95,6 +95,11 @@ def local_model_probability(name: str, domain: str) -> tuple[float | None, str |
         return None, None
     artifact = candidates[0]
     try:
+        metadata_path = artifact.with_suffix(".metadata.json")
+        if metadata_path.exists():
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            if metadata.get("artifact_schema_version") != "dns-shield-model-v1" or metadata.get("name") != name:
+                return None, None
         modified = artifact.stat().st_mtime
         cached = models.get(str(artifact))
         if cached is None or cached[0] != modified:
@@ -163,4 +168,6 @@ def monitoring():
         baseline = json.loads(baseline_files[-1].read_text()); observed = {key: sum(row[key] for row in recent_features) / len(recent_features) for key in ("length", "entropy")}
         change = {key: round(abs(observed[key] - baseline[f"{key}_mean"]) / max(abs(baseline[f"{key}_mean"]), .001), 4) for key in observed}
         drift = {"status": "computed", "training_baseline": baseline, "recent_sample_count": len(recent_features), "recent_means": observed, "relative_mean_change": change, "indicator": "elevated" if max(change.values()) > .30 else "stable"}
-    return {"model_version": metric_files[-1].stem.replace(".metrics", "") if metric_files else "heuristic-baseline-1.0", "evaluation_metrics": metrics, "metrics_status": "loaded_from_training_artifact" if metric_files else "not_available_until_training_run", "feature_drift": drift, "latency_source": "returned by every /predict response"}
+    metadata_files = sorted(ARTIFACT_DIR.glob("*.metadata.json")) if ARTIFACT_DIR.exists() else []
+    metadata = json.loads(metadata_files[-1].read_text(encoding="utf-8")) if metadata_files else {}
+    return {"model_version": metric_files[-1].stem.replace(".metrics", "") if metric_files else "heuristic-baseline-1.0", "evaluation_metrics": metrics, "training_metadata": metadata, "metrics_status": "loaded_from_training_artifact" if metric_files else "not_available_until_training_run", "feature_drift": drift, "latency_source": "returned by every /predict response"}

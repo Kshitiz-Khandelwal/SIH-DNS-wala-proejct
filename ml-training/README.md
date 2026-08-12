@@ -4,4 +4,11 @@ The runtime starts with a transparent deterministic baseline. Train and export v
 
 Data sources to download manually and license/review before use: Bambenek Consulting DGA feeds (historical), UMUDGA, and DGArchive academic references. Use a benign set such as Tranco (CC BY-SA) and retain source/date/checksum beside the CSV.
 
-Expected CSV format: `domain,label`, where `1` is DGA/typosquat and `0` is benign. Run `python train.py --data data/dga.csv --name dga` and `python train.py --data data/typosquat.csv --name typosquat`. The inference service automatically uses `dga-v*.joblib` and `typosquat-v*.joblib` from its read-only artifact mount; if either is absent or unreadable it uses the explicit deterministic baseline. Copy resulting metrics into the dashboard only after that real run. Analyst feedback persisted through `/v1/events/{id}/feedback` should be exported into the next labelled CSV and split by time to avoid leakage.
+Expected CSV format: `domain,label[,observed_at]`, where `1` is DGA/typosquat and `0` is benign. Every training run requires a `--source` value that records the dataset's source/license reference:
+
+```powershell
+python train.py --data data/dga.csv --name dga --version 1 --source "documented dataset URL and license" --chronological
+python train.py --data data/typosquat.csv --name typosquat --version 1 --source "documented dataset URL and license" --chronological
+```
+
+Each run writes `.joblib`, held-out `.metrics.json`, `.feature-baseline.json`, and auditable `.metadata.json` files. The inference service uses only artifacts with `dns-shield-model-v1` metadata matching their model family; absent, invalid, or mismatched artifacts use the explicit deterministic baseline. Copy resulting metrics into the dashboard only after that real run. Analyst feedback persisted through `/v1/events/{id}/feedback` should be exported into the next labelled CSV and split by time to avoid leakage.
