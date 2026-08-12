@@ -9,5 +9,5 @@ Complete this before enabling a hosted demo:
 - [ ] Obtain and mount only a licensed MaxMind database. Keep OTX and MISP keys in secret storage, never source control.
 - [ ] Review feed terms and test malformed PCAP/Zeek upload limits before a public demo.
 - [ ] Confirm active response remains lab-only; do not attach it to host firewall permissions or a production subnet.
+- [ ] Confirm `lab-honeypot` is reachable only inside the `dns-shield-lab` network and never configured as a public proxy.
 - [ ] Record actual load, quality, and resilience evidence before stating performance results.
-

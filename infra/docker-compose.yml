@@ -65,6 +65,16 @@ services:
     env_file: ../.env
     ports: ["8004:8004"]
     networks: [lab]
+  lab-honeypot:
+    build: ../services/lab-honeypot
+    environment:
+      ACTIVE_RESPONSE_URL: http://active-response:8004
+      HONEYPOT_MAX_CAPTURED_BODY_BYTES: 1024
+    depends_on:
+      active-response: {condition: service_started}
+    networks:
+      lab:
+        ipv4_address: 172.28.0.250
   analytics-store:
     build: ../services/analytics-store
     env_file: ../.env
@@ -100,7 +110,45 @@ services:
     ports: ["3000:3000"]
     depends_on: [api-gateway]
     networks: [lab]
+  simulation-benign:
+    build: ./lab-simulator
+    profiles: [simulation]
+    environment: ["GATEWAY_URL=http://api-gateway:8080"]
+    command: ["benign", "--device", "172.28.0.101"]
+    depends_on: [api-gateway]
+    networks: [lab]
+  simulation-dga:
+    build: ./lab-simulator
+    profiles: [simulation]
+    environment: ["GATEWAY_URL=http://api-gateway:8080"]
+    command: ["dga", "--device", "172.28.0.102", "--repeat", "20"]
+    depends_on: [api-gateway]
+    networks: [lab]
+  simulation-tunnelling:
+    build: ./lab-simulator
+    profiles: [simulation]
+    environment: ["GATEWAY_URL=http://api-gateway:8080"]
+    command: ["tunnelling", "--device", "172.28.0.103", "--repeat", "2"]
+    depends_on: [api-gateway]
+    networks: [lab]
+  simulation-c2:
+    build: ./lab-simulator
+    profiles: [simulation]
+    environment: ["GATEWAY_URL=http://api-gateway:8080"]
+    command: ["c2", "--device", "172.28.0.104"]
+    depends_on: [api-gateway]
+    networks: [lab]
+  simulation-typosquat:
+    build: ./lab-simulator
+    profiles: [simulation]
+    environment: ["GATEWAY_URL=http://api-gateway:8080"]
+    command: ["typosquat", "--device", "172.28.0.105"]
+    depends_on: [api-gateway]
+    networks: [lab]
 networks:
   lab:
     name: dns-shield-lab
     internal: false
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
