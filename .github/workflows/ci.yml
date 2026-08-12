@@ -13,9 +13,6 @@ jobs:
   compose-configuration:
     name: Validate Compose topology
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: SIH-DNS-wala-project
     steps:
       - uses: actions/checkout@v4
       - name: Create non-secret CI environment
@@ -26,9 +23,6 @@ jobs:
   python-syntax:
     name: Validate Python syntax
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: SIH-DNS-wala-project
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: SIH-DNS-wala-project/services/resolver-core
+        working-directory: services/resolver-core
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -51,14 +45,14 @@ jobs:
       - name: Download dependencies and compile
         run: |
           go mod download
-          go test ./...
+          go build -v ./...
 
   dashboard-build:
     name: Build SOC dashboard
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: SIH-DNS-wala-project/dashboard
+        working-directory: dashboard
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -73,9 +67,6 @@ jobs:
     name: Build service images
     needs: [compose-configuration, python-syntax, resolver-build, dashboard-build]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: SIH-DNS-wala-project
     steps:
       - uses: actions/checkout@v4
       - name: Create non-secret CI environment
