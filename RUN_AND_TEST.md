@@ -2,6 +2,10 @@
 
 Before running anything, read `docs/COMPONENT_AND_DESIGN_GUIDE.md` for component/design rationale and `docs/SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md` for topology, flows, and operating boundaries. Use `TEST_PLAN.md` as the pass/fail checklist.
 
+Before authorizing execution, read `PRE_TEST_READINESS.md` for the exact remaining code review, required inputs, test-transition sequence, and claims that must remain unmade until evidence exists.
+
+For notebook-based visual analysis of real test/demo evidence after the stack is running, use `notebooks/01_soc_demo_analysis.ipynb`; see `notebooks/README.md`.
+
 This repository was written without executing services or tests. Run the following from a clean development machine after reviewing exposed ports and `infra/docker-compose.yml`.
 
 ## Prerequisites
