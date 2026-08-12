@@ -21,6 +21,8 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="DNS Shield Threat Intelligence", version="1.1.0")
 cache = redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
 INDICATOR_TTL_SECONDS = int(os.getenv("INDICATOR_TTL_SECONDS", str(7 * 24 * 3600)))
+MISP_URL = os.getenv("MISP_URL", "").rstrip("/")
+MISP_API_KEY = os.getenv("MISP_API_KEY", "")
 SEED = [line.strip() for line in open("seed_indicators.txt", encoding="utf-8") if line.strip() and not line.startswith("#")]
 DOMAIN_PATTERN = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$", re.I)
 
@@ -78,6 +80,12 @@ def extract_urlhaus_domains(lines: Iterable[str]) -> Iterable[str]:
             yield domain
 
 
+def misp_event_payload(domain: str, indicator: dict) -> dict:
+    """Map one STIX-normalized DNS indicator to the documented MISP event API shape."""
+    source = indicator.get("external_references", [{}])[0].get("source_name", "DNS Shield")
+    return {"Event": {"info": f"DNS Shield indicator: {domain}", "distribution": 0, "threat_level_id": 2, "analysis": 0, "Tag": [{"name": tag} for tag in indicator.get("labels", [])], "Attribute": [{"type": "domain", "category": "Network activity", "value": domain, "to_ids": True, "comment": f"Imported by DNS Shield from {source}; STIX ID {indicator['id']}", "distribution": 0}]}}
+
+
 @app.on_event("startup")
 def seed() -> None:
     for domain in SEED:
@@ -106,6 +114,46 @@ def stix_bundle(limit: int = 500):
     domains = list(cache.sscan_iter("indicators:domains", count=min(limit, 1000)))[:min(limit, 1000)]
     objects = [json.loads(row["stix"]) for domain in domains if (row := cache.hgetall(f"indicator:{domain}")) and row.get("stix")]
     return {"type": "bundle", "id": f"bundle--{uuid.uuid4()}", "objects": objects}
+
+
+@app.get("/misp/health", tags=["misp"])
+def misp_health():
+    """Return configuration state without ever exposing MISP credentials."""
+    if not MISP_URL or not MISP_API_KEY:
+        return {"configured": False, "status": "not_configured", "required": ["MISP_URL", "MISP_API_KEY"]}
+    try:
+        response = requests.get(MISP_URL + "/servers/getVersion", headers={"Authorization": MISP_API_KEY, "Accept": "application/json"}, timeout=10)
+        response.raise_for_status()
+        return {"configured": True, "status": "reachable", "endpoint": MISP_URL}
+    except requests.RequestException as exc:
+        return {"configured": True, "status": "unreachable", "endpoint": MISP_URL, "error": type(exc).__name__}
+
+
+@app.post("/misp/publish", tags=["misp"])
+def publish_to_misp(limit: int = 100):
+    """Publish cached indicators to a user-controlled MISP instance on operator request.
+
+    This is intentionally not a startup action: MISP publishing changes external state
+    and must remain an explicit operator/deployment decision.
+    """
+    if not MISP_URL or not MISP_API_KEY:
+        raise HTTPException(status_code=409, detail="MISP_URL and MISP_API_KEY are required before publishing")
+    domains = list(cache.sscan_iter("indicators:domains", count=min(limit, 1000)))[:min(max(limit, 1), 1000)]
+    headers = {"Authorization": MISP_API_KEY, "Accept": "application/json", "Content-Type": "application/json"}
+    published, failed = [], []
+    for domain in domains:
+        row = cache.hgetall(f"indicator:{domain}")
+        if not row.get("stix"):
+            continue
+        try:
+            stix = json.loads(row["stix"])
+            response = requests.post(MISP_URL + "/events/add", headers=headers, json=misp_event_payload(domain, stix), timeout=15)
+            response.raise_for_status()
+            published.append(domain)
+        except (requests.RequestException, ValueError) as exc:
+            failed.append({"domain": domain, "error": type(exc).__name__})
+    record_feed("misp-publish", "success" if not failed else "partial", added=len(published), detail=f"failed={len(failed)}")
+    return {"endpoint": MISP_URL, "published": len(published), "failed": failed, "warning": "MISP deduplication policy should be configured by the MISP administrator before repeated publishes."}
 
 
 @app.post("/feeds/urlhaus", tags=["feeds"])
@@ -164,4 +212,4 @@ def feeds():
     for name, enabled in configured.items():
         state = cache.hgetall(f"feed:{name}")
         output.append({"name": name, "configured": enabled, "status": state.get("status", "not_run" if enabled else "not_configured"), "last_run": state.get("last_run"), "indicators_added": int(state.get("last_added", 0)), "detail": state.get("detail", "")})
-    return {"feeds": output, "fallback": "Redis retains last successfully parsed indicators until their configured TTL expires"}
+    return {"feeds": output, "misp": {"configured": bool(MISP_URL and MISP_API_KEY), "mode": "operator-triggered publishing"}, "fallback": "Redis retains last successfully parsed indicators until their configured TTL expires"}

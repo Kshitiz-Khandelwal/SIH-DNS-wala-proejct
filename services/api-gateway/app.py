@@ -8,13 +8,14 @@ from __future__ import annotations
 import os
 import time
 import uuid
+from collections import Counter, deque
 from typing import Any
 
 import redis
 import requests
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI(
@@ -43,6 +44,13 @@ CACHE_TTL_SECONDS = int(os.getenv("VERDICT_CACHE_TTL_SECONDS", "300"))
 API_KEY = os.getenv("GATEWAY_API_KEY", "")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("GATEWAY_RATE_LIMIT_PER_MINUTE", "240"))
 AUTH_EXEMPT_PATHS = {"/health", "/docs", "/openapi.json", "/redoc"}
+METRICS_PUBLIC = os.getenv("METRICS_PUBLIC", "false").lower() == "true"
+if METRICS_PUBLIC:
+    AUTH_EXEMPT_PATHS.add("/metrics")
+REQUEST_COUNTS: Counter[tuple[str, str]] = Counter()
+REQUEST_LATENCIES_MS: deque[float] = deque(maxlen=5000)
+PIPELINE_VERDICTS: Counter[str] = Counter()
+DEGRADED_REQUESTS: Counter[str] = Counter()
 
 
 def request_ip(request: Request) -> str:
@@ -59,6 +67,21 @@ def store_rate_limit(key: str) -> int:
     if count == 1:
         redis_client.expire(key, 61)
     return count
+
+
+@app.middleware("http")
+async def request_observability(request: Request, call_next):
+    """Attach a correlation ID and collect compact in-process operational metrics."""
+    correlation_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
+    request.state.correlation_id = correlation_id
+    started = time.perf_counter()
+    response = await call_next(request)
+    elapsed = (time.perf_counter() - started) * 1000
+    REQUEST_COUNTS[(request.method, str(response.status_code))] += 1
+    REQUEST_LATENCIES_MS.append(elapsed)
+    response.headers["X-Correlation-ID"] = correlation_id
+    response.headers["X-Response-Time-Ms"] = f"{elapsed:.3f}"
+    return response
 
 
 @app.middleware("http")
@@ -150,6 +173,7 @@ def query(request: Query) -> dict[str, Any]:
 
     cached = redis_client.hgetall(f"verdict:{domain}")
     if cached:
+        PIPELINE_VERDICTS[cached["verdict"]] += 1
         return {
             "domain": domain, "verdict": cached["verdict"], "domain_risk": int(cached["risk"]),
             "device_risk": int(cached.get("device_risk", 0)), "confidence": cached.get("confidence", "LOW"),
@@ -226,6 +250,9 @@ def query(request: Query) -> dict[str, Any]:
         else: event["sinkhole"] = action
 
     event.update({"cache": "miss", "pipeline": pipeline, "ml": ml, "behavior": behavior, "geo": geo, "degraded_dependencies": degraded, "latency_ms": round((time.perf_counter() - started) * 1000, 3)})
+    PIPELINE_VERDICTS[verdict] += 1
+    for dependency in degraded:
+        DEGRADED_REQUESTS[dependency.split(":")[0]] += 1
     return event
 
 
@@ -319,3 +346,20 @@ def release(ip: str):
 @app.get("/health", tags=["operations"])
 def health():
     return {"status": "ok", "detection_plane": "local deterministic", "llm_required": False, "cache_ttl_seconds": CACHE_TTL_SECONDS}
+
+
+@app.get("/metrics", tags=["operations"], response_class=PlainTextResponse)
+def metrics():
+    """Prometheus text exposition for local/demo monitoring; protect in hosted mode by default."""
+    lines = ["# HELP dns_shield_gateway_requests_total Requests completed by method and status.", "# TYPE dns_shield_gateway_requests_total counter"]
+    lines += [f'dns_shield_gateway_requests_total{{method="{method}",status="{status}"}} {count}' for (method, status), count in sorted(REQUEST_COUNTS.items())]
+    lines += ["# HELP dns_shield_gateway_pipeline_verdicts_total Decisions by verdict.", "# TYPE dns_shield_gateway_pipeline_verdicts_total counter"]
+    lines += [f'dns_shield_gateway_pipeline_verdicts_total{{verdict="{verdict}"}} {count}' for verdict, count in sorted(PIPELINE_VERDICTS.items())]
+    lines += ["# HELP dns_shield_gateway_degraded_requests_total Requests that observed unavailable dependencies.", "# TYPE dns_shield_gateway_degraded_requests_total counter"]
+    lines += [f'dns_shield_gateway_degraded_requests_total{{dependency="{dependency}"}} {count}' for dependency, count in sorted(DEGRADED_REQUESTS.items())]
+    if REQUEST_LATENCIES_MS:
+        ordered = sorted(REQUEST_LATENCIES_MS)
+        for percentile in (50, 95, 99):
+            index = min(len(ordered) - 1, round((percentile / 100) * (len(ordered) - 1)))
+            lines.append(f'dns_shield_gateway_response_latency_ms{{quantile="{percentile}"}} {ordered[index]:.3f}')
+    return "\n".join(lines) + "\n"
