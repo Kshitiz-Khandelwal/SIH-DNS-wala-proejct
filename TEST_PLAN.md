@@ -45,6 +45,13 @@ Evidence: capture the Compose service list and one health response per service.
 - [ ] Confirm normal responses include remaining/limit headers.
 - [ ] Stop Redis and verify requests remain available but return `X-DNS-Shield-RateLimit: degraded-redis-unavailable`.
 - [ ] Verify `TRUST_PROXY_HEADERS` is false by default; test trusted-header behavior only behind a controlled proxy.
+
+## 1.3 Observability checks
+
+- [ ] Send a request with a chosen `X-Correlation-ID`; confirm the exact value returns in the response with `X-Response-Time-Ms`.
+- [ ] Request `/metrics` with the required API key (or only in an isolated private-monitoring configuration) and verify request, verdict, degradation, and latency metric families are present.
+- [ ] Generate ALLOW, FLAG, BLOCK, and degraded-dependency cases; confirm their counters change in gateway metrics.
+- [ ] Restart the gateway and confirm in-process metrics reset; do not treat them as persistent historical evidence.
 - [ ] After owner approval, apply `services/analytics-store/migrations/001_retention_and_indexes.sql` to a non-production ClickHouse instance.
 - [ ] Verify the events table has 90-day TTL, feedback has 180-day TTL, and verdict/client-IP skipping indexes exist.
 - [ ] Insert representative events and verify the `events_hourly` materialized view returns grouped verdict totals.

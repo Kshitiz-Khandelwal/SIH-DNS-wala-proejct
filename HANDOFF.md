@@ -154,7 +154,7 @@ Do **not** present the platform as tested, <100ms compliant, hosted, or producti
 
 - [ ] Write actual Kubernetes manifests (Deployment, Service, ConfigMap, Secret templates, NetworkPolicies, PVCs) or fully document the Compose-to-cloud deployment path. Current `infra/k8s/README.md` is guidance only.
 - [ ] Add CI workflow for lint, unit tests, Compose integration test, dependency scanning, and artifact build.
-- [ ] Add structured logging, correlation IDs, metrics endpoint, tracing, and application-level readiness probes. Compose dependency health checks are now present for Redis, ClickHouse, and mock DNS.
+- [ ] Add structured service logs, distributed tracing, and application-level readiness probes. Gateway correlation IDs and Prometheus-format in-process metrics are now implemented; Compose dependency health checks are present for Redis, ClickHouse, and mock DNS.
 - [ ] Add backup/restore procedure for ClickHouse and Redis data.
 - [ ] Add QR-code generation after an approved hosted dashboard URL exists.
 - [ ] Record backup demo video only after the test plan passes.

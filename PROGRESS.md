@@ -34,6 +34,7 @@ The complete code-and-configuration baseline for Phases 1–6 is present. It has
 - P0 analytics foundation: added an operator-applied ClickHouse retention/index migration, clean-bootstrap hourly aggregate materialized view, migration instructions, and validation checks.
 - Documentation deepening: added detailed component/design rationale and system-flow/operations guides covering all services, seven-layer justification, runtime topology, active/passive flows, safety boundaries, and test usage.
 - P0 gateway hardening: added optional API-key boundary protection, Redis-backed per-IP rate limiting with availability-preserving degradation, secure proxy-header guidance, access-control operating notes, and test-plan coverage.
+- P1 observability: added gateway correlation IDs, response-time headers, Prometheus-format request/verdict/degradation/latency metrics, secure metrics exposure configuration, evidence-collection guidance, and verification checks.
 
 ## Manual prerequisites
 
