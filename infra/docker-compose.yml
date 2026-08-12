@@ -1,8 +1,23 @@
 name: dns-shield
 services:
+  mock-dns:
+    image: coredns/coredns:1.11.3
+    command: ["-conf", "/etc/coredns/Corefile"]
+    volumes: ["./mock-dns/Corefile:/etc/coredns/Corefile:ro"]
+    healthcheck:
+      test: ["CMD", "coredns", "-version"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks: [lab]
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks: [lab]
   clickhouse:
     image: clickhouse/clickhouse-server:24.8-alpine
@@ -12,12 +27,19 @@ services:
       CLICKHOUSE_USER: default
       CLICKHOUSE_PASSWORD: ""
     volumes: ["../services/analytics-store/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8123/ping | grep -q Ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks: [lab]
   threat-intel:
     build: ../services/threat-intel
     env_file: ../.env
     ports: ["8003:8003"]
-    depends_on: [redis, clickhouse]
+    depends_on:
+      redis: {condition: service_healthy}
+      clickhouse: {condition: service_healthy}
     networks: [lab]
   ml-inference:
     build: ../services/ml-inference
@@ -29,12 +51,14 @@ services:
     build: ../services/behavioral-engine
     env_file: ../.env
     ports: ["8001:8001"]
-    depends_on: [redis]
+    depends_on:
+      redis: {condition: service_healthy}
     networks: [lab]
   geo-intel:
     build: ../services/geo-intel
     env_file: ../.env
     ports: ["8002:8002"]
+    volumes: ["../data:/data:ro"]
     networks: [lab]
   active-response:
     build: ../services/active-response
@@ -45,19 +69,30 @@ services:
     build: ../services/analytics-store
     env_file: ../.env
     ports: ["8005:8005"]
-    depends_on: [clickhouse]
+    depends_on:
+      clickhouse: {condition: service_healthy}
     networks: [lab]
   api-gateway:
     build: ../services/api-gateway
     env_file: ../.env
     ports: ["8080:8080"]
-    depends_on: [redis, threat-intel, ml-inference, behavioral-engine, geo-intel, active-response, analytics-store]
+    depends_on:
+      redis: {condition: service_healthy}
+      threat-intel: {condition: service_started}
+      ml-inference: {condition: service_started}
+      behavioral-engine: {condition: service_started}
+      geo-intel: {condition: service_started}
+      active-response: {condition: service_started}
+      analytics-store: {condition: service_started}
     networks: [lab]
   resolver-core:
     build: ../services/resolver-core
     env_file: ../.env
     ports: ["5353:53/udp", "5353:53/tcp", "8443:443", "8853:853"]
-    depends_on: [api-gateway]
+    volumes: ["./certs:/certs:ro"]
+    depends_on:
+      api-gateway: {condition: service_started}
+      mock-dns: {condition: service_healthy}
     networks: [lab]
   dashboard:
     build: ../dashboard
