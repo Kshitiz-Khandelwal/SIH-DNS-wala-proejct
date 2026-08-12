@@ -38,6 +38,11 @@ The complete code-and-configuration baseline for Phases 1–6 is present. It has
 - P1 response realism: added a dedicated lab-only HTTP honeypot container at the sinkhole IP, bounded telemetry forwarding, richer sinkhole audit metadata, explicit static lab subnet wiring, and sinkhole acceptance/security tests.
 - P1 demo reproducibility: added five named opt-in Docker lab-simulation containers (benign, DGA, tunnelling, C2, typosquat), scenario-specific source/event labels, CLI/container URL configuration, and verification/documentation updates.
 - P1 SOC evidence: added ClickHouse-backed analyst-feedback persistence with degradation status, hourly domain/device/global trend API, incident-detail endpoint with ordered evidence timeline, and related test/API updates.
+- P1 SOC visualization: wired the dashboard to live hourly security trends, showing average domain-risk bars and blocked/flagged event counts from the new trends API.
+- P1 ML reproducibility: expanded training with required source attribution, dataset checksums, versioned artifact metadata, chronological holdout mode, feature-schema metadata, and inference-side artifact compatibility fallback.
+- P1 delivery automation: added a non-deploying GitHub Actions quality gate for Compose validation, Python syntax, Go resolver build, dashboard build, and Docker image builds, with CI documentation and acceptance checks.
+- P2 deployment baseline: replaced Kubernetes guidance-only content with private-by-default manifests for core platform services, secret/config templates, a default-deny policy, deployment safeguards, and cluster validation checks. No cluster action was taken.
+- Hackathon visualization: added an unexecuted Jupyter SOC demo/evidence notebook with real gateway-driven pipeline, event, trend, incident, reputation, feed, and model visualizations, plus notebook setup and verification guidance.
 
 ## Manual prerequisites
 

@@ -9,6 +9,7 @@ This is the single checklist for validating the whole path after implementation 
 - [ ] Docker Desktop has enough memory for ClickHouse, Redis, seven Python services, the resolver, and dashboard.
 - [ ] Test traffic is confined to the `dns-shield-lab` Docker network.
 - [ ] The resolver is not exposed publicly and no host firewall permissions are granted.
+- [ ] CI runs against a non-secret `.env` derived from `.env.example`; no real key/certificate/database is available to the workflow.
 - [ ] Development TLS certificate/key exist before testing DoH/DoT.
 - [ ] Confirm `infra/certs/tls.crt` and `infra/certs/tls.key` are local-only and ignored by Git.
 - [ ] Confirm the default upstream is the internal `mock-dns` service, not a public resolver.
@@ -108,6 +109,9 @@ Evidence: save DNS response code/answer and gateway event ID for each protocol.
 - [ ] Baseline mode clearly reports `transparent-deterministic-baseline` before artifacts exist.
 - [ ] Train DGA and typosquat models from documented labelled datasets.
 - [ ] Confirm versioned joblib artifacts and metrics JSON appear in `ml-training/artifacts`.
+- [ ] Confirm every trained artifact also has metadata recording dataset source, SHA-256, rows, split strategy, feature schema, and runtime compatibility.
+- [ ] Run chronological holdout mode only with complete `observed_at` values; confirm it rejects an invalid chronological split rather than silently leaking future data.
+- [ ] Place an intentionally mismatched model metadata file beside an artifact and confirm inference safely falls back to baseline rather than loading it.
 - [ ] Restart inference and confirm `trained-local-artifact` with the expected model version.
 - [ ] Confirm held-out precision/recall/F1 are real training values, never manually entered.
 - [ ] Send enough representative queries to compute drift; validate the monitoring endpoint’s feature baseline, recent sample count, and drift indicator.
@@ -172,6 +176,8 @@ Run safe local traffic scenarios with `python infra/simulate.py`.
 - [ ] Request `GET /v1/trends` for global, device-filtered, and domain-filtered views; confirm hourly query/risk/block/flag points match inserted events.
 - [ ] Confirm each virtual-lab quarantine is displayed with its reason and the dashboard **Release** action removes it.
 - [ ] Model monitoring values clearly state unavailable until trained; no fabricated metrics.
+- [ ] After collecting real events, open `notebooks/01_soc_demo_analysis.ipynb`; verify its pipeline, verdict, trend, incident, profile, feed, and model cells draw only from gateway responses.
+- [ ] Confirm no API key is saved in the notebook; use `DNS_SHIELD_API_KEY` environment variable only when required.
 
 ## 10. Performance and resilience evidence
 
@@ -182,6 +188,19 @@ Run safe local traffic scenarios with `python infra/simulate.py`.
 - [ ] Stop threat-intel, ML, behavioral, geo, analytics, and active-response one at a time.
 - [ ] For each outage, record DNS result, verdict behavior, `degraded_dependencies`, and recovery action.
 - [ ] Confirm optional intelligence plane is absent/disabled and cannot affect detection.
+
+## 10.1 Continuous-integration checks
+
+- [ ] Confirm GitHub Actions Compose configuration job passes after a change to Compose/env wiring.
+- [ ] Confirm Python syntax, Go resolver build, dashboard build, and Docker image build jobs pass before merging a code change.
+- [ ] Treat CI success as a build-quality gate only; still execute the active, passive, performance, and resilience sections in an approved lab.
+
+## 10.2 Kubernetes deployment checks — only after explicit approval
+
+- [ ] Run `kubectl apply --dry-run=client` for `infra/k8s/base.yaml` and `network-policy.yaml` against the approved cluster context.
+- [ ] Confirm no placeholder image, secret, dashboard URL, or `emptyDir` production data store is deployed.
+- [ ] Confirm all Services remain ClusterIP until reviewed ingress/resolver exposure is approved.
+- [ ] Confirm default-deny NetworkPolicy is supplemented with narrow allow rules before it is applied.
 
 ## 11. Final demo acceptance path
 

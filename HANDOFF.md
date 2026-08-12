@@ -35,6 +35,7 @@ Do **not** present the platform as tested, <100ms compliant, hosted, or producti
 - `TEST_PLAN.md`: full preflight-to-demo verification matrix with evidence requirements.
 - `infra/SECURITY_CHECKLIST.md`: deployment/security checks.
 - `docs/ARCHITECTURE.md` and `docs/API.md`: architecture and API context.
+- `notebooks/01_soc_demo_analysis.ipynb`: unexecuted Jupyter visual-analysis companion for real gateway evidence after test execution is approved.
 - `PROGRESS.md`: chronological status log.
 
 ### Resolver core — `services/resolver-core`
@@ -140,7 +141,7 @@ Do **not** present the platform as tested, <100ms compliant, hosted, or producti
 ### P1 — feature depth and product polish
 
 - [ ] Replace heuristic n-gram rarity with a corpus-derived n-gram frequency table produced by the training pipeline.
-- [ ] Improve model training: separate DGA/typosquat datasets, artifact metadata/version manifests, feature schema compatibility checks, and time-based evaluation split.
+- [ ] Obtain and train separate real DGA/typosquat datasets. Artifact metadata/version manifests, basic compatibility checks, and optional chronological evaluation split are now implemented.
 - [ ] Add actual feature-distribution histogram/PSI drift calculation rather than only relative means.
 - [ ] Add dedicated incident-detail route/UI showing every timeline item and response action.
 - [ ] Add domain/device trend charts from ClickHouse history.
@@ -152,8 +153,8 @@ Do **not** present the platform as tested, <100ms compliant, hosted, or producti
 
 ### P2 — infrastructure/deployment deliverables
 
-- [ ] Write actual Kubernetes manifests (Deployment, Service, ConfigMap, Secret templates, NetworkPolicies, PVCs) or fully document the Compose-to-cloud deployment path. Current `infra/k8s/README.md` is guidance only.
-- [ ] Add CI workflow for lint, unit tests, Compose integration test, dependency scanning, and artifact build.
+- [ ] Complete Kubernetes production overlays: immutable real image tags, managed secrets, encrypted PVCs/backups, narrow allow policies, resolver exposure, and approved ingress. A private-by-default Deployment/Service/ConfigMap/Secret-template/NetworkPolicy baseline now exists.
+- [ ] Extend CI with linting, unit/integration tests, dependency scanning, and image vulnerability scanning. A baseline workflow now validates Compose, Python syntax, Go resolver build, Next.js build, and Docker image builds.
 - [ ] Add structured service logs, distributed tracing, and application-level readiness probes. Gateway correlation IDs and Prometheus-format in-process metrics are now implemented; Compose dependency health checks are present for Redis, ClickHouse, and mock DNS.
 - [ ] Add backup/restore procedure for ClickHouse and Redis data.
 - [ ] Add QR-code generation after an approved hosted dashboard URL exists.
