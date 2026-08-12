@@ -35,6 +35,9 @@ class SinkholeObservation(BaseModel):
     protocol: str = Field(default="http", max_length=32)
     path: str = Field(default="/", max_length=2048)
     user_agent: str = Field(default="", max_length=1024)
+    method: str = Field(default="GET", max_length=16)
+    content_length: int = Field(default=0, ge=0, le=1024 * 1024)
+    captured_body_preview: str = Field(default="", max_length=1024)
 
 
 def in_lab(device_ip: str) -> bool:
@@ -70,7 +73,7 @@ def observe_sinkhole(observation: SinkholeObservation):
     row = observation.model_dump() | {"at": time.time()}
     key = f"sinkhole:telemetry:{observation.domain.lower().rstrip('.')}"
     store.lpush(key, json.dumps(row)); store.ltrim(key, 0, 499); store.expire(key, ACTION_TTL_SECONDS)
-    audit("sinkhole-observation", observation.domain, {"device_ip": observation.device_ip, "protocol": observation.protocol, "path": observation.path})
+    audit("sinkhole-observation", observation.domain, {"device_ip": observation.device_ip, "protocol": observation.protocol, "method": observation.method, "path": observation.path, "content_length": observation.content_length})
     return {"status": "logged", "scope": "virtual-lab-only"}
 
 
