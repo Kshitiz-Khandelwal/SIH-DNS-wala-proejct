@@ -125,11 +125,18 @@ Run safe local traffic scenarios with `python infra/simulate.py`.
 - [ ] `GET /v1/devices/{ip}` shows risk history/timeline.
 - [ ] `GET /v1/domains/{domain}` shows first/last seen, query count, device count, and parent-domain context.
 - [ ] Multiple signals become one Incident with an ordered timeline and plain-language summary.
+- [ ] Request `GET /v1/incidents/{id}` and confirm the full timeline is sorted chronologically and includes the detector evidence.
 - [ ] Device risk decays after normal traffic; record observed before/after values.
+- [ ] Run named Docker profile containers `simulation-benign`, `simulation-dga`, `simulation-tunnelling`, `simulation-c2`, and `simulation-typosquat` one at a time; confirm normal `docker compose up` does not start them.
+- [ ] Confirm each simulator calls only `http://api-gateway:8080` inside `dns-shield-lab` and carries its scenario name in the persisted event source.
 
 ## 7. Response and honeypot path — lab only
 
 - [ ] Known malicious domain invokes sinkhole lifecycle and returns only configured lab sinkhole IP.
+- [ ] Verify `lab-honeypot` owns configured `SINKHOLE_IP` (`172.28.0.250`) inside the Docker lab network.
+- [ ] From a lab client only, request `http://172.28.0.250/healthz` and verify its lab-only status.
+- [ ] Send harmless HTTP traffic to the lab sinkhole and confirm method/path/user-agent/body-size metadata is recorded through `/sinkhole/observe`.
+- [ ] Confirm the honeypot returns a fixed harmless response, does not proxy traffic, and is not published on a host port.
 - [ ] Sinkhole telemetry from a lab prefix is accepted and audited.
 - [ ] Telemetry from outside configured lab prefix returns HTTP 403.
 - [ ] Repeated sinkhole telemetry produces review-only signature suggestions.
@@ -161,6 +168,8 @@ Run safe local traffic scenarios with `python infra/simulate.py`.
 - [ ] Three.js globe renders and arcs appear for blocked events.
 - [ ] Incident timeline renders correlated event sequence.
 - [ ] `False Positive`, `Confirmed Threat`, and `Needs Investigation` feedback persists via API.
+- [ ] Confirm feedback is present in both Redis immediate state and ClickHouse `dns_shield.feedback` when analytics is healthy; record `redis-only-degraded` if ClickHouse is intentionally unavailable.
+- [ ] Request `GET /v1/trends` for global, device-filtered, and domain-filtered views; confirm hourly query/risk/block/flag points match inserted events.
 - [ ] Confirm each virtual-lab quarantine is displayed with its reason and the dashboard **Release** action removes it.
 - [ ] Model monitoring values clearly state unavailable until trained; no fabricated metrics.
 

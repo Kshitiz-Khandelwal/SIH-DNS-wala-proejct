@@ -147,7 +147,7 @@ Do **not** present the platform as tested, <100ms compliant, hosted, or producti
 - [ ] Add full PCAP/Zeek result table with filter/export and evidence links in dashboard.
 - [ ] Make 3D globe map true source/target coordinates from stored geo JSON, tooltips, and selectable arcs; current fallback uses deterministic display positions when GeoIP is missing.
 - [ ] Add dashboard loading/empty/error states and accessibility pass.
-- [ ] Add lab honeypot container and named Docker-network attack-simulation containers rather than only a local API simulation script.
+- [x] Add named Docker-network attack-simulation containers. Five opt-in one-shot containers now exist under the Compose `simulation` profile.
 - [ ] Add parent-domain aggregation/reputation across all subdomains rather than only emitting context per queried domain.
 
 ### P2 — infrastructure/deployment deliverables

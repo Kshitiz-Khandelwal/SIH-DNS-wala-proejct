@@ -145,7 +145,7 @@ E --> D["Dashboard / SIEM investigation"]
 
 1. A blocking decision can activate virtual sinkhole state for the bad domain.
 2. The resolver returns `SINKHOLE_IP` only for compatible blocked A-record requests.
-3. A separate lab honeypot (still a remaining implementation item) may send observed request metadata to `/sinkhole/observe`.
+3. The `lab-honeypot` container owns the configured lab sinkhole IP and sends observed HTTP metadata to `/sinkhole/observe`.
 4. The response service stores lab telemetry/audit entries and creates review-only signature suggestions.
 5. If device risk reaches the configured critical threshold, the gateway asks the response service to create a virtual quarantine record.
 6. The dashboard can release that virtual quarantine record.
@@ -194,6 +194,8 @@ python infra/simulate.py typosquat
 
 These scripts only call the local gateway. They do not generate external attacks.
 
+For a fully containerized, repeatable demo use the opt-in `simulation` Compose profile. See `infra/lab-simulator/README.md` for the exact named-container commands.
+
 ## 9. Testing and evidence workflow
 
 Use `TEST_PLAN.md` in order:
@@ -207,4 +209,3 @@ Use `TEST_PLAN.md` in order:
 7. Only claim a feature works after the relevant check has actual evidence.
 
 Use `HANDOFF.md` for remaining engineering work and `COMPONENT_AND_DESIGN_GUIDE.md` to understand the intent of each component before changing it.
-

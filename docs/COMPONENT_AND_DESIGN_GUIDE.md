@@ -53,6 +53,7 @@ The gateway prevents an uncertain lexical result alone from blocking. If ML is u
 | `services/behavioral-engine` | Device risk, anomalies, incidents | Adds time-series and per-device context. |
 | `services/geo-intel` | Offline GeoLite2 City/ASN enrichment | Adds geographic infrastructure context with no paid/live lookup dependency. |
 | `services/active-response` | Lab-only sinkhole/quarantine controller | Demonstrates response safely without host firewall access. |
+| `services/lab-honeypot` | Controlled HTTP sinkhole listener | Captures harmless lab-only decoy metadata without proxying traffic. |
 | `services/analytics-store` | ClickHouse event persistence and forensic parsing | Provides evidence, dashboard queries, and offline analysis. |
 | `dashboard` | Next.js SOC interface | Lets a reviewer operate and observe the system. |
 | `ml-training` | Offline training/export scripts | Keeps training separate from low-latency inference. |
@@ -157,7 +158,15 @@ This service models response in a safe virtual lab. It creates sinkhole state, a
 
 **Why signature suggestions are review-only:** Automatically promoting decoy behavior into blocks can create false positives. A human or explicit threat-intel process must review the suggestion.
 
-### 4.9 `services/analytics-store`
+### 4.9 `services/lab-honeypot`
+
+The lab honeypot is a minimal HTTP listener bound to `SINKHOLE_IP` inside the Docker-only lab subnet. It returns a harmless fixed response and forwards a bounded amount of request metadata to active response: source address, method, path, user agent, body size, and at most 1 KiB of preview.
+
+It never proxies a request to a destination, executes content, or opens an outbound connection for the client. This is important: the purpose is safe observation of the simulated C2 request, not an internet-facing trap.
+
+**Why a separate service:** Active response owns policy state and audits. The honeypot owns only observation. Keeping them separate makes the safety boundary clear and allows the decoy to be replaced later without changing response decisions.
+
+### 4.10 `services/analytics-store`
 
 **Main files:** `app.py`, `schema.sql`, `migrations/`.
 
@@ -169,7 +178,7 @@ Passive parsing only extracts observable DNS. Encrypted DoH/DoT cannot be decode
 
 **Why PCAP parsing is separate from the gateway:** Capture files are bulky and parsing can be slow. The analytics service extracts domains, while the gateway ensures the same detection rules are used for replay.
 
-### 4.10 `dashboard`
+### 4.11 `dashboard`
 
 **Main files:** `app/page.js`, `app/ThreatGlobe.jsx`, `app/style.css`.
 
@@ -207,6 +216,10 @@ Explains how to create a local-only development certificate for DoH/DoT. Private
 
 Provides safe API-only traffic scenarios: `benign`, `dga`, `tunnelling`, `c2`, and `typosquat`. It does not generate external traffic or change networking.
 
+### `infra/lab-simulator`
+
+Packages the same five safe scenarios as named, one-shot Docker containers under the Compose `simulation` profile. This makes the live demo repeatable: each scenario has a stable source address and event source string. The profile is opt-in, so simulations cannot start accidentally with the normal platform stack.
+
 ### `infra/DATA_RETENTION.md`
 
 Defines evidence retention intentions and explicitly states which retention behavior is operational policy versus enforced migration.
@@ -236,4 +249,3 @@ The code is intentionally untested so far because the user deferred execution. T
 - Current virtual quarantine is a lab state model, not network enforcement.
 
 Use `HANDOFF.md` for prioritized work and `TEST_PLAN.md` for all validation.
-
