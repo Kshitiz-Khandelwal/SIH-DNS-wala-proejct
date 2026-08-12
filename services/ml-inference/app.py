@@ -19,7 +19,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="DNS Shield ML Inference", version="1.2.0")
-store = redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+store = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 ARTIFACT_DIR = Path(os.getenv("MODEL_ARTIFACT_DIR", "/app/artifacts"))
 WHOIS_TTL_SECONDS = int(os.getenv("WHOIS_CACHE_TTL_SECONDS", str(7 * 24 * 3600)))
 TOP_DOMAINS = ["google.com", "youtube.com", "facebook.com", "amazon.com", "wikipedia.org", "isro.gov.in", "microsoft.com", "github.com", "apple.com", "netflix.com", "linkedin.com", "instagram.com"]
@@ -72,9 +72,12 @@ def ngram_rarity(text: str) -> float:
 def cached_whois_age(domain: str, supplied: int | None) -> tuple[int | None, str]:
     if supplied is not None:
         return supplied, "caller-supplied-cached"
-    row = store.hgetall(f"whois:age:{domain}")
-    if row.get("age_days"):
-        return int(row["age_days"]), row.get("source", "redis-cache")
+    try:
+        row = store.hgetall(f"whois:age:{domain}")
+        if row.get("age_days"):
+            return int(row["age_days"]), row.get("source", "redis-cache")
+    except Exception:
+        pass
     return None, "not-available-no-live-whois"
 
 

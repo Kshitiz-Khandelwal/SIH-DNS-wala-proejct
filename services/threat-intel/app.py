@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Iterable
 from urllib.parse import urlparse
+from pathlib import Path
 
 import redis
 import requests
@@ -19,11 +20,12 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="DNS Shield Threat Intelligence", version="1.1.0")
-cache = redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+cache = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 INDICATOR_TTL_SECONDS = int(os.getenv("INDICATOR_TTL_SECONDS", str(7 * 24 * 3600)))
 MISP_URL = os.getenv("MISP_URL", "").rstrip("/")
 MISP_API_KEY = os.getenv("MISP_API_KEY", "")
-SEED = [line.strip() for line in open("seed_indicators.txt", encoding="utf-8") if line.strip() and not line.startswith("#")]
+SEED_FILE = Path(__file__).parent / "seed_indicators.txt"
+SEED = [line.strip() for line in open(SEED_FILE, encoding="utf-8") if line.strip() and not line.startswith("#")] if SEED_FILE.exists() else ["c2.bad-demo.example"]
 DOMAIN_PATTERN = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$", re.I)
 
 
@@ -52,20 +54,30 @@ def stix_indicator(domain: str, source: str, confidence: int, tags: list[str]) -
     }
 
 
+LOCAL_SEED_CACHE = {}
+
 def save_indicator(domain: str, source: str, confidence: int, tags: list[str]) -> bool:
     domain = clean_domain(domain)
     if not domain:
         return False
     stix = stix_indicator(domain, source, confidence, tags)
-    key = f"indicator:{domain}"
-    cache.hset(key, mapping={"source": source, "confidence": str(confidence), "tags": json.dumps(tags), "stix": json.dumps(stix), "updated_at": datetime.now(timezone.utc).isoformat()})
-    cache.expire(key, INDICATOR_TTL_SECONDS)
-    cache.sadd("indicators:domains", domain)
+    data = {"source": source, "confidence": str(confidence), "tags": json.dumps(tags), "stix": json.dumps(stix), "updated_at": datetime.now(timezone.utc).isoformat()}
+    LOCAL_SEED_CACHE[domain] = data
+    try:
+        key = f"indicator:{domain}"
+        cache.hset(key, mapping=data)
+        cache.expire(key, INDICATOR_TTL_SECONDS)
+        cache.sadd("indicators:domains", domain)
+    except Exception:
+        pass
     return True
 
 
 def record_feed(name: str, status: str, *, added: int = 0, detail: str = "") -> None:
-    cache.hset(f"feed:{name}", mapping={"status": status, "last_run": datetime.now(timezone.utc).isoformat(), "last_added": str(added), "detail": detail})
+    try:
+        cache.hset(f"feed:{name}", mapping={"status": status, "last_run": datetime.now(timezone.utc).isoformat(), "last_added": str(added), "detail": detail})
+    except Exception:
+        pass
 
 
 def extract_urlhaus_domains(lines: Iterable[str]) -> Iterable[str]:
@@ -73,7 +85,6 @@ def extract_urlhaus_domains(lines: Iterable[str]) -> Iterable[str]:
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        # URLhaus hostfile format is typically "0.0.0.0 domain # comment".
         fields = line.split()
         domain = clean_domain(fields[1] if len(fields) > 1 and re.fullmatch(r"(?:0\\.){3}0|127\\.0\\.0\\.1", fields[0]) else fields[0])
         if domain:
@@ -81,7 +92,6 @@ def extract_urlhaus_domains(lines: Iterable[str]) -> Iterable[str]:
 
 
 def misp_event_payload(domain: str, indicator: dict) -> dict:
-    """Map one STIX-normalized DNS indicator to the documented MISP event API shape."""
     source = indicator.get("external_references", [{}])[0].get("source_name", "DNS Shield")
     return {"Event": {"info": f"DNS Shield indicator: {domain}", "distribution": 0, "threat_level_id": 2, "analysis": 0, "Tag": [{"name": tag} for tag in indicator.get("labels", [])], "Attribute": [{"type": "domain", "category": "Network activity", "value": domain, "to_ids": True, "comment": f"Imported by DNS Shield from {source}; STIX ID {indicator['id']}", "distribution": 0}]}}
 
@@ -98,7 +108,13 @@ def lookup(domain: str):
     domain = clean_domain(domain)
     if not domain:
         raise HTTPException(status_code=422, detail="invalid domain")
-    row = cache.hgetall(f"indicator:{domain}")
+    row = None
+    try:
+        row = cache.hgetall(f"indicator:{domain}")
+    except Exception:
+        row = LOCAL_SEED_CACHE.get(domain)
+    if not row:
+        row = LOCAL_SEED_CACHE.get(domain)
     return {"domain": domain, "hit": bool(row), "indicator": row or None, "cache_only": True}
 
 

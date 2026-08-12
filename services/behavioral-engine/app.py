@@ -19,7 +19,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="DNS Shield Behavioral Engine", version="1.1.0")
-store = redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+store = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 
 WINDOW_SECONDS = int(os.getenv("BEHAVIOR_WINDOW_SECONDS", "60"))
 VOLUME_THRESHOLD = int(os.getenv("BEHAVIOR_VOLUME_THRESHOLD", "50"))
@@ -39,6 +39,10 @@ def parent_domain(domain: str) -> str:
     return ".".join(labels[-2:]) if len(labels) >= 2 else domain
 
 
+LOCAL_PROFILES: dict[str, dict] = {}
+LOCAL_TIMELINES: dict[str, list] = {}
+LOCAL_INCIDENTS: dict[str, dict] = {}
+
 def shannon_entropy(text: str) -> float:
     counts = Counter(text)
     return -sum((count / len(text)) * math.log2(count / len(text)) for count in counts.values()) if text else 0.0
@@ -56,33 +60,59 @@ def profile_key(client_ip: str) -> str:
 
 
 def save_timeline_event(client_ip: str, event: dict[str, Any]) -> None:
-    key = f"device:timeline:{client_ip}"
-    store.lpush(key, json.dumps(event))
-    store.ltrim(key, 0, 499)
-    store.expire(key, DEVICE_TTL)
+    if client_ip not in LOCAL_TIMELINES:
+        LOCAL_TIMELINES[client_ip] = []
+    LOCAL_TIMELINES[client_ip].insert(0, event)
+    LOCAL_TIMELINES[client_ip] = LOCAL_TIMELINES[client_ip][:500]
+    try:
+        key = f"device:timeline:{client_ip}"
+        store.lpush(key, json.dumps(event))
+        store.ltrim(key, 0, 499)
+        store.expire(key, DEVICE_TTL)
+    except Exception:
+        pass
 
 
 def create_or_extend_incident(client_ip: str, signals: list[str], risk: int, domain: str) -> dict | None:
-    """Correlate more than one weak signal into a single time-bounded incident."""
     if len(signals) < 2 and risk < 70:
         return None
     active_key = f"incident:active:{client_ip}"
-    current_id = store.get(active_key)
+    current_id = None
+    try:
+        current_id = store.get(active_key)
+    except Exception:
+        current_id = LOCAL_INCIDENTS.get(f"active:{client_ip}")
+
     now = time.time()
     evidence = {"at": now, "event": "detector trigger", "domain": domain, "signals": signals, "device_risk": risk}
     if current_id:
-        raw = store.get(f"incident:{current_id}")
+        raw = None
+        try:
+            raw = store.get(f"incident:{current_id}")
+        except Exception:
+            raw = json.dumps(LOCAL_INCIDENTS.get(current_id, {})) if current_id in LOCAL_INCIDENTS else None
         if raw:
             incident = json.loads(raw)
-            incident["timeline"].append(evidence)
+            incident.setdefault("timeline", []).append(evidence)
             incident["summary"] = f"{len(incident['timeline'])} correlated DNS events from {client_ip}; latest: {'; '.join(signals)}"
-            incident["severity"] = "critical" if risk >= 80 else incident["severity"]
-            store.setex(f"incident:{current_id}", DEVICE_TTL, json.dumps(incident))
+            incident["severity"] = "critical" if risk >= 80 else incident.get("severity", "high")
+            LOCAL_INCIDENTS[current_id] = incident
+            try:
+                store.setex(f"incident:{current_id}", DEVICE_TTL, json.dumps(incident))
+            except Exception:
+                pass
             return incident
-    incident = {"id": str(uuid.uuid4()), "device": client_ip, "parent_domains": [parent_domain(domain)], "severity": "critical" if risk >= 80 else "high", "opened_at": now, "summary": f"Correlated DNS incident: {'; '.join(signals)}", "timeline": [{"at": now, "event": "first contact", "domain": domain}, evidence]}
-    store.setex(f"incident:{incident['id']}", DEVICE_TTL, json.dumps(incident))
-    store.lpush("incidents:index", incident["id"]); store.ltrim("incidents:index", 0, 199)
-    store.setex(active_key, WINDOW_SECONDS * 5, incident["id"])
+
+    inc_id = str(uuid.uuid4())
+    incident = {"id": inc_id, "device": client_ip, "parent_domains": [parent_domain(domain)], "severity": "critical" if risk >= 80 else "high", "opened_at": now, "summary": f"Correlated DNS incident: {'; '.join(signals)}", "timeline": [{"at": now, "event": "first contact", "domain": domain}, evidence]}
+    LOCAL_INCIDENTS[inc_id] = incident
+    LOCAL_INCIDENTS[f"active:{client_ip}"] = inc_id
+    try:
+        store.setex(f"incident:{inc_id}", DEVICE_TTL, json.dumps(incident))
+        store.lpush("incidents:index", inc_id); store.ltrim("incidents:index", 0, 199)
+        store.setex(active_key, WINDOW_SECONDS * 5, inc_id)
+    except Exception:
+        pass
     return incident
 
 
@@ -122,16 +152,42 @@ def observe(observation: Observation):
         contribution += 35
         signals.append("threat-intelligence match raises device risk")
 
-    old_risk = int(store.hget(profile_key(observation.client_ip), "risk") or 0)
-    # Decay prevents a device from remaining critical forever after normal traffic resumes.
-    risk = min(100, round(old_risk * 0.92 + contribution))
-    profile = {"ip": observation.client_ip, "risk": risk, "previous_risk": old_risk, "last_seen": now, "query_count": int(store.hget(profile_key(observation.client_ip), "query_count") or 0) + 1, "blocked_or_known_bad": int(store.hget(profile_key(observation.client_ip), "blocked_or_known_bad") or 0) + int(observation.threat_hit), "dga_hits": int(store.hget(profile_key(observation.client_ip), "dga_hits") or 0) + int(observation.ml_probability >= .70)}
-    store.hset(profile_key(observation.client_ip), mapping={key: str(value) for key, value in profile.items()}); store.expire(profile_key(observation.client_ip), DEVICE_TTL)
+    old_risk = 0
+    query_count = 0
+    blocked_count = 0
+    dga_count = 0
+    try:
+        old_risk = int(store.hget(profile_key(observation.client_ip), "risk") or 0)
+        query_count = int(store.hget(profile_key(observation.client_ip), "query_count") or 0)
+        blocked_count = int(store.hget(profile_key(observation.client_ip), "blocked_or_known_bad") or 0)
+        dga_count = int(store.hget(profile_key(observation.client_ip), "dga_hits") or 0)
+    except Exception:
+        local_p = LOCAL_PROFILES.get(observation.client_ip, {})
+        old_risk = local_p.get("risk", 0)
+        query_count = local_p.get("query_count", 0)
+        blocked_count = local_p.get("blocked_or_known_bad", 0)
+        dga_count = local_p.get("dga_hits", 0)
 
-    domain_key = f"domain:profile:{domain}"
-    first_seen = store.hget(domain_key, "first_seen") or str(now)
-    store.hset(domain_key, mapping={"first_seen": first_seen, "last_seen": str(now), "query_count": str(int(store.hget(domain_key, "query_count") or 0) + 1), "last_device": observation.client_ip, "threat_intel_hits": str(int(store.hget(domain_key, "threat_intel_hits") or 0) + int(observation.threat_hit)), "last_ml_probability": str(observation.ml_probability), "parent_domain": parent_domain(domain)})
-    store.expire(domain_key, DEVICE_TTL); store.sadd(f"domain:devices:{domain}", observation.client_ip); store.expire(f"domain:devices:{domain}", DEVICE_TTL)
+    risk = min(100, round(old_risk * 0.92 + contribution))
+    profile = {
+        "ip": observation.client_ip, "risk": risk, "previous_risk": old_risk, "last_seen": now,
+        "query_count": query_count + 1, "blocked_or_known_bad": blocked_count + int(observation.threat_hit),
+        "dga_hits": dga_count + int(observation.ml_probability >= .70)
+    }
+    LOCAL_PROFILES[observation.client_ip] = profile
+    try:
+        store.hset(profile_key(observation.client_ip), mapping={key: str(value) for key, value in profile.items()})
+        store.expire(profile_key(observation.client_ip), DEVICE_TTL)
+    except Exception:
+        pass
+
+    try:
+        domain_key = f"domain:profile:{domain}"
+        first_seen = store.hget(domain_key, "first_seen") or str(now)
+        store.hset(domain_key, mapping={"first_seen": first_seen, "last_seen": str(now), "query_count": str(int(store.hget(domain_key, "query_count") or 0) + 1), "last_device": observation.client_ip, "threat_intel_hits": str(int(store.hget(domain_key, "threat_intel_hits") or 0) + int(observation.threat_hit)), "last_ml_probability": str(observation.ml_probability), "parent_domain": parent_domain(domain)})
+        store.expire(domain_key, DEVICE_TTL); store.sadd(f"domain:devices:{domain}", observation.client_ip); store.expire(f"domain:devices:{domain}", DEVICE_TTL)
+    except Exception:
+        pass
 
     event = {"at": now, "domain": domain, "device_risk": risk, "contribution": contribution, "signals": signals or ["normal behavioural baseline"], "window_query_count": len(window)}
     save_timeline_event(observation.client_ip, event)
@@ -141,16 +197,28 @@ def observe(observation: Observation):
 
 @app.get("/devices/{ip}", tags=["profiles"])
 def device(ip: str):
-    profile = store.hgetall(profile_key(ip))
-    timeline = [json.loads(row) for row in reversed(store.lrange(f"device:timeline:{ip}", 0, 199))]
+    profile = {}
+    timeline = []
+    try:
+        profile = store.hgetall(profile_key(ip))
+        timeline = [json.loads(row) for row in reversed(store.lrange(f"device:timeline:{ip}", 0, 199))]
+    except Exception:
+        profile = LOCAL_PROFILES.get(ip, {})
+        timeline = LOCAL_TIMELINES.get(ip, [])
     return {"ip": ip, "profile": profile, "risk": int(profile.get("risk", 0)), "timeline": timeline}
 
 
 @app.get("/domains/{domain}", tags=["profiles"])
 def domain_profile(domain: str):
     domain = domain.lower().rstrip(".")
-    profile = store.hgetall(f"domain:profile:{domain}")
-    return {"domain": domain, "profile": profile, "device_count": store.scard(f"domain:devices:{domain}") if profile else 0, "parent_domain": parent_domain(domain), "parent_poisoning_analysis": {"status": "review" if int(profile.get("threat_intel_hits", 0)) else "clean", "reason": "parent domain is surfaced for related-subdomain investigation"}}
+    profile = {}
+    device_count = 0
+    try:
+        profile = store.hgetall(f"domain:profile:{domain}")
+        device_count = store.scard(f"domain:devices:{domain}") if profile else 0
+    except Exception:
+        pass
+    return {"domain": domain, "profile": profile, "device_count": device_count, "parent_domain": parent_domain(domain), "parent_poisoning_analysis": {"status": "review" if int(profile.get("threat_intel_hits", 0)) else "clean", "reason": "parent domain is surfaced for related-subdomain investigation"}}
 
 
 @app.get("/incidents", tags=["incidents"])

@@ -11,4 +11,4 @@ scenarios={
 p=argparse.ArgumentParser();p.add_argument("scenario",choices=scenarios);p.add_argument("--device",default="172.28.0.99");p.add_argument("--repeat",type=int,default=1);a=p.parse_args()
 for _ in range(a.repeat):
  for domain in scenarios[a.scenario]:
-  print(requests.post(BASE,json={"domain":domain,"client_ip":a.device,"source":f"lab-simulation:{a.scenario}"},timeout=2).json())
+  print(requests.post(BASE,json={"domain":domain,"client_ip":a.device,"source":f"lab-simulation:{a.scenario}"},timeout=10).json())

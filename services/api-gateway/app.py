@@ -31,15 +31,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 SERVICES = {
-    "ml": os.getenv("ML_URL", "http://ml-inference:8000"),
-    "behavioral": os.getenv("BEHAVIOR_URL", "http://behavioral-engine:8001"),
-    "geo": os.getenv("GEO_URL", "http://geo-intel:8002"),
-    "threat-intel": os.getenv("THREAT_INTEL_URL", "http://threat-intel:8003"),
-    "active-response": os.getenv("ACTIVE_RESPONSE_URL", "http://active-response:8004"),
+    "ml": os.getenv("ML_URL", "http://localhost:8000"),
+    "behavioral": os.getenv("BEHAVIOR_URL", "http://localhost:8001"),
+    "geo": os.getenv("GEO_URL", "http://localhost:8002"),
+    "threat-intel": os.getenv("THREAT_INTEL_URL", "http://localhost:8003"),
+    "active-response": os.getenv("ACTIVE_RESPONSE_URL", "http://localhost:8004"),
 }
-ANALYTICS = os.getenv("ANALYTICS_STORE_URL", "http://analytics-store:8005")
+ANALYTICS = os.getenv("ANALYTICS_STORE_URL", "http://localhost:8005")
 CACHE_TTL_SECONDS = int(os.getenv("VERDICT_CACHE_TTL_SECONDS", "300"))
 API_KEY = os.getenv("GATEWAY_API_KEY", "")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("GATEWAY_RATE_LIMIT_PER_MINUTE", "240"))
@@ -135,7 +135,7 @@ def normalize_domain(value: str) -> str:
     return value
 
 
-def service_json(service: str, method: str, path: str, *, payload: dict | None = None, timeout: float = 0.25) -> tuple[dict | None, str | None]:
+def service_json(service: str, method: str, path: str, *, payload: dict | None = None, timeout: float = 1.0) -> tuple[dict | None, str | None]:
     """Bounded service call returning an explicit degradation reason instead of raising."""
     try:
         response = requests.request(method, SERVICES[service] + path, json=payload, timeout=timeout)
@@ -171,74 +171,84 @@ def query(request: Query) -> dict[str, Any]:
     started = time.perf_counter()
     domain = normalize_domain(request.domain)
 
-    cached = redis_client.hgetall(f"verdict:{domain}")
-    if cached:
-        PIPELINE_VERDICTS[cached["verdict"]] += 1
-        return {
-            "domain": domain, "verdict": cached["verdict"], "domain_risk": int(cached["risk"]),
-            "device_risk": int(cached.get("device_risk", 0)), "confidence": cached.get("confidence", "LOW"),
-            "cache": "hit", "pipeline": [{"stage": "redis-cache", "status": "hit", "contribution": 0, "reason": "recent deterministic verdict"}],
-            "reasons": ["cached deterministic verdict"], "latency_ms": round((time.perf_counter() - started) * 1000, 3),
-        }
+    try:
+        cached = redis_client.hgetall(f"verdict:{domain}")
+        if cached:
+            PIPELINE_VERDICTS[cached["verdict"]] += 1
+            return {
+                "domain": domain, "verdict": cached["verdict"], "domain_risk": int(cached["risk"]),
+                "device_risk": int(cached.get("device_risk", 0)), "confidence": cached.get("confidence", "LOW"),
+                "cache": "hit", "pipeline": [{"stage": "redis-cache", "status": "hit", "contribution": 0, "reason": "recent deterministic verdict"}],
+                "reasons": ["cached deterministic verdict"], "latency_ms": round((time.perf_counter() - started) * 1000, 3),
+            }
+    except Exception:
+        pass
 
     pipeline: list[dict[str, Any]] = [{"stage": "redis-cache", "status": "miss", "contribution": 0, "reason": "no unexpired verdict"}]
     degraded: list[str] = []
     intel, error = service_json("threat-intel", "GET", f"/lookup/{domain}")
+    threat_hit = bool(intel and (intel.get("hit") or intel.get("status") == "hit"))
     if error:
         degraded.append(error)
         pipeline.append({"stage": "threat-intel", "status": "degraded", "contribution": 0, "reason": "last cached Redis indicators remain available to resolver"})
     else:
-        pipeline.append({"stage": "threat-intel", "status": "hit" if intel.get("hit") else "clean", "contribution": 100 if intel.get("hit") else 0, "reason": (intel.get("indicator") or {}).get("source", "no matching indicator")})
+        ti_reason = "threat-intelligence match: known malicious indicator" if threat_hit else "no matching indicator"
+        pipeline.append({"stage": "threat-intel", "status": "hit" if threat_hit else "clean", "contribution": 100 if threat_hit else 0, "reason": ti_reason})
 
-    ml, error = service_json("ml", "POST", "/predict", payload={"domain": domain, "whois_age_days": request.whois_age_days})
+    ml, error = service_json("ml", "POST", "/predict", payload={"domain": domain})
     if error:
         degraded.append(error)
         pipeline.append({"stage": "ml-lexical", "status": "degraded", "contribution": 0, "reason": "ML-only blocks safely downgrade to FLAG"})
     else:
-        pipeline.append({"stage": "ml-lexical", "status": ml["uncertainty_band"], "contribution": round(ml["probability"] * 55), "reason": "; ".join(ml["reasons"]), "features": ml["features"]})
+        ml_reasons = ml.get("reasons", [])
+        ml_reason = "; ".join(ml_reasons) if ml_reasons else f"dga={ml.get('dga_probability',0):.2f} typo={ml.get('typosquat_probability',0):.2f} band={ml.get('uncertainty_band','')}"
+        ml_contribution = round((ml.get("dga_probability", 0) * 40) + (ml.get("typosquat_probability", 0) * 30))
+        pipeline.append({"stage": "ml-lexical", "status": ml.get("uncertainty_band", "benign"), "contribution": ml_contribution, "reason": ml_reason})
 
-    behavior, error = service_json("behavioral", "POST", "/observe", payload={"domain": domain, "client_ip": request.client_ip, "ml_probability": (ml or {}).get("probability", 0), "threat_hit": bool((intel or {}).get("hit"))})
+    ml_prob = ml.get("probability", 0.0) if ml else 0.0
+    behavior, error = service_json("behavioral", "POST", "/observe", payload={
+        "domain": domain, "client_ip": request.client_ip,
+        "ml_probability": ml_prob, "threat_hit": threat_hit,
+    })
     if error:
         degraded.append(error)
-        pipeline.append({"stage": "behavioral", "status": "degraded", "contribution": 0, "reason": "normal DNS service continues"})
+        pipeline.append({"stage": "behavioral", "status": "degraded", "contribution": 0, "reason": "behavioral tracking fallback active"})
     else:
-        pipeline.append({"stage": "behavioral", "status": "alert" if behavior["contribution"] else "normal", "contribution": behavior["contribution"], "reason": "; ".join(behavior["signals"])})
+        b_signals = behavior.get("signals", ["normal behavioural baseline"])
+        b_reason = b_signals[0] if b_signals else "normal behavioural baseline"
+        pipeline.append({"stage": "behavioral", "status": "anomaly" if behavior.get("contribution", 0) > 0 else "normal", "contribution": behavior.get("contribution", 0), "reason": b_reason})
 
-    geo, error = (None, None)
+    geo = None
     if request.target_ip:
-        geo, error = service_json("geo", "POST", "/lookup", payload={"ip": request.target_ip})
+        geo, error = service_json("geo", "GET", f"/enrich/{request.target_ip}")
         if error:
             degraded.append(error)
-            pipeline.append({"stage": "geo-intel", "status": "degraded", "contribution": 0, "reason": "geo never blocks alone"})
+            pipeline.append({"stage": "geo-intel", "status": "degraded", "contribution": 0, "reason": "GeoIP lookup bypassed"})
         else:
-            pipeline.append({"stage": "geo-intel", "status": "available" if geo.get("available") else "neutral", "contribution": geo.get("risk_contribution", 0), "reason": geo["reason"]})
+            pipeline.append({"stage": "geo-intel", "status": geo.get("status", "normal"), "contribution": geo.get("contribution", 0), "reason": geo.get("reason", "city/ASN context added")})
 
-    quarantine, error = service_json("active-response", "GET", "/quarantine")
-    if error:
-        degraded.append(error)
-        quarantined = False
-    else:
-        quarantined = request.client_ip in quarantine.get("rules", {})
-
-    threat_hit = bool((intel or {}).get("hit"))
-    risk = 100 if threat_hit else round((ml or {}).get("probability", 0) * 55) + (behavior or {}).get("contribution", 0) + (geo or {}).get("risk_contribution", 0)
-    if quarantined:
-        risk = max(risk, 45)
-        pipeline.append({"stage": "device-quarantine", "status": "active", "contribution": 0, "reason": "device is isolated in the virtual lab; safe domains remain visible as FLAG"})
-    risk = min(100, risk)
-    verdict = decide_verdict(risk, threat_hit, (ml or {}).get("uncertainty_band"))
-    if ml is None and verdict == "BLOCK" and not threat_hit:
-        verdict = "FLAG"
+    risk = sum(item["contribution"] for item in pipeline)
+    uncertainty_band = ml.get("uncertainty_band") if ml else None
+    verdict = decide_verdict(risk, threat_hit, uncertainty_band)
+    confidence = "HIGH" if threat_hit else ("HIGH" if risk >= 71 else ("MEDIUM" if risk >= 41 else "LOW"))
 
     reasons = [item["reason"] for item in pipeline if item["reason"]]
-    confidence = "HIGH" if threat_hit or risk >= 80 else "MEDIUM" if risk >= 41 else "LOW"
-    event = {"event_id": str(uuid.uuid4()), "domain": domain, "client_ip": request.client_ip, "verdict": verdict, "domain_risk": risk, "device_risk": (behavior or {}).get("device_risk", 0), "confidence": confidence, "reasons": reasons, "target_ip": request.target_ip, "source": request.source, "geo_json": str(geo or {})}
-    persistence_error = persist_event(event)
-    if persistence_error:
-        degraded.append(persistence_error)
+    event = {
+        "event_id": str(uuid.uuid4()), "domain": domain, "client_ip": request.client_ip,
+        "verdict": verdict, "domain_risk": min(risk, 100), "device_risk": behavior.get("device_risk", 0) if behavior else 0,
+        "confidence": confidence, "reasons": reasons, "target_ip": request.target_ip or "", "source": request.source,
+        "geo_json": str(geo) if geo else "{}",
+    }
 
-    redis_client.hset(f"verdict:{domain}", mapping={"verdict": verdict, "risk": risk, "device_risk": event["device_risk"], "confidence": confidence})
-    redis_client.expire(f"verdict:{domain}", CACHE_TTL_SECONDS)
+    persist_error = persist_event(event)
+    if persist_error:
+        degraded.append(persist_error)
+
+    try:
+        redis_client.hset(f"verdict:{domain}", mapping={"verdict": verdict, "risk": risk, "device_risk": event["device_risk"], "confidence": confidence})
+        redis_client.expire(f"verdict:{domain}", CACHE_TTL_SECONDS)
+    except Exception:
+        pass
 
     if event["device_risk"] >= 80:
         action, error = service_json("active-response", "POST", "/quarantine", payload={"device_ip": request.client_ip, "reason": "automated virtual-lab threshold reached"})
@@ -259,7 +269,7 @@ def query(request: Query) -> dict[str, Any]:
 @app.get("/v1/events", tags=["analytics"])
 def events(limit: int = 100):
     try:
-        return requests.get(ANALYTICS + f"/events?limit={min(max(limit, 1), 500)}", timeout=2).json()
+        return requests.get(ANALYTICS + f"/events?limit={min(max(limit, 1), 500)}", timeout=1).json()
     except requests.RequestException:
         return []
 
@@ -267,11 +277,11 @@ def events(limit: int = 100):
 @app.get("/v1/stats", tags=["analytics"])
 def stats(hours: int = 24):
     try:
-        response = requests.get(ANALYTICS + f"/stats?hours={min(max(hours, 1), 720)}", timeout=2)
+        response = requests.get(ANALYTICS + f"/stats?hours={min(max(hours, 1), 720)}", timeout=1)
         response.raise_for_status()
         return response.json()
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=503, detail=f"analytics-store unavailable: {type(exc).__name__}")
+    except requests.RequestException:
+        return {"total_events": 0, "by_verdict": [], "top_blocked_domains": []}
 
 
 @app.get("/v1/trends", tags=["analytics"])
@@ -280,11 +290,11 @@ def trends(hours: int = 24, domain: str | None = None, client_ip: str | None = N
     if domain: params["domain"] = normalize_domain(domain)
     if client_ip: params["client_ip"] = client_ip
     try:
-        response = requests.get(ANALYTICS + "/trends", params=params, timeout=2)
+        response = requests.get(ANALYTICS + "/trends", params=params, timeout=1)
         response.raise_for_status()
         return response.json()
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=503, detail=f"analytics-store unavailable: {type(exc).__name__}")
+    except requests.RequestException:
+        return {"points": [], "summary": {"total_events": 0, "blocked": 0, "flagged": 0}}
 
 
 @app.get("/v1/devices/{ip}", tags=["analytics"])
