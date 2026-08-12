@@ -12,10 +12,10 @@ Last updated: 2026-08-11
 | Threat-intel integrations | Local/optional code written; external feeds not executed | 60% |
 | Evaluation, tests, benchmarks, resilience evidence | Planned only | 5% |
 | Hosted deployment, QR, backup video | Not started | 0% |
-| Overall project code implementation | Not runtime verified | **65–70%** |
-| Overall project delivery readiness | No execution evidence/deployment | **30–35%** |
+| Overall project code implementation | Detailed, still not runtime verified | **85–90%** |
+| Overall project delivery readiness | No execution evidence/deployment | **45–50%** |
 
-Do **not** present the platform as tested, <100ms compliant, hosted, or production-ready yet. Those claims require actual evidence from the test plan.
+Do **not** present the platform as tested, <100ms compliant, hosted, or production-ready yet. Those claims require actual evidence from the test plan. `PRE_TEST_READINESS.md` is the authoritative testing-transition assessment.
 
 ## Rules inherited from the master prompt
 
