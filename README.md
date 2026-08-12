@@ -1,58 +1,168 @@
-# SIH 2024: DNS Filtering Service using Threat Intelligence & AI/ML
+# DNS Shield — AI-Powered Secure DNS Filtering & Threat Intelligence Platform
 
-**Problem Statement ID:** SIH260003  
-**Organization:** Indian Space Research Organisation (ISRO)  
-**Category:** Software, Space Technology  
+**SIH260003 · ISRO · Software / Space Technology**
 
-This repository contains the ideation, architectural plans, and core concepts for building a secure, AI-powered DNS Filtering Service.
+DNS Shield is a hackathon-focused, microservice-based DNS-security platform. It evaluates DNS requests before resolution, combines cached intelligence, local lexical analysis, device behavior, and optional offline geo context, then returns an explainable `ALLOW`, `FLAG`, or `BLOCK` decision. It supports both live DNS filtering and passive forensic replay of PCAP/PCAPNG/Zeek DNS data.
 
-## 🎯 Core Objectives
-- Build a secure DNS resolver (supporting DoH, DoT, UDP).
-- Filter malicious domains using Threat Intelligence (STIX/TAXII) and Blacklists.
-- Leverage AI/ML to detect zero-day threats like DGAs.
-- Detect and block DNS Tunnelling.
-- Maintain ultra-low latency (<100ms) with DNS caching.
-- Provide Live (Active) and Log-based (Passive) analysis via a Web Dashboard.
+> Current state: the detailed code and local demo infrastructure are written, but the stack has **not been started or tested yet**. Do not claim performance, model quality, public hosting, or verified protocol support until `TEST_PLAN.md` has actual evidence.
 
----
+## Why DNS Shield
 
-## 🛡️ Detailed Attack Vectors & How They Work
+DNS resolution is typically the first network action before a device contacts an internet service. Filtering there helps stop known malicious domains and detect suspicious new names before an application reaches them.
 
-To build an effective DNS filter, we must deeply understand the attacks we are defending against. Below is a detailed breakdown of the primary threats our system will neutralize.
+DNS Shield is designed to demonstrate:
 
-### 1. Command-and-Control (C2) Callbacks
-**What it is:** When a device is infected with malware (like ransomware or a botnet), the malware needs to communicate with the hacker's server (the C2 server) to receive instructions, encryption keys, or to send stolen data.
-**How they do it:** The malware is programmed to reach out to a specific domain (e.g., `update-server-malicious.com`). It sends a DNS request to find the IP address of this server.
-**How we block it:** Our Threat Intelligence feeds (STIX/TAXII) and static blacklists will have records of known C2 domains. When the DNS query comes in, our system matches it against the list and blocks the resolution, neutralizing the malware's ability to communicate.
+- known-bad domain blocking from cached threat intelligence;
+- zero-day-style lexical detection for DGAs and typosquatting;
+- device-level behavior and DNS-tunnelling signals;
+- explainable decisions instead of a black-box block screen;
+- virtual-lab sinkholing and quarantine workflow;
+- SOC dashboard, API, notebook visualizations, and passive forensic analysis.
 
-### 2. Domain Generation Algorithms (DGA)
-**What it is:** Hackers know that static C2 domains get blacklisted quickly. To evade this, malware uses an algorithm to generate thousands of random-looking domains daily (e.g., `xkqjz1298dh.com`). The hacker only registers one of them.
-**How they do it:** The infected machine attempts to resolve hundreds of these domains until it finds the one that is active. Because the domains change constantly, static human-made blacklists are useless.
-**How we block it:** We deploy **Machine Learning (ML)** models trained on lexical analysis. The ML model calculates the entropy, vowel-to-consonant ratios, and n-gram distribution of the domain name. If it looks machine-generated rather than human-readable, the system assigns a high risk score and blocks it.
+## Core capabilities
 
-### 3. Phishing and Typosquatting (Homograph Attacks)
-**What it is:** Deceiving users into entering credentials on a fake website that looks identical to a legitimate one.
-**How they do it:** Attackers register domains that look visually similar to trusted brands. 
-- *Typosquatting:* `goooooogle.com`, `faceb00k.com`
-- *Homograph Attacks:* Using Cyrillic or similar Unicode characters that look exactly like standard Latin letters (e.g., `apple.com` where the 'a' is a Cyrillic 'а').
-**How we block it:** 
-- **Threat Feeds:** Newly registered phishing domains are rapidly added to intelligence feeds.
-- **AI/ML Lexical Analysis:** Our models will calculate the Levenshtein distance (string similarity) against top 1000 Alexa domains. If a domain is unusually close to a major brand but isn't the brand itself, it is flagged as suspicious.
+| Capability | Implementation status |
+|---|---|
+| Active DNS filtering | Go resolver code for UDP/TCP DNS, DoH, DoT; pending runtime verification |
+| Passive analysis | PCAP, PCAPNG, and Zeek DNS extraction + shared pipeline replay |
+| Threat intelligence | Redis indicator cache, STIX 2.1 export, URLhaus/OTX/CERT-In/MISP integration paths |
+| Local ML | Deterministic lexical baseline + optional local Scikit-learn artifacts |
+| Behavior/incident engine | Device risk, tunnelling/fan-out signals, domain/device reputation, correlated incidents |
+| Geo context | Offline GeoLite2 City/ASN enrichment, never blocks alone |
+| Active response | Lab-only virtual sinkhole/quarantine, audit log, HTTP honeypot telemetry |
+| Analytics | ClickHouse events, feedback, trends, PCAP/Zeek forensic extraction |
+| SOC UI | Dashboard, XAI pipeline view, trends, incidents, 3D threat globe, quarantine controls |
+| Visual analysis | Jupyter notebook that charts real gateway results after test execution |
 
-### 4. DNS Tunnelling
-**What it is:** Sneaking data past firewalls by hiding it inside the DNS protocol itself.
-**How they do it:** Firewalls usually let DNS traffic (port 53) pass freely. An attacker wants to steal a password ("P@ssword123"). They encode it (e.g., base64: `UEBzc3dvcmQxMjM=`) and make a DNS query for `UEBzc3dvcmQxMjM=.hacker-server.com`. The hacker's DNS server receives the query, logs the encoded password, and the data is stolen without ever establishing a standard web connection.
-**How we block it:** **Behavioral Analysis.** Our system will analyze the payload and traffic patterns. We look for:
-- Unusually long subdomains (which are carrying the encoded data).
-- High volume of DNS requests to the same root domain from a single IP.
-- Unusual character distributions in the query payload.
+## Seven-stage filtering pipeline
 
-### 5. Fast Flux DNS
-**What it is:** A technique used by botnets to hide their phishing and malware delivery sites behind an ever-changing network of compromised hosts acting as proxies.
-**How they do it:** The attacker constantly changes the IP addresses associated with a single malicious domain name (sometimes every few minutes) by rapidly updating DNS A-records with very low Time-To-Live (TTL) values.
-**How we block it:** While Fast Flux evades IP blocking, it still relies on a single or a few Domain Names. Our DNS filter blocks the domain resolution itself, rendering the changing IP addresses completely irrelevant.
+```mermaid
+flowchart LR
+    Q["DNS query"] --> C["1. Redis verdict cache"]
+    C --> T["2. Cached threat intelligence"]
+    T --> M["3. Local lexical ML"]
+    M --> B["4. Device behavior analysis"]
+    B --> G["5. Offline geo context"]
+    G --> R["6. Risk aggregation + XAI"]
+    R --> A["7. Lab-only active response"]
+    A --> V["ALLOW / FLAG / BLOCK"]
+```
 
-### 6. Eavesdropping and DNS Spoofing (Man-in-the-Middle)
-**What it is:** Attackers intercepting plain-text DNS requests to spy on user activity or redirect them to fake IP addresses.
-**How they do it:** Because traditional DNS over UDP is unencrypted, anyone on the local network (like a public Wi-Fi) can read the queries or alter the responses before they reach the user.
-**How we block it:** Our resolver implements **DNS over HTTPS (DoH)** and **DNS over DTLS**. This encrypts the DNS query between the client and our resolver, ensuring privacy and preventing tampering in transit.
+The order is deliberate: fast/high-confidence checks run before more contextual work. A known intelligence hit blocks immediately; uncertain ML alone becomes `FLAG`, not `BLOCK`; geo adds context only. Every stage emits reasons and score contribution for the dashboard/API.
+
+Read [Component and Design Guide](docs/COMPONENT_AND_DESIGN_GUIDE.md) for the detailed reasoning behind each layer and technology choice.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    Client["DNS client / SOC analyst / SIEM"] --> Resolver["Go resolver\nUDP · TCP · DoH · DoT"]
+    Client --> Dashboard["Next.js SOC dashboard"]
+    Resolver --> Gateway["API gateway\nPolicy + XAI"]
+    Dashboard --> Gateway
+    Gateway --> Redis["Redis\ncache + operational state"]
+    Gateway --> TI["Threat Intel\nSTIX / feeds / MISP"]
+    Gateway --> ML["Local ML inference"]
+    Gateway --> Behavior["Behavior + incidents"]
+    Gateway --> Geo["Offline GeoLite2"]
+    Gateway --> Response["Lab response"]
+    Gateway --> Analytics["Analytics store"]
+    Analytics --> ClickHouse["ClickHouse"]
+    Resolver --> MockDNS["Mock DNS\nlocal demo upstream"]
+    Response --> Honeypot["Lab HTTP honeypot"]
+```
+
+For the full runtime topology, active/passive sequence diagrams, degradation behavior, and local operating boundaries, see [System Flow and Operations Guide](docs/SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md).
+
+## Repository layout
+
+```text
+SIH-DNS-wala-project/
+├── services/
+│   ├── resolver-core/       Go DNS / DoH / DoT enforcement point
+│   ├── api-gateway/         seven-stage policy and SIEM REST API
+│   ├── threat-intel/        feed, STIX, MISP and Redis indicator handling
+│   ├── ml-inference/        local lexical analysis and model artifacts
+│   ├── behavioral-engine/   device risk, reputation and incidents
+│   ├── geo-intel/           offline GeoLite2 enrichment
+│   ├── active-response/     virtual-lab sinkhole/quarantine/audit
+│   ├── lab-honeypot/        safe decoy HTTP listener
+│   └── analytics-store/     ClickHouse events and passive parsing
+├── dashboard/               Next.js SOC interface
+├── infra/                   Compose, mock DNS, TLS, simulations, security docs
+├── ml-training/             reproducible local training/export script
+├── notebooks/               Jupyter SOC analysis and visual evidence
+├── docs/                    architecture, API, design and system-flow guides
+├── TEST_PLAN.md             authoritative pass/fail checklist
+├── PRE_TEST_READINESS.md    what remains before test execution
+├── RUN_AND_TEST.md          local setup and test commands
+├── HANDOFF.md               implementation inventory and remaining backlog
+└── PROGRESS.md              chronological implementation status
+```
+
+## Local demo topology
+
+The initial demo runs on one machine using Docker Compose. The resolver receives requests on host ports `5353` (UDP/TCP), `8443` (DoH), and `8853` (DoT after TLS setup). Dashboard is at `http://localhost:3000`; API documentation is at `http://localhost:8080/docs`.
+
+The default resolver upstream is an internal `mock-dns` service, not public DNS. This makes benign lookups and gateway-fallback tests reproducible. The lab honeypot is internal-only at `172.28.0.250`; it never changes host firewall settings or interacts with external targets.
+
+## Start only when execution is authorized
+
+The current build process intentionally deferred all execution. Before starting containers, read [Pre-Test Readiness](PRE_TEST_READINESS.md), then follow [Run and Test Guide](RUN_AND_TEST.md) and the ordered [Test Plan](TEST_PLAN.md).
+
+```powershell
+Copy-Item .env.example .env
+# Optional for DoH/DoT: follow infra/certs/README.md to create local-only TLS files
+docker compose -f infra/docker-compose.yml up --build
+```
+
+Do not expose the resolver publicly, use paid cloud resources, publish to MISP, or configure external feeds without explicit approval.
+
+## Safe demo scenarios
+
+After the stack is healthy and testing is approved, run the named local scenarios:
+
+```powershell
+docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-benign
+docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-dga
+docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-tunnelling
+docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-c2
+docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-typosquat
+```
+
+They only call the internal gateway and are not external attack tools.
+
+## Jupyter visualization companion
+
+After real events exist, open [notebooks/01_soc_demo_analysis.ipynb](notebooks/01_soc_demo_analysis.ipynb). It produces charts based on real gateway responses: XAI pipeline contributions, verdicts, risk trends, incidents, reputation, feed health, and model state.
+
+See [notebooks/README.md](notebooks/README.md) for setup. Never store API keys in notebook cells.
+
+## Documentation map
+
+| Document | Use it for |
+|---|---|
+| [COMPONENT_AND_DESIGN_GUIDE.md](docs/COMPONENT_AND_DESIGN_GUIDE.md) | What each service/file group does and why it was chosen |
+| [SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md](docs/SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md) | Runtime topology, request flows, operating model, degradation behavior |
+| [TEST_PLAN.md](TEST_PLAN.md) | Exact pass/fail test path and evidence requirements |
+| [PRE_TEST_READINESS.md](PRE_TEST_READINESS.md) | Remaining work and test-transition decision |
+| [RUN_AND_TEST.md](RUN_AND_TEST.md) | Copy-paste local setup/test commands |
+| [HANDOFF.md](HANDOFF.md) | Work inventory, priorities, and next-agent instructions |
+| [infra/SECURITY_CHECKLIST.md](infra/SECURITY_CHECKLIST.md) | Hosted-demo security review |
+| [infra/ACCESS_CONTROL.md](infra/ACCESS_CONTROL.md) | Gateway API key/rate-limit behavior |
+| [infra/OBSERVABILITY.md](infra/OBSERVABILITY.md) | Metrics, correlation IDs, evidence collection |
+
+## Current scope and honest limitations
+
+The hackathon core is code-complete enough for a first local testing cycle, but none of the following have been verified yet:
+
+- p50/p95/p99 latency or `<100ms` target;
+- sustained QPS/concurrency;
+- model precision/recall/F1 or false-positive rate;
+- actual OTX/CERT-In/MISP ingestion;
+- DoH/DoT runtime behavior;
+- full browser interaction and Compose startup;
+- hosted URL, QR code, or demo recording.
+
+See [PRE_TEST_READINESS.md](PRE_TEST_READINESS.md) for the precise remaining work and testing transition.
+

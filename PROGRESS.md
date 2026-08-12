@@ -44,6 +44,7 @@ The complete code-and-configuration baseline for Phases 1–6 is present. It has
 - P2 deployment baseline: replaced Kubernetes guidance-only content with private-by-default manifests for core platform services, secret/config templates, a default-deny policy, deployment safeguards, and cluster validation checks. No cluster action was taken.
 - Hackathon visualization: added an unexecuted Jupyter SOC demo/evidence notebook with real gateway-driven pipeline, event, trend, incident, reputation, feed, and model visualizations, plus notebook setup and verification guidance.
 - Testing-transition planning: added `PRE_TEST_READINESS.md`, a detailed assessment of code readiness, remaining static/code work, required inputs, exact test sequence, and evidence/claim boundaries; updated handoff estimates to reflect the completed hackathon feature baseline.
+- Documentation refresh: replaced the root README with a detailed hackathon-facing overview covering capabilities, seven-layer pipeline, architecture, layout, local demo topology, safe scenarios, notebook usage, documentation map, and verified-vs-unverified scope.
 
 ## Manual prerequisites
 
