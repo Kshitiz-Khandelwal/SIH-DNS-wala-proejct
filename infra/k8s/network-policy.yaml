@@ -1,0 +1,10 @@
+# Default-deny network policy. Add reviewed allow rules for DNS ingress, dashboard
+# ingress, and required internal service paths before attempting a Kubernetes deploy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: dns-shield
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
