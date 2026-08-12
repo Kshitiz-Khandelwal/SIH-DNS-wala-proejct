@@ -34,6 +34,13 @@ class Event(BaseModel):
     geo_json: str = "{}"
 
 
+class FeedbackRecord(BaseModel):
+    event_id: str = Field(min_length=1, max_length=64)
+    label: str = Field(pattern="^(False Positive|Confirmed Threat|Needs Investigation)$")
+    analyst: str = Field(default="dashboard", max_length=128)
+    timestamp: str | None = None
+
+
 def clickhouse(query: str, data: str | None = None, timeout: float = 3) -> requests.Response:
     response = requests.post(CLICKHOUSE_URL, params={"query": query}, data=data, timeout=timeout)
     response.raise_for_status()
@@ -84,6 +91,32 @@ def stats(hours: int = 24):
     hours = min(max(hours, 1), 720)
     query = f"SELECT verdict, count() AS count, round(avg(domain_risk), 2) AS avg_domain_risk FROM {DATABASE}.events WHERE timestamp >= now() - INTERVAL {hours} HOUR GROUP BY verdict ORDER BY verdict"
     return {"window_hours": hours, "by_verdict": clickhouse_rows(query)}
+
+
+@app.get("/trends", tags=["analytics"])
+def trends(hours: int = 24, domain: str | None = None, client_ip: str | None = None):
+    """Return compact hourly domain/device risk trend rows for SOC charts."""
+    hours = min(max(hours, 1), 720)
+    clauses = [f"timestamp >= now() - INTERVAL {hours} HOUR"]
+    if domain:
+        safe_domain = domain.lower().rstrip(".")
+        if all(character.isalnum() or character in ".-" for character in safe_domain):
+            clauses.append(f"domain = '{safe_domain}'")
+    if client_ip and all(character.isdigit() or character in ".:abcdefABCDEF" for character in client_ip):
+        clauses.append(f"client_ip = '{client_ip}'")
+    where = " AND ".join(clauses)
+    query = f"SELECT toStartOfHour(timestamp) AS hour, count() AS query_count, round(avg(domain_risk), 2) AS avg_domain_risk, round(avg(device_risk), 2) AS avg_device_risk, countIf(verdict = 'BLOCK') AS blocked_count, countIf(verdict = 'FLAG') AS flagged_count FROM {DATABASE}.events WHERE {where} GROUP BY hour ORDER BY hour"
+    return {"window_hours": hours, "domain": domain, "client_ip": client_ip, "points": clickhouse_rows(query)}
+
+
+@app.post("/feedback", tags=["analyst-feedback"])
+def add_feedback(record: FeedbackRecord):
+    row = record.model_dump(); row["timestamp"] = row["timestamp"] or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+    try:
+        clickhouse(f"INSERT INTO {DATABASE}.feedback (event_id, label, analyst, timestamp) FORMAT JSONEachRow", json.dumps(row) + "\n")
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=503, detail=f"ClickHouse feedback ingest failed: {type(exc).__name__}")
+    return row
 
 
 def parse_zeek_dns(text: str) -> Iterable[dict]:

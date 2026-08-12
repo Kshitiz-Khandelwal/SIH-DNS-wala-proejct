@@ -274,6 +274,19 @@ def stats(hours: int = 24):
         raise HTTPException(status_code=503, detail=f"analytics-store unavailable: {type(exc).__name__}")
 
 
+@app.get("/v1/trends", tags=["analytics"])
+def trends(hours: int = 24, domain: str | None = None, client_ip: str | None = None):
+    params = {"hours": min(max(hours, 1), 720)}
+    if domain: params["domain"] = normalize_domain(domain)
+    if client_ip: params["client_ip"] = client_ip
+    try:
+        response = requests.get(ANALYTICS + "/trends", params=params, timeout=2)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=503, detail=f"analytics-store unavailable: {type(exc).__name__}")
+
+
 @app.get("/v1/devices/{ip}", tags=["analytics"])
 def device(ip: str):
     data, error = service_json("behavioral", "GET", f"/devices/{ip}", timeout=2)
@@ -294,6 +307,13 @@ def incidents():
     return [] if error else data
 
 
+@app.get("/v1/incidents/{incident_id}", tags=["analytics"])
+def incident_detail(incident_id: str):
+    data, error = service_json("behavioral", "GET", f"/incidents/{incident_id}", timeout=2)
+    if error: raise HTTPException(status_code=503, detail=error)
+    return data
+
+
 @app.get("/v1/feed-health", tags=["operations"])
 def feed_health():
     data, error = service_json("threat-intel", "GET", "/feeds/health", timeout=2)
@@ -311,7 +331,14 @@ def model_monitoring():
 @app.post("/v1/events/{event_id}/feedback", tags=["analyst-feedback"])
 def feedback(event_id: str, body: Feedback):
     redis_client.hset(f"feedback:{event_id}", mapping=body.model_dump())
-    return {"event_id": event_id, **body.model_dump(), "status": "persisted", "retraining_path": "ml-training/README.md"}
+    persistence = "redis-only-degraded"
+    try:
+        response = requests.post(ANALYTICS + "/feedback", json={"event_id": event_id, **body.model_dump()}, timeout=1)
+        response.raise_for_status()
+        persistence = "redis-and-clickhouse"
+    except requests.RequestException:
+        DEGRADED_REQUESTS["analytics-feedback"] += 1
+    return {"event_id": event_id, **body.model_dump(), "status": persistence, "retraining_path": "ml-training/README.md"}
 
 
 @app.post("/v1/passive/{format_name}", tags=["passive-analysis"])

@@ -157,3 +157,14 @@ def domain_profile(domain: str):
 def incidents():
     ids = store.lrange("incidents:index", 0, 199)
     return [json.loads(raw) for incident_id in ids if (raw := store.get(f"incident:{incident_id}"))]
+
+
+@app.get("/incidents/{incident_id}", tags=["incidents"])
+def incident_detail(incident_id: str):
+    raw = store.get(f"incident:{incident_id}")
+    if not raw:
+        return {"found": False, "id": incident_id, "timeline": []}
+    incident = json.loads(raw)
+    incident["timeline"] = sorted(incident.get("timeline", []), key=lambda item: item.get("at", 0))
+    incident["found"] = True
+    return incident
