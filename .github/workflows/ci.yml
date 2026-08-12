@@ -1,0 +1,84 @@
+name: DNS Shield CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  compose-configuration:
+    name: Validate Compose topology
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SIH-DNS-wala-project
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create non-secret CI environment
+        run: cp .env.example .env
+      - name: Validate Docker Compose syntax and interpolation
+        run: docker compose -f infra/docker-compose.yml config --quiet
+
+  python-syntax:
+    name: Validate Python syntax
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SIH-DNS-wala-project
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile every Python service and helper
+        run: python -m compileall -q services infra ml-training
+
+  resolver-build:
+    name: Build Go resolver
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SIH-DNS-wala-project/services/resolver-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+      - name: Download dependencies and compile
+        run: |
+          go mod download
+          go test ./...
+
+  dashboard-build:
+    name: Build SOC dashboard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SIH-DNS-wala-project/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dashboard dependencies and build
+        run: |
+          npm install --ignore-scripts
+          npm run build
+
+  container-builds:
+    name: Build service images
+    needs: [compose-configuration, python-syntax, resolver-build, dashboard-build]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SIH-DNS-wala-project
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create non-secret CI environment
+        run: cp .env.example .env
+      - name: Build default service images without starting containers
+        run: docker compose -f infra/docker-compose.yml build
