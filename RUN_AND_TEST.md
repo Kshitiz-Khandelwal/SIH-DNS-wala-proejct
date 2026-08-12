@@ -1,5 +1,7 @@
 # Run and test DNS Shield
 
+Before running anything, read `docs/COMPONENT_AND_DESIGN_GUIDE.md` for component/design rationale and `docs/SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md` for topology, flows, and operating boundaries. Use `TEST_PLAN.md` as the pass/fail checklist.
+
 This repository was written without executing services or tests. Run the following from a clean development machine after reviewing exposed ports and `infra/docker-compose.yml`.
 
 ## Prerequisites
@@ -7,6 +9,8 @@ This repository was written without executing services or tests. Run the followi
 Install Docker Desktop with Compose, Go 1.22+, Python 3.11+, and Node 20+. Copy `.env.example` to `.env`. Leave optional feed keys blank for the safe baseline, or add your own OTX key and an approved CERT-In source. Obtain GeoLite2 manually from MaxMind and place it at the configured `MAXMIND_MMDB_PATH` if geo enrichment is required.
 
 For local TLS development, create and mount a certificate/key at paths set by `RESOLVER_TLS_CERT` and `RESOLVER_TLS_KEY`. Do not use a publicly trusted certificate for a demo unless you control the DNS name.
+
+The default `UPSTREAM_DNS=mock-dns:53` is an internal deterministic CoreDNS service. It supplies stable documentation-range A records for the listed benign demo names and a fallback documentation address for other names. This makes the demo self-contained. Change it only when you intentionally want real upstream DNS.
 
 ## Start
 
