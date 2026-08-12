@@ -139,7 +139,7 @@ def predict(request: PredictRequest): return predict_one(request)
 
 
 @app.post("/predict/batch", tags=["inference"])
-def batch(requests: list[PredictRequest] = Field(max_length=1000)): return [predict_one(request) for request in requests]
+def batch(requests: list[PredictRequest]): return [predict_one(request) for request in requests]
 
 
 @app.put("/whois-cache/{domain}", tags=["whois-cache"])
