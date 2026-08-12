@@ -12,8 +12,9 @@ from typing import Any
 
 import redis
 import requests
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI(
@@ -39,6 +40,56 @@ SERVICES = {
 }
 ANALYTICS = os.getenv("ANALYTICS_STORE_URL", "http://analytics-store:8005")
 CACHE_TTL_SECONDS = int(os.getenv("VERDICT_CACHE_TTL_SECONDS", "300"))
+API_KEY = os.getenv("GATEWAY_API_KEY", "")
+RATE_LIMIT_PER_MINUTE = int(os.getenv("GATEWAY_RATE_LIMIT_PER_MINUTE", "240"))
+AUTH_EXEMPT_PATHS = {"/health", "/docs", "/openapi.json", "/redoc"}
+
+
+def request_ip(request: Request) -> str:
+    """Trust forwarded headers only behind an explicitly configured reverse proxy."""
+    if os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true":
+        forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        if forwarded:
+            return forwarded
+    return request.client.host if request.client else "unknown"
+
+
+def store_rate_limit(key: str) -> int:
+    count = int(redis_client.incr(key))
+    if count == 1:
+        redis_client.expire(key, 61)
+    return count
+
+
+@app.middleware("http")
+async def protect_api(request: Request, call_next):
+    """Apply optional API-key access control and Redis-backed fixed-window limits.
+
+    Local development remains usable while GATEWAY_API_KEY is empty. A hosted API
+    must set it (or place an equivalent reviewed auth layer in front of the gateway).
+    If Redis is down, this fails open to preserve DNS availability and marks the
+    response so monitoring can detect the degraded control.
+    """
+    if request.url.path in AUTH_EXEMPT_PATHS:
+        return await call_next(request)
+    if API_KEY and request.headers.get("X-DNS-Shield-Key") != API_KEY:
+        return JSONResponse(status_code=401, content={"detail": "valid X-DNS-Shield-Key required"})
+    bucket = int(time.time() // 60)
+    try:
+        count = store_rate_limit(f"ratelimit:{request_ip(request)}:{bucket}")
+        if count > RATE_LIMIT_PER_MINUTE:
+            retry_after = 60 - int(time.time()) % 60
+            return JSONResponse(status_code=429, content={"detail": "rate limit exceeded", "limit_per_minute": RATE_LIMIT_PER_MINUTE}, headers={"Retry-After": str(retry_after)})
+        response = await call_next(request)
+        response.headers["X-RateLimit-Limit"] = str(RATE_LIMIT_PER_MINUTE)
+        response.headers["X-RateLimit-Remaining"] = str(max(0, RATE_LIMIT_PER_MINUTE - count))
+        if not API_KEY:
+            response.headers["X-DNS-Shield-Auth"] = "disabled-local-development-only"
+        return response
+    except redis.RedisError:
+        response = await call_next(request)
+        response.headers["X-DNS-Shield-RateLimit"] = "degraded-redis-unavailable"
+        return response
 
 
 class Query(BaseModel):
@@ -184,6 +235,16 @@ def events(limit: int = 100):
         return requests.get(ANALYTICS + f"/events?limit={min(max(limit, 1), 500)}", timeout=2).json()
     except requests.RequestException:
         return []
+
+
+@app.get("/v1/stats", tags=["analytics"])
+def stats(hours: int = 24):
+    try:
+        response = requests.get(ANALYTICS + f"/stats?hours={min(max(hours, 1), 720)}", timeout=2)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=503, detail=f"analytics-store unavailable: {type(exc).__name__}")
 
 
 @app.get("/v1/devices/{ip}", tags=["analytics"])
