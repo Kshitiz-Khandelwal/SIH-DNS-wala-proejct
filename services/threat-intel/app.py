@@ -19,7 +19,7 @@ import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="DNS Shield Threat Intelligence", version="1.1.0")
+app = FastAPI(title="DNS Shield Threat Intelligence", version="1.2.0")
 cache = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 INDICATOR_TTL_SECONDS = int(os.getenv("INDICATOR_TTL_SECONDS", str(7 * 24 * 3600)))
 MISP_URL = os.getenv("MISP_URL", "").rstrip("/")
@@ -27,6 +27,43 @@ MISP_API_KEY = os.getenv("MISP_API_KEY", "")
 SEED_FILE = Path(__file__).parent / "seed_indicators.txt"
 SEED = [line.strip() for line in open(SEED_FILE, encoding="utf-8") if line.strip() and not line.startswith("#")] if SEED_FILE.exists() else ["c2.bad-demo.example"]
 DOMAIN_PATTERN = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$", re.I)
+
+# ─── Disk-Backed IOC Persistence ─────────────────────────────────────────────
+# Indicators are written to a JSON Lines file so they survive Redis restarts.
+# This file is the source of truth for LOCAL_SEED_CACHE, which is consulted
+# whenever Redis is unreachable.
+DISK_CACHE_DIR = Path(__file__).parent / "data"
+DISK_CACHE_FILE = DISK_CACHE_DIR / "ioc_cache.jsonl"
+
+
+def _load_disk_cache() -> dict:
+    """Load all indicators from the JSONL disk cache into a dict keyed by domain."""
+    loaded: dict = {}
+    if not DISK_CACHE_FILE.exists():
+        return loaded
+    try:
+        with open(DISK_CACHE_FILE, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                entry = json.loads(line)
+                domain = entry.pop("_domain", None)
+                if domain:
+                    loaded[domain] = entry
+    except Exception:
+        pass
+    return loaded
+
+
+def _append_disk_cache(domain: str, data: dict) -> None:
+    """Append a single indicator to the JSONL disk cache (idempotent on re-write)."""
+    try:
+        DISK_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with open(DISK_CACHE_FILE, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"_domain": domain, **data}) + "\n")
+    except Exception:
+        pass
 
 
 class Indicator(BaseModel):
@@ -54,15 +91,28 @@ def stix_indicator(domain: str, source: str, confidence: int, tags: list[str]) -
     }
 
 
-LOCAL_SEED_CACHE = {}
+# Populated at startup from disk cache, then kept in sync with every save_indicator() call.
+LOCAL_SEED_CACHE: dict = {}
+
 
 def save_indicator(domain: str, source: str, confidence: int, tags: list[str]) -> bool:
     domain = clean_domain(domain)
     if not domain:
         return False
     stix = stix_indicator(domain, source, confidence, tags)
-    data = {"source": source, "confidence": str(confidence), "tags": json.dumps(tags), "stix": json.dumps(stix), "updated_at": datetime.now(timezone.utc).isoformat()}
+    data = {
+        "source": source, "confidence": str(confidence),
+        "tags": json.dumps(tags), "stix": json.dumps(stix),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    # 1. In-memory cache (always succeeds)
     LOCAL_SEED_CACHE[domain] = data
+    # 2. Disk persistence (survives Redis restart + process restart)
+    if domain not in LOCAL_SEED_CACHE or LOCAL_SEED_CACHE.get(domain) != data:
+        _append_disk_cache(domain, data)
+    else:
+        _append_disk_cache(domain, data)  # always append so new seeds are persisted
+    # 3. Redis (best-effort, fails gracefully)
     try:
         key = f"indicator:{domain}"
         cache.hset(key, mapping=data)
@@ -98,9 +148,26 @@ def misp_event_payload(domain: str, indicator: dict) -> dict:
 
 @app.on_event("startup")
 def seed() -> None:
+    # 1. Load disk cache first — restores all previously saved indicators
+    #    even if Redis is empty after a restart.
+    disk = _load_disk_cache()
+    LOCAL_SEED_CACHE.update(disk)
+    for domain, data in disk.items():
+        try:
+            key = f"indicator:{domain}"
+            cache.hset(key, mapping=data)
+            cache.expire(key, INDICATOR_TTL_SECONDS)
+            cache.sadd("indicators:domains", domain)
+        except Exception:
+            pass  # Redis unreachable — disk cache is the fallback
+
+    # 2. Seed built-in demo indicators
     for domain in SEED:
         save_indicator(domain, "seed-urlhaus-demo", 100, ["malware", "demo"])
-    record_feed("seed", "loaded", added=len(SEED), detail="safe local demo indicators")
+    record_feed(
+        "seed", "loaded", added=len(SEED),
+        detail=f"safe local demo indicators; disk_cache_restored={len(disk)}"
+    )
 
 
 @app.get("/lookup/{domain}", tags=["lookup"])
@@ -108,14 +175,28 @@ def lookup(domain: str):
     domain = clean_domain(domain)
     if not domain:
         raise HTTPException(status_code=422, detail="invalid domain")
+
     row = None
+    source_used = "redis"
     try:
         row = cache.hgetall(f"indicator:{domain}")
     except Exception:
-        row = LOCAL_SEED_CACHE.get(domain)
+        # Redis unreachable — fall through to local caches
+        source_used = "local-memory"
+
+    # Fallback 1: in-memory cache (seeded from disk on startup)
     if not row:
         row = LOCAL_SEED_CACHE.get(domain)
-    return {"domain": domain, "hit": bool(row), "indicator": row or None, "cache_only": True}
+        if row:
+            source_used = "local-memory"
+
+    return {
+        "domain": domain,
+        "hit": bool(row),
+        "indicator": row or None,
+        "cache_only": True,
+        "lookup_source": source_used,  # transparency for XAI pipeline
+    }
 
 
 @app.post("/indicators", tags=["manual"])

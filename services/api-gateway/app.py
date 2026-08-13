@@ -18,6 +18,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
+# Local rules: deterministic scoring that works with zero external dependencies.
+# Import is best-effort — service stays functional even if the module is absent.
+try:
+    from dns_shield_local_rules import score_local_rules
+    LOCAL_RULES_AVAILABLE = True
+except ImportError:
+    LOCAL_RULES_AVAILABLE = False
+    def score_local_rules(domain: str):  # type: ignore[misc]
+        return 0, []
+
 app = FastAPI(
     title="DNS Shield SIEM API",
     version="1.1.0",
@@ -190,10 +200,36 @@ def query(request: Query) -> dict[str, Any]:
     threat_hit = bool(intel and (intel.get("hit") or intel.get("status") == "hit"))
     if error:
         degraded.append(error)
-        pipeline.append({"stage": "threat-intel", "status": "degraded", "contribution": 0, "reason": "last cached Redis indicators remain available to resolver"})
+        # Resilience: try direct Redis lookup for this IOC before giving up
+        ti_redis_hit = False
+        try:
+            ti_row = redis_client.hgetall(f"indicator:{domain}")
+            ti_redis_hit = bool(ti_row)
+        except Exception:
+            pass
+        threat_hit = ti_redis_hit
+        lookup_source = "redis-direct" if ti_redis_hit else "none"
+        ti_status = "hit-redis-direct" if ti_redis_hit else "degraded"
+        ti_reason = (
+            f"threat-intel service unavailable; direct Redis lookup: hit (source={lookup_source})"
+            if ti_redis_hit
+            else "threat-intel service unavailable; local Redis and disk cache active"
+        )
+        pipeline.append({"stage": "threat-intel", "status": ti_status, "contribution": 100 if ti_redis_hit else 0, "reason": ti_reason})
     else:
         ti_reason = "threat-intelligence match: known malicious indicator" if threat_hit else "no matching indicator"
         pipeline.append({"stage": "threat-intel", "status": "hit" if threat_hit else "clean", "contribution": 100 if threat_hit else 0, "reason": ti_reason})
+
+    # ── Local deterministic rules (always run, zero dependencies) ─────────────
+    local_score, local_reasons = score_local_rules(domain)
+    local_reason_str = "; ".join(local_reasons) if local_reasons else "no local rule triggered"
+    pipeline.append({
+        "stage": "local-rules",
+        "status": "flagged" if local_score > 0 else "clean",
+        "contribution": local_score,
+        "reason": local_reason_str,
+        "available": LOCAL_RULES_AVAILABLE,
+    })
 
     ml, error = service_json("ml", "POST", "/predict", payload={"domain": domain})
     if error:
@@ -259,7 +295,13 @@ def query(request: Query) -> dict[str, Any]:
         if error: degraded.append(error)
         else: event["sinkhole"] = action
 
-    event.update({"cache": "miss", "pipeline": pipeline, "ml": ml, "behavior": behavior, "geo": geo, "degraded_dependencies": degraded, "latency_ms": round((time.perf_counter() - started) * 1000, 3)})
+    event.update({
+        "cache": "miss", "pipeline": pipeline, "ml": ml, "behavior": behavior,
+        "geo": geo, "degraded_dependencies": degraded,
+        "latency_ms": round((time.perf_counter() - started) * 1000, 3),
+        "resilience_mode": "local-fallback" if degraded else "full-pipeline",
+        "local_rules_active": LOCAL_RULES_AVAILABLE,
+    })
     PIPELINE_VERDICTS[verdict] += 1
     for dependency in degraded:
         DEGRADED_REQUESTS[dependency.split(":")[0]] += 1
