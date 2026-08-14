@@ -138,6 +138,9 @@ graph TD
     GEO --> AR["Stage 6: Active Response :8004<br/>Lab-only sinkhole/quarantine"]
     AR --> ANL["Stage 7: Analytics :8005<br/>Event persistence"]
 
+    TI -. "degraded" .-> LR["Local Rules (Fallback)<br/>Direct Redis + 9 deterministic rules"]
+    LR --> ML
+
     ANL --> VERDICT["Verdict Assembly<br/>ALLOW / FLAG / BLOCK<br/>+ XAI pipeline array"]
     VERDICT --> DASH["SOC Dashboard :3000<br/>Next.js live query stream<br/>XAI panel + Threat Globe"]
 ```
@@ -211,11 +214,12 @@ SOC Dashboard :3000 (Next.js)
 Service call fails or times out (>1.0s)
         |
         v
-Gateway logs: degraded_dependencies = ["ml-lexical"]
+Gateway logs: degraded_dependencies = ["threat-intel", "ml-lexical"]
         |
         ├── If threat-intel offline:
-        │       Skip Stage 2, continue with ML only
-        │       Downgrade: ML-only BLOCK → FLAG (safety net)
+        │       1. Try direct Redis lookup (cache fallback)
+        │       2. Apply 9 deterministic local rules (e.g. .tk TLD, no vowels)
+        │       3. Continue to ML stage with local rules score
         │
         ├── If ml-inference offline:
         │       Skip Stage 3, contribution = 0

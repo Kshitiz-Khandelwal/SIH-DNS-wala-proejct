@@ -34,6 +34,8 @@ It does this by combining **three complementary detection methods**:
 2. ML Lexical Analysis (character-level pattern scoring) → Stage 3
 3. Behavioral Engine (per-device anomaly tracking) → Stage 4
 
+And to guarantee stability, the entire pipeline is wrapped in a **Resilience Layer**: if any service goes down, deterministic local rules and a disk-backed IOC cache kick in to ensure zero loss of security coverage.
+
 ---
 
 ## The System at a Glance
@@ -44,8 +46,8 @@ It does this by combining **three complementary detection methods**:
 | Output | `ALLOW` / `FLAG` / `BLOCK` + risk score (0–100) + per-stage XAI trace |
 | Pipeline stages | 7 |
 | Services | 7 independent FastAPI microservices |
-| ML algorithm | Random Forest + char n-gram TF-IDF + 11 engineered lexical features |
-| Threat intel format | STIX 2.1 (industry standard) |
+| ML algorithm | Random Forest + char TF-IDF + 11 engineered features (Hardened against 7 evasive mutations) |
+| Threat intel format | STIX 2.1 (industry standard), disk-backed persistence |
 | Feed sources | URLhaus (Abuse.ch), CERT-In-compatible indicators |
 | Demo latency | ~3 seconds end-to-end (local dev) |
 | Dashboard | Next.js SOC console with live XAI pipeline visualization |
@@ -173,16 +175,15 @@ This is the core differentiator for the hackathon: **every verdict is fully trac
 Traditional DNS filtering relies on blocklists that only catch known threats. DNS Shield catches **zero-day DGA malware**, **freshly registered typosquat domains**, and **live DNS tunnelling** — threats that blocklists miss by definition.
 
 ### "What's the AI component?"
-A Random Forest classifier trained on character-level TF-IDF features plus 11 hand-engineered lexical features (entropy, digit ratio, consonant runs, etc.). The feature function is extracted into a standalone module (`dns_shield_features.py`) to ensure safe joblib pickling — a production-safety detail that shows understanding of sklearn internals.
+A Random Forest classifier trained on character-level TF-IDF features plus 11 hand-engineered lexical features (entropy, digit ratio, consonant runs, etc.). To prove its robustness, we built an **Adversarial Evaluation Framework** that mutates domains to try and fool the model, finds its blind spots, and retrains it with those hard examples to create a significantly stronger, hardened classifier.
 
 ### "How is it different from Cisco Umbrella or Cloudflare Gateway?"
-Those are production enterprise products. DNS Shield is built from first principles to demonstrate the *mechanism* — specifically the per-stage explainability trace — which commercial products don't expose to end users.
+Those are production enterprise products. DNS Shield is built from first principles to demonstrate the *mechanism* — specifically the per-stage explainability trace and the transparent local-fallback resilience mode — which commercial products don't expose to end users.
 
 ### "What would you do with more time?"
 1. Train on a real labelled DGA dataset (Bambenek Consulting, DGArchive)
-2. Deploy the Go-based DNS resolver-core to intercept real UDP/TCP DNS traffic (not just API calls)
-3. Add MISP integration for real-time threat intelligence sharing
-4. Build the LSTM-based sequential model for tunnelling detection (the current behavioral thresholds are heuristic)
+2. Deploy the Go-based DNS resolver-core to intercept real UDP/TCP DNS traffic
+3. Build the LSTM-based sequential model for tunnelling detection (the current behavioral thresholds are heuristic)
 
 ---
 
@@ -198,7 +199,7 @@ A: STIX (Structured Threat Information eXpression) is the industry-standard JSON
 A: DNS tunnelling encodes binary data in the subdomain portion of a query. For example, `aGVsbG8gd29ybGQ.evil.com` contains "hello world" base64-encoded. Detection signals: very long labels (>45 chars), high entropy subdomains, unusually high query frequency from one device, and unusual parent domain diversity. The behavioral engine tracks all four.
 
 **Q: How does the system handle a service being offline?**  
-A: Every service call is wrapped in a timeout-guarded HTTP request. If the service doesn't respond in 1 second, the gateway logs it as a `degraded_dependency`, downgrades the decision conservatively (ML-only BLOCK becomes FLAG), and continues. DNS resolution is never blocked by a microservice failure.
+A: Every service call is wrapped in a timeout-guarded HTTP request (1s). If a service fails, it logs a `degraded_dependency` and graceful degradation kicks in. For example, if Threat Intel is offline, the gateway falls back to its direct Redis cache and evaluates 9 deterministic offline local rules (e.g. is it a `.tk` TLD with zero vowels?) to ensure we still flag obvious threats. DNS resolution is never blocked by a microservice failure.
 
 **Q: Why does the feature function live in `dns_shield_features.py` instead of `train.py`?**  
-A: joblib (the model serialization library) pickles a `FunctionTransformer` by storing a reference to the function's module path and name, not its source code. If the function is defined in `train.py`'s `__main__`, unpickling it in the inference service (a different process with a different `__main__`) raises `AttributeError`. Keeping it in its own importable module fixes this permanently. The training script also verifies this with a subprocess reload test before trusting the exported artifact.
+A: joblib (the model serialization library) pickles a `FunctionTransformer` by storing a reference to the function's module path and name. If defined in `train.py`, unpickling it in the inference service raises `AttributeError` because the `__main__` module differs. Keeping it in its own importable module fixes this permanently.

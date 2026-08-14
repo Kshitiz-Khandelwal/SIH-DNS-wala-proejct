@@ -20,7 +20,9 @@
 | Confidence levels | `LOW`, `MEDIUM`, `HIGH` |
 | Primary metric | Per-stage explainability (XAI) + weighted F1 of ML stage |
 | ML algorithm | Random Forest + FeatureUnion (char TF-IDF + engineered features) |
-| Threat intelligence | STIX 2.1 IOC database (URLhaus feed + CERT-In compatible) |
+| Threat intelligence | STIX 2.1 IOC database (URLhaus feed + CERT-In compatible) + Disk persistence |
+| Resilience | Deterministic offline local rules + API degradation graceful fallbacks |
+| Adversarial ML | Evaluated and hardened against 7 evasion mutations (vowel inject, etc.) |
 | Dashboard | Next.js SOC console with live stream + 3D threat globe |
 
 ---
@@ -50,9 +52,12 @@ SIH-DNS-wala-project/
 ├── dns_shield_features.py       # ← CRITICAL: shared feature module
 │                                #   Must be importable by both train.py
 │                                #   and ml-inference at runtime
+├── dns_shield_local_rules.py    # Deterministic local rules for resilience
 │
 ├── ml-training/
 │   ├── train.py                 # Training script (Random Forest + tuning)
+│   ├── adversarial_eval.py      # Hardens model against evasive domains
+│   ├── domain_mutations.py      # Generates 7 types of attacker mutations
 │   └── artifacts/               # .joblib + .metrics.json + .metadata.json
 │
 ├── frontend/                    # Next.js 16 / TypeScript SOC dashboard
@@ -157,7 +162,9 @@ SIH-DNS-wala-project/
     {"stage": 6, "name": "active-response","status":"pass",  "contribution": 0,  "reason": "no active response required",           "decided": false},
     {"stage": 7, "name": "analytics",   "status": "logged",  "contribution": 0,  "reason": "final composite score: 45",             "decided": false}
   ],
-  "degraded_dependencies": []
+  "degraded_dependencies": [],
+  "resilience_mode": "full-pipeline",
+  "local_rules_active": true
 }
 ```
 
@@ -248,7 +255,8 @@ python ml-training/train.py \
   "engineered_feature_names": ["length","entropy","digit_ratio","vowel_ratio","consonant_ratio","unique_char_ratio","hyphen_ratio","longest_consonant_run","longest_digit_run","label_count","has_digit"],
   "hyperparameter_tuning": {"enabled": true, "cv_folds": 5, "best_params": {...}, "best_cv_f1_weighted": 0.94},
   "runtime_compatibility": "services/ml-inference local_model_probability uses predict_proba([domain]); verified by standalone subprocess reload at export time",
-  "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH"
+  "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH",
+  "adversarial_hardening": true
 }
 ```
 

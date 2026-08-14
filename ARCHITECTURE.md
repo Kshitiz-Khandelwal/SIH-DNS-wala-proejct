@@ -10,6 +10,8 @@ Smart India Hackathon (SIH) 2026 — Problem Statement SIH260003
 
 ```
 DNS Client → API Gateway (8080) → [7-Stage Pipeline] → Verdict + XAI trace
+                                            ↓ (fallback)
+                                     [Local Rules]
                                             ↓
                               Analytics Store (8005) → SOC Dashboard (3001)
 ```
@@ -65,6 +67,17 @@ def resolve_cv_folds(labels: list[int], requested: int) -> int:
 def _verify_artifact_reloads_standalone(artifact_path: Path, sample_domain: str) -> None:
     """Spawns a subprocess and calls predict_proba([domain]) on the saved artifact.
     Raises RuntimeError if pickle contract is broken."""
+```
+
+### `ml-training/adversarial_eval.py`
+
+```python
+def generate_evasive_candidates(domain: str) -> list[tuple[str, str]]:
+    """Applies 7 mutation strategies (e.g. vowel_inject, tld_swap) to a domain."""
+
+# CLI Entrypoint:
+# Generates evasive variants, identifies baseline model failures, augments the
+# training dataset with hard negatives, and triggers a retraining cycle.
 ```
 
 ### `services/ml-inference/app.py`
@@ -129,6 +142,12 @@ else:                confidence = "LOW"
 # Graceful degradation
 if "ml-lexical" in degraded_deps and verdict == "BLOCK":
     verdict = "FLAG"  # Never BLOCK on uncertainty alone
+
+# Resilience Mode Output
+event.update({
+    "resilience_mode": "local-fallback" if degraded_deps else "full-pipeline",
+    "local_rules_active": LOCAL_RULES_AVAILABLE
+})
 ```
 
 ---
