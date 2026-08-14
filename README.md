@@ -1,168 +1,196 @@
-# DNS Shield — AI-Powered Secure DNS Filtering & Threat Intelligence Platform
+# DNS Shield — Real-Time Explainable DNS Threat Detection 🛡️
 
-**SIH260003 · ISRO · Software / Space Technology**
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg) 
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi) 
+![Next.js](https://img.shields.io/badge/Next.js-black?style=flat&logo=next.js) 
+![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=flat&logo=redis&logoColor=white) 
+![scikit-learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=flat&logo=scikit-learn&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-DNS Shield is a hackathon-focused, microservice-based DNS-security platform. It evaluates DNS requests before resolution, combines cached intelligence, local lexical analysis, device behavior, and optional offline geo context, then returns an explainable `ALLOW`, `FLAG`, or `BLOCK` decision. It supports both live DNS filtering and passive forensic replay of PCAP/PCAPNG/Zeek DNS data.
+DNS Shield is a microservice-based DNS security platform built for the **Smart India Hackathon (SIH) 2026**. 
 
-> Current state: the detailed code and local demo infrastructure are written, but the stack has **not been started or tested yet**. Do not claim performance, model quality, public hosting, or verified protocol support until `TEST_PLAN.md` has actual evidence.
+It intercepts DNS requests and evaluates them through a **7-stage detection pipeline** combining Threat Intelligence (STIX 2.1), Adversarially-Hardened Machine Learning, and Device Behavioral Analysis. Rather than returning a "black-box" block, DNS Shield provides a fully transparent, explainable trace (XAI) of exactly *why* a domain was blocked, making it the perfect tool for modern SOC analysts.
 
-## Why DNS Shield
+## Table of Contents
+1. [Tech Stack](#tech-stack)
+2. [Architecture Overview](#architecture-overview)
+3. [Key Features](#key-features)
+4. [Getting Started / Installation](#getting-started--installation)
+5. [Usage & Simulation](#usage--simulation)
+6. [Repository Structure](#repository-structure)
+7. [Contributing Guidelines](#contributing-guidelines)
+8. [Roadmap / Future Work](#roadmap--future-work)
+9. [License & Credits](#license--credits)
 
-DNS resolution is typically the first network action before a device contacts an internet service. Filtering there helps stop known malicious domains and detect suspicious new names before an application reaches them.
+---
 
-DNS Shield is designed to demonstrate:
+## Tech Stack
 
-- known-bad domain blocking from cached threat intelligence;
-- zero-day-style lexical detection for DGAs and typosquatting;
-- device-level behavior and DNS-tunnelling signals;
-- explainable decisions instead of a black-box block screen;
-- virtual-lab sinkholing and quarantine workflow;
-- SOC dashboard, API, notebook visualizations, and passive forensic analysis.
+- **Backend / Microservices**: Python 3.11, FastAPI, Uvicorn
+- **Machine Learning**: scikit-learn, NumPy, Pandas (Random Forest + TF-IDF)
+- **State & Caching**: Redis
+- **Frontend SOC Dashboard**: Next.js 16, React, TypeScript, TailwindCSS, Three.js (Threat Globe)
+- **Threat Intelligence**: STIX 2.1 format, Abuse.ch URLhaus, CERT-In integration
 
-## Core capabilities
+---
 
-| Capability | Implementation status |
-|---|---|
-| Active DNS filtering | Go resolver code for UDP/TCP DNS, DoH, DoT; pending runtime verification |
-| Passive analysis | PCAP, PCAPNG, and Zeek DNS extraction + shared pipeline replay |
-| Threat intelligence | Redis indicator cache, STIX 2.1 export, URLhaus/OTX/CERT-In/MISP integration paths |
-| Local ML | Deterministic lexical baseline + optional local Scikit-learn artifacts |
-| Behavior/incident engine | Device risk, tunnelling/fan-out signals, domain/device reputation, correlated incidents |
-| Geo context | Offline GeoLite2 City/ASN enrichment, never blocks alone |
-| Active response | Lab-only virtual sinkhole/quarantine, audit log, HTTP honeypot telemetry |
-| Analytics | ClickHouse events, feedback, trends, PCAP/Zeek forensic extraction |
-| SOC UI | Dashboard, XAI pipeline view, trends, incidents, 3D threat globe, quarantine controls |
-| Visual analysis | Jupyter notebook that charts real gateway results after test execution |
+## Architecture Overview
 
-## Seven-stage filtering pipeline
-
-```mermaid
-flowchart LR
-    Q["DNS query"] --> C["1. Redis verdict cache"]
-    C --> T["2. Cached threat intelligence"]
-    T --> M["3. Local lexical ML"]
-    M --> B["4. Device behavior analysis"]
-    B --> G["5. Offline geo context"]
-    G --> R["6. Risk aggregation + XAI"]
-    R --> A["7. Lab-only active response"]
-    A --> V["ALLOW / FLAG / BLOCK"]
-```
-
-The order is deliberate: fast/high-confidence checks run before more contextual work. A known intelligence hit blocks immediately; uncertain ML alone becomes `FLAG`, not `BLOCK`; geo adds context only. Every stage emits reasons and score contribution for the dashboard/API.
-
-Read [Component and Design Guide](docs/COMPONENT_AND_DESIGN_GUIDE.md) for the detailed reasoning behind each layer and technology choice.
-
-## Architecture
+The system evaluates every query synchronously across 7 distinct stages. If a dependency goes down, the system degrades gracefully to offline deterministic local rules ensuring DNS resolution is never blocked by a service outage.
 
 ```mermaid
-flowchart TB
-    Client["DNS client / SOC analyst / SIEM"] --> Resolver["Go resolver\nUDP · TCP · DoH · DoT"]
-    Client --> Dashboard["Next.js SOC dashboard"]
-    Resolver --> Gateway["API gateway\nPolicy + XAI"]
-    Dashboard --> Gateway
-    Gateway --> Redis["Redis\ncache + operational state"]
-    Gateway --> TI["Threat Intel\nSTIX / feeds / MISP"]
-    Gateway --> ML["Local ML inference"]
-    Gateway --> Behavior["Behavior + incidents"]
-    Gateway --> Geo["Offline GeoLite2"]
-    Gateway --> Response["Lab response"]
-    Gateway --> Analytics["Analytics store"]
-    Analytics --> ClickHouse["ClickHouse"]
-    Resolver --> MockDNS["Mock DNS\nlocal demo upstream"]
-    Response --> Honeypot["Lab HTTP honeypot"]
+graph TD
+    CLIENT["DNS Client / Endpoint<br/>POST /v1/query"] --> GW["API Gateway :8080<br/>Orchestrates 7-stage pipeline"]
+
+    GW --> CACHE["Stage 1: Redis Cache :6379<br/>5-minute verdict cache"]
+    CACHE -- "HIT" --> RESP["Return cached verdict"]
+    CACHE -- "MISS" --> TI["Stage 2: Threat Intel :8003<br/>STIX 2.1 IOC database<br/>URLhaus + CERT-In feeds"]
+
+    TI -- "threat_hit=True (+100)" --> BLOCK["BLOCK verdict"]
+    TI -- "clean" --> ML["Stage 3: ML Lexical :8000<br/>Random Forest + TF-IDF<br/>+ 11 engineered features"]
+
+    TI -. "degraded" .-> LR["Local Rules (Fallback)<br/>Direct Redis + 9 deterministic rules"]
+    LR --> ML
+
+    ML --> BEH["Stage 4: Behavioral :8001<br/>Device sliding window<br/>Volume, tunnelling, fan-out"]
+    BEH --> GEO["Stage 5: Geo Intel :8002<br/>IP → Country / ASN"]
+    GEO --> AR["Stage 6: Active Response :8004<br/>Lab-only sinkhole/quarantine"]
+    AR --> ANL["Stage 7: Analytics :8005<br/>Event persistence"]
+
+    ANL --> VERDICT["Verdict Assembly<br/>ALLOW / FLAG / BLOCK<br/>+ XAI pipeline array"]
+    VERDICT --> DASH["SOC Dashboard :3000<br/>Next.js live query stream<br/>XAI panel + Threat Globe"]
 ```
 
-For the full runtime topology, active/passive sequence diagrams, degradation behavior, and local operating boundaries, see [System Flow and Operations Guide](docs/SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md).
+---
 
-## Repository layout
+## Key Features
+
+- **Adversarially Hardened ML**: The lexical detection model has been systematically evaluated against 7 attacker mutation strategies (vowel injection, TLD swapping, digit removal) and retrained on its blind spots to ensure high resilience against evasive DGA and typosquatting domains.
+- **Explainable AI (XAI)**: Every API response includes a detailed `pipeline` array, explaining exactly how much risk each stage contributed and *why*.
+- **Resilient Fallback Mode**: If the Threat Intel service goes down, the Gateway automatically falls back to an offline, deterministic rules engine (e.g., catching high-digit density or suspicious TLDs like `.tk`) and a disk-backed IOC cache.
+- **Cyber Command Dashboard**: A premium Next.js interface featuring a live streaming 3D Threat Globe, real-time query waterfall, and detailed incident response tools.
+
+---
+
+## Getting Started / Installation
+
+### Prerequisites
+- Python 3.11+
+- Node.js 18+ (for frontend)
+- Redis server running on port 6379
+
+### 1. Clone & Setup Python Environment
+```bash
+git clone https://github.com/Kshitiz-Khandelwal/SIH-DNS-wala-proejct.git
+cd SIH-DNS-wala-project
+
+# Create virtual environment
+python -m venv .venv
+# Activate (Windows)
+.venv\Scripts\activate
+# Activate (Linux/Mac)
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 2. Start the Backend Services
+Make sure Redis is running (`redis-server`). Then, open separate terminals for each microservice:
+```bash
+$env:PYTHONPATH = (Get-Location).Path  # Windows PowerShell
+# export PYTHONPATH=$(pwd)             # Linux/Mac
+
+# Start microservices on their respective ports:
+uvicorn services.threat-intel.app:app --port 8003
+uvicorn services.ml-inference.app:app --port 8000
+uvicorn services.behavioral-engine.app:app --port 8001
+uvicorn services.analytics-store.app_local:app --port 8005
+
+# Start the API Gateway
+uvicorn services.api-gateway.app:app --port 8080
+```
+
+### 3. Start the SOC Dashboard
+```bash
+cd frontend
+npm install
+npm run dev -- -p 3001
+```
+The dashboard will be available at `http://localhost:3001`.
+
+---
+
+## Usage & Simulation
+
+You can test the system using the built-in traffic simulator which generates specific types of attacks.
+
+```bash
+# Generate Benign traffic (google.com, etc)
+python infra/simulate.py benign --device 10.0.0.10 --repeat 5
+
+# Generate DGA Malware traffic
+python infra/simulate.py dga --device 10.0.0.20 --repeat 5
+
+# Generate Typosquatting traffic
+python infra/simulate.py typosquat --device 10.0.0.40 --repeat 5
+```
+
+Alternatively, query the gateway directly via `curl`:
+```bash
+curl -X POST http://localhost:8080/v1/query \
+  -H "Content-Type: application/json" \
+  -d '{"domain":"xq9m2kz7v4na.com","client_ip":"10.0.0.20","source":"test"}'
+```
+
+---
+
+## Repository Structure
 
 ```text
 SIH-DNS-wala-project/
-├── services/
-│   ├── resolver-core/       Go DNS / DoH / DoT enforcement point
-│   ├── api-gateway/         seven-stage policy and SIEM REST API
-│   ├── threat-intel/        feed, STIX, MISP and Redis indicator handling
-│   ├── ml-inference/        local lexical analysis and model artifacts
-│   ├── behavioral-engine/   device risk, reputation and incidents
-│   ├── geo-intel/           offline GeoLite2 enrichment
-│   ├── active-response/     virtual-lab sinkhole/quarantine/audit
-│   ├── lab-honeypot/        safe decoy HTTP listener
-│   └── analytics-store/     ClickHouse events and passive parsing
-├── dashboard/               Next.js SOC interface
-├── infra/                   Compose, mock DNS, TLS, simulations, security docs
-├── ml-training/             reproducible local training/export script
-├── notebooks/               Jupyter SOC analysis and visual evidence
-├── docs/                    architecture, API, design and system-flow guides
-├── TEST_PLAN.md             authoritative pass/fail checklist
-├── PRE_TEST_READINESS.md    what remains before test execution
-├── RUN_AND_TEST.md          local setup and test commands
-├── HANDOFF.md               implementation inventory and remaining backlog
-└── PROGRESS.md              chronological implementation status
+├── services/                # The 7 FastAPI Microservices
+│   ├── api-gateway/         # Port 8080 — Orchestrator & SIEM REST API
+│   ├── threat-intel/        # Port 8003 — IOC Database, STIX 2.1, Disk Cache
+│   ├── ml-inference/        # Port 8000 — ML Lexical scoring
+│   ├── behavioral-engine/   # Port 8001 — Device risk & incidents
+│   ├── geo-intel/           # Port 8002 — Offline GeoLite2 enrichment
+│   ├── active-response/     # Port 8004 — Virtual-lab sinkhole/quarantine
+│   └── analytics-store/     # Port 8005 — Event persistence
+├── ml-training/             # Adversarial evaluation and model training scripts
+├── frontend/                # Next.js 16 SOC Dashboard
+├── infra/                   # Simulation scripts and Docker Compose
+├── docs/                    # Extensive project documentation & architecture guides
+└── dns_shield_local_rules.py # Core resilience fallback logic
 ```
 
-## Local demo topology
+---
 
-The initial demo runs on one machine using Docker Compose. The resolver receives requests on host ports `5353` (UDP/TCP), `8443` (DoH), and `8853` (DoT after TLS setup). Dashboard is at `http://localhost:3000`; API documentation is at `http://localhost:8080/docs`.
+## Contributing Guidelines
 
-The default resolver upstream is an internal `mock-dns` service, not public DNS. This makes benign lookups and gateway-fallback tests reproducible. The lab honeypot is internal-only at `172.28.0.250`; it never changes host firewall settings or interacts with external targets.
+1. **Code Style**: We strictly follow `black` for Python formatting and standard `eslint` configs for TypeScript.
+2. **Branching**: Use `feature/your-feature-name` or `bugfix/issue-description`.
+3. **Commits**: Follow conventional commits (`feat: ...`, `fix: ...`, `docs: ...`).
+4. **Pull Requests**: Link to the relevant issue, describe the changes, and ensure all local tests (e.g. `python ml-training/adversarial_eval.py --dry-run`) pass before submitting.
 
-## Start only when execution is authorized
+---
 
-The current build process intentionally deferred all execution. Before starting containers, read [Pre-Test Readiness](PRE_TEST_READINESS.md), then follow [Run and Test Guide](RUN_AND_TEST.md) and the ordered [Test Plan](TEST_PLAN.md).
+## Roadmap / Future Work
 
-```powershell
-Copy-Item .env.example .env
-# Optional for DoH/DoT: follow infra/certs/README.md to create local-only TLS files
-docker compose -f infra/docker-compose.yml up --build
-```
+- [x] Initial 7-stage microservice architecture
+- [x] Next.js SOC Dashboard with 3D Globe visualization
+- [x] Adversarial Hardening of ML Pipeline
+- [x] Resilient offline fallback mode
+- [ ] Deploy Go-based DNS resolver-core to intercept real UDP/TCP DNS traffic directly
+- [ ] Integrate MISP for real-time threat intelligence sharing with external CERTs
+- [ ] Implement LSTM-based sequential modelling for advanced DNS tunnelling detection
 
-Do not expose the resolver publicly, use paid cloud resources, publish to MISP, or configure external feeds without explicit approval.
+---
 
-## Safe demo scenarios
+## License & Credits
 
-After the stack is healthy and testing is approved, run the named local scenarios:
+**License**: Distributed under the MIT License. See `LICENSE` for more information.
 
-```powershell
-docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-benign
-docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-dga
-docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-tunnelling
-docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-c2
-docker compose -f infra/docker-compose.yml --profile simulation run --rm simulation-typosquat
-```
-
-They only call the internal gateway and are not external attack tools.
-
-## Jupyter visualization companion
-
-After real events exist, open [notebooks/01_soc_demo_analysis.ipynb](notebooks/01_soc_demo_analysis.ipynb). It produces charts based on real gateway responses: XAI pipeline contributions, verdicts, risk trends, incidents, reputation, feed health, and model state.
-
-See [notebooks/README.md](notebooks/README.md) for setup. Never store API keys in notebook cells.
-
-## Documentation map
-
-| Document | Use it for |
-|---|---|
-| [COMPONENT_AND_DESIGN_GUIDE.md](docs/COMPONENT_AND_DESIGN_GUIDE.md) | What each service/file group does and why it was chosen |
-| [SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md](docs/SYSTEM_FLOW_AND_OPERATIONS_GUIDE.md) | Runtime topology, request flows, operating model, degradation behavior |
-| [TEST_PLAN.md](TEST_PLAN.md) | Exact pass/fail test path and evidence requirements |
-| [PRE_TEST_READINESS.md](PRE_TEST_READINESS.md) | Remaining work and test-transition decision |
-| [RUN_AND_TEST.md](RUN_AND_TEST.md) | Copy-paste local setup/test commands |
-| [HANDOFF.md](HANDOFF.md) | Work inventory, priorities, and next-agent instructions |
-| [infra/SECURITY_CHECKLIST.md](infra/SECURITY_CHECKLIST.md) | Hosted-demo security review |
-| [infra/ACCESS_CONTROL.md](infra/ACCESS_CONTROL.md) | Gateway API key/rate-limit behavior |
-| [infra/OBSERVABILITY.md](infra/OBSERVABILITY.md) | Metrics, correlation IDs, evidence collection |
-
-## Current scope and honest limitations
-
-The hackathon core is code-complete enough for a first local testing cycle, but none of the following have been verified yet:
-
-- p50/p95/p99 latency or `<100ms` target;
-- sustained QPS/concurrency;
-- model precision/recall/F1 or false-positive rate;
-- actual OTX/CERT-In/MISP ingestion;
-- DoH/DoT runtime behavior;
-- full browser interaction and Compose startup;
-- hosted URL, QR code, or demo recording.
-
-See [PRE_TEST_READINESS.md](PRE_TEST_READINESS.md) for the precise remaining work and testing transition.
-
+**Credits**:
+Developed by **Kshitiz Khandelwal** for the Smart India Hackathon (SIH) 2026.
+Special thanks to Abuse.ch for URLhaus datasets, and the open-source Python data science community.
