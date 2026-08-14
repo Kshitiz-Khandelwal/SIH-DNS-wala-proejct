@@ -19,8 +19,7 @@ It intercepts DNS requests and evaluates them through a **7-stage detection pipe
 5. [Usage & Simulation](#usage--simulation)
 6. [Repository Structure](#repository-structure)
 7. [Contributing Guidelines](#contributing-guidelines)
-8. [Roadmap / Future Work](#roadmap--future-work)
-9. [License & Credits](#license--credits)
+8. [License & Credits](#license--credits)
 
 ---
 
@@ -172,18 +171,6 @@ SIH-DNS-wala-project/
 2. **Branching**: Use `feature/your-feature-name` or `bugfix/issue-description`.
 3. **Commits**: Follow conventional commits (`feat: ...`, `fix: ...`, `docs: ...`).
 4. **Pull Requests**: Link to the relevant issue, describe the changes, and ensure all local tests (e.g. `python ml-training/adversarial_eval.py --dry-run`) pass before submitting.
-
----
-
-## Roadmap / Future Work
-
-- [x] Initial 7-stage microservice architecture
-- [x] Next.js SOC Dashboard with 3D Globe visualization
-- [x] Adversarial Hardening of ML Pipeline
-- [x] Resilient offline fallback mode
-- [ ] Deploy Go-based DNS resolver-core to intercept real UDP/TCP DNS traffic directly
-- [ ] Integrate MISP for real-time threat intelligence sharing with external CERTs
-- [ ] Implement LSTM-based sequential modelling for advanced DNS tunnelling detection
 
 ---
 
