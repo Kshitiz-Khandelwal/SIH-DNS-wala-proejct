@@ -25,13 +25,14 @@ export const metadata: Metadata = {
     "Intercept, score, and explain DNS queries through a 7-stage pipeline. ALLOW, FLAG, or BLOCK with full traceability.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-ink text-text">{children}</body>
+      <body suppressHydrationWarning className="min-h-full bg-slate-50 text-slate-900 font-sans">{children}</body>
     </html>
   );
 }

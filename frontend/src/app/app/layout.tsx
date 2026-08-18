@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
-import { ConsoleNav, StatusStrip } from "@/components/console/ConsoleNav";
+import { AppSidebar } from "@/components/console/AppSidebar";
+import { AppHeader } from "@/components/console/AppHeader";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted">
-        Loading console…
+      <div className="flex min-h-screen items-center justify-center text-sm text-slate-500 font-medium bg-slate-50">
+        Loading consoleâ€¦
       </div>
     );
   }
@@ -30,11 +31,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isFlush = pathname === "/app/pipeline";
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <ConsoleNav />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <StatusStrip />
-        <main className={isFlush ? "flex-1 overflow-hidden" : "flex-1 overflow-auto p-5"}>
+    <div className="flex h-screen overflow-hidden bg-slate-50/50">
+      <AppSidebar />
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <AppHeader />
+        <main className={isFlush ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto p-6 md:p-8"}>
           {children}
         </main>
       </div>

@@ -1,31 +1,38 @@
 import type { Verdict } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const styles: Record<Verdict, string> = {
-  ALLOW: "bg-trace/15 text-trace border-trace/40 shadow-[0_0_12px_rgba(0,229,255,0.35)]",
-  FLAG: "bg-signal-amber/15 text-signal-amber border-signal-amber/40 shadow-[0_0_12px_rgba(255,176,32,0.35)]",
-  BLOCK: "bg-alert/15 text-alert border-alert/40 shadow-[0_0_12px_rgba(255,59,92,0.35)]",
+const styles: Record<string, string> = {
+  ALLOW: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  FLAG:  "bg-amber-50  text-amber-700  border-amber-200",
+  BLOCK: "bg-rose-50   text-rose-700   border-rose-200",
+};
+
+const dots: Record<string, string> = {
+  ALLOW: "bg-emerald-500",
+  FLAG:  "bg-amber-500",
+  BLOCK: "bg-rose-500",
 };
 
 export function VerdictBadge({
   verdict,
   className,
-  glow = true,
+  glow = false,
 }: {
-  verdict: Verdict;
+  verdict: Verdict | string;
   className?: string;
   glow?: boolean;
 }) {
+  const v = (verdict || "ALLOW").toUpperCase();
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 font-mono text-xs font-medium tracking-wide",
-        styles[verdict],
-        !glow && "shadow-none",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-semibold",
+        styles[v] || "bg-slate-50 text-slate-700 border-slate-200",
         className,
       )}
     >
-      {verdict}
+      <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", dots[v] || "bg-slate-400")} />
+      {v}
     </span>
   );
 }
