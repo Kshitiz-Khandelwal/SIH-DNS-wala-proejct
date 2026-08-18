@@ -83,7 +83,7 @@ export default function SettingsPage() {
 
       {/* Decision Boundaries / Thresholds */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           ARBITER BOUNDARIES
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-1">
@@ -120,7 +120,7 @@ export default function SettingsPage() {
           <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
             <label className="block">
               <span className="text-xs font-semibold text-slate-700 block">ALLOW Boundary Max (0 to 99)</span>
-              <span className="text-[11px] text-slate-400 block mb-2 font-mono">Scores below this are allowed without review</span>
+              <span className="text-[11px] text-slate-500 block mb-2 font-mono">Scores below this are allowed without review</span>
               <input
                 type="number"
                 min={0}
@@ -135,7 +135,7 @@ export default function SettingsPage() {
           <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
             <label className="block">
               <span className="text-xs font-semibold text-slate-700 block">FLAG Boundary Max (BLOCK Above)</span>
-              <span className="text-[11px] text-slate-400 block mb-2 font-mono">Scores above this trigger zero-day hard block</span>
+              <span className="text-[11px] text-slate-500 block mb-2 font-mono">Scores above this trigger zero-day hard block</span>
               <input
                 type="number"
                 min={1}
@@ -151,7 +151,7 @@ export default function SettingsPage() {
 
       {/* Lab Simulators */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           TEST HARNESS
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-1">
@@ -191,7 +191,7 @@ export default function SettingsPage() {
 
       {/* Passive Analysis / PCAP Upload */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           OFFLINE FORENSICS
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-1">

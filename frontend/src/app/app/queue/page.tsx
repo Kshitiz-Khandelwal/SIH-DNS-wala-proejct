@@ -88,7 +88,7 @@ export default function QueuePage() {
       {stats && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               ALLOWED (24H)
             </span>
             <div className="font-mono text-2xl font-bold text-emerald-700 mt-1">
@@ -96,7 +96,7 @@ export default function QueuePage() {
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               FLAGGED (24H)
             </span>
             <div className="font-mono text-2xl font-bold text-amber-700 mt-1">
@@ -104,7 +104,7 @@ export default function QueuePage() {
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               BLOCKED (24H)
             </span>
             <div className="font-mono text-2xl font-bold text-rose-700 mt-1">
@@ -112,7 +112,7 @@ export default function QueuePage() {
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               OPEN INCIDENTS
             </span>
             <div className="font-mono text-2xl font-bold text-slate-900 mt-1">

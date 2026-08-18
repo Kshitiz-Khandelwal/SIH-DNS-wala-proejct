@@ -26,7 +26,7 @@ export function HighRiskList({ events }: { events: QueryResult[] }) {
                   {ev.domain}
                 </p>
                 <p className="mt-0.5 text-[11px] text-slate-500">
-                  Client: <span className="font-mono">{ev.client_ip}</span> Â· Risk:{" "}
+                  Client: <span className="font-mono">{ev.client_ip}</span> · Risk:{" "}
                   <span className="font-mono font-bold text-rose-600">{ev.risk_score}</span>
                 </p>
               </div>

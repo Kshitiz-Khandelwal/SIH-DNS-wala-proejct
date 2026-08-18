@@ -52,6 +52,7 @@ export interface FeedHealth {
   status: "healthy" | "degraded" | "failed";
   indicator_count: number;
   last_sync: string;
+  latency_ms?: number;
   error?: string;
 }
 

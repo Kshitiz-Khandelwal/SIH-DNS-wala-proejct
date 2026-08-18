@@ -40,7 +40,7 @@ export function LiveQueryTable({
       {/* Table Header & Controls */}
       <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between bg-white">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">
             LIVE RESOLVER STREAM
           </span>
           <h2 className="text-base font-bold text-slate-900 mt-0.5">Live Query &amp; Threat Stream</h2>
@@ -79,12 +79,12 @@ export function LiveQueryTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-slate-50/70 border-b border-slate-100">
-            <TableHead className="w-[110px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">Timestamp</TableHead>
-            <TableHead className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">Queried Domain</TableHead>
-            <TableHead className="w-[120px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">Client IP</TableHead>
-            <TableHead className="w-[140px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">Risk Score</TableHead>
-            <TableHead className="w-[100px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">Verdict</TableHead>
-            <TableHead className="w-[80px] text-right font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">Action</TableHead>
+            <TableHead className="w-[110px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Timestamp</TableHead>
+            <TableHead className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Queried Domain</TableHead>
+            <TableHead className="w-[120px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Client IP</TableHead>
+            <TableHead className="w-[140px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Risk Score</TableHead>
+            <TableHead className="w-[100px] font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Verdict</TableHead>
+            <TableHead className="w-[80px] text-right font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

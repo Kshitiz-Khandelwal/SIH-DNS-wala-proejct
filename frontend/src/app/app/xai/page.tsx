@@ -170,7 +170,7 @@ export default function XAIPage() {
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="flex items-center rounded-full border border-slate-200 bg-white p-1 shadow-2xs">
+        <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-2xs">
           <button
             type="button"
             onClick={() => setActiveTab("shap")}
@@ -228,7 +228,7 @@ export default function XAIPage() {
 
           {/* Interactive Entropy & String Sandbox */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               INTERACTIVE REASONING SANDBOX
             </span>
             <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-2">
@@ -250,11 +250,11 @@ export default function XAIPage() {
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-center min-w-[130px] shadow-2xs">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">Length</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">Length</span>
                   <span className="font-mono text-sm font-bold text-slate-900">{charLength} chars</span>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-center min-w-[150px] shadow-2xs">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">Entropy H(X)</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">Entropy H(X)</span>
                   <span className={cn(
                     "font-mono text-sm font-bold",
                     entropy > 4.2 ? "text-rose-600" : entropy > 3.5 ? "text-amber-600" : "text-emerald-600"
@@ -268,7 +268,7 @@ export default function XAIPage() {
 
           {/* SHAP Decomposition Table */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               TREE-SHAP FEATURE ATTRIBUTION
             </span>
             <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-4">
@@ -351,7 +351,7 @@ export default function XAIPage() {
       {activeTab === "registry" && (
         <div className="space-y-5">
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               PRODUCTION REGISTRY
             </span>
             <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-4">

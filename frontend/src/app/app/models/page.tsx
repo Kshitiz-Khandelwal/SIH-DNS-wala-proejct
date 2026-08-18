@@ -182,7 +182,7 @@ export default function ModelsRationalePage() {
 
       {/* Rationale Pillars */}
       <div className="space-y-5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">
           CORE ENGINEERING PILLARS
         </span>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -217,7 +217,7 @@ export default function ModelsRationalePage() {
 
       {/* Model Benchmark & Comparison Table */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           EMPIRICAL BENCHMARK MATRIX
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-2">

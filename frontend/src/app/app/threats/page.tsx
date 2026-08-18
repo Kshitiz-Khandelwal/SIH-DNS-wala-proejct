@@ -19,11 +19,11 @@ import type { FeedHealth } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_FEEDS: FeedHealth[] = [
-  { name: "Abuse.ch URLhaus", entries: 28420, last_sync: "4 mins ago", status: "HEALTHY", latency_ms: 120 },
-  { name: "PhishTank Verified", entries: 14200, last_sync: "12 mins ago", status: "HEALTHY", latency_ms: 180 },
-  { name: "AlienVault OTX Community", entries: 62900, last_sync: "1 hour ago", status: "HEALTHY", latency_ms: 240 },
-  { name: "Emerging Threats DNS", entries: 19800, last_sync: "25 mins ago", status: "HEALTHY", latency_ms: 95 },
-  { name: "OpenPhish Global Feed", entries: 8400, last_sync: "8 mins ago", status: "HEALTHY", latency_ms: 110 },
+  { name: "Abuse.ch URLhaus", indicator_count: 28420, last_sync: "4 mins ago", status: "healthy", latency_ms: 120 },
+  { name: "PhishTank Verified", indicator_count: 14200, last_sync: "12 mins ago", status: "healthy", latency_ms: 180 },
+  { name: "AlienVault OTX Community", indicator_count: 62900, last_sync: "1 hour ago", status: "healthy", latency_ms: 240 },
+  { name: "Emerging Threats DNS", indicator_count: 19800, last_sync: "25 mins ago", status: "healthy", latency_ms: 95 },
+  { name: "OpenPhish Global Feed", indicator_count: 8400, last_sync: "8 mins ago", status: "healthy", latency_ms: 110 },
 ];
 
 const RECENT_IOCS = [
@@ -46,7 +46,7 @@ export default function ThreatsPage() {
         if (data && data.length > 0) {
           const safeData = data.map((item) => ({
             ...item,
-            entries: typeof item.entries === "number" ? item.entries : 15000,
+            indicator_count: typeof item.indicator_count === "number" ? item.indicator_count : 15000,
           }));
           setFeeds(safeData);
         }
@@ -73,7 +73,7 @@ export default function ThreatsPage() {
     }
   }
 
-  const totalIoCs = feeds.reduce((sum, f) => sum + (f.entries || 0), 0);
+  const totalIoCs = feeds.reduce((sum, f) => sum + (f.indicator_count || 0), 0);
 
   return (
     <div className="w-full space-y-6 pb-12">
@@ -110,7 +110,7 @@ export default function ThreatsPage() {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             TOTAL CACHED IOCS
           </span>
           <div className="font-mono text-3xl font-bold text-slate-900 mt-2">
@@ -122,7 +122,7 @@ export default function ThreatsPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             MATCH HIT RATE (24H)
           </span>
           <div className="font-mono text-3xl font-bold text-blue-700 mt-2">
@@ -134,7 +134,7 @@ export default function ThreatsPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             MEAN LOOKUP TIME
           </span>
           <div className="font-mono text-3xl font-bold text-emerald-700 mt-2">
@@ -146,7 +146,7 @@ export default function ThreatsPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             FEED SYNC HEALTH
           </span>
           <div className="font-mono text-3xl font-bold text-emerald-700 mt-2">
@@ -160,7 +160,7 @@ export default function ThreatsPage() {
 
       {/* Search IoC Bar */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           LOCAL REPUTATION LOOKUP
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-2">
@@ -203,7 +203,7 @@ export default function ThreatsPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               SUBSCRIBED PROVIDERS
             </span>
             <h2 className="text-base font-bold text-slate-900 mt-0.5">
@@ -232,7 +232,7 @@ export default function ThreatsPage() {
                     {feed.name}
                   </td>
                   <td className="py-3.5 font-mono font-bold text-slate-900">
-                    {(feed.entries || 0).toLocaleString()}
+                    {(feed.indicator_count || 0).toLocaleString()}
                   </td>
                   <td className="py-3.5 font-mono text-slate-500">
                     {feed.last_sync}
@@ -241,8 +241,22 @@ export default function ThreatsPage() {
                     {feed.latency_ms} ms
                   </td>
                   <td className="py-3.5 text-right">
-                    <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                        feed.status === "healthy" && "text-emerald-700 bg-emerald-50 border-emerald-200",
+                        feed.status === "degraded" && "text-amber-700 bg-amber-50 border-amber-200",
+                        feed.status === "failed" && "text-red-700 bg-red-50 border-red-200",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full",
+                          feed.status === "healthy" && "bg-emerald-500",
+                          feed.status === "degraded" && "bg-amber-500",
+                          feed.status === "failed" && "bg-red-500",
+                        )}
+                      />
                       {feed.status}
                     </span>
                   </td>
@@ -255,7 +269,7 @@ export default function ThreatsPage() {
 
       {/* Recent IoCs Ingested */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           LATEST INGESTION
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-4">

@@ -22,7 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-slate-500 font-medium bg-slate-50">
-        Loading consoleâ€¦
+        Loading console…
       </div>
     );
   }

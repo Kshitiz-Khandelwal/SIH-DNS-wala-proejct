@@ -132,7 +132,7 @@ export default function ReportsPage() {
           <div key={fw.name} className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
                   REGULATORY AUDIT
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-700">
@@ -152,7 +152,7 @@ export default function ReportsPage() {
 
       {/* Reports Table */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           AUDIT ARCHIVE
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-4">

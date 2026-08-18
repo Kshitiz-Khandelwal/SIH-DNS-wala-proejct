@@ -128,7 +128,7 @@ export default function DevicesPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             ACTIVE CLIENTS
           </span>
           <div className="font-mono text-3xl font-bold text-slate-900 mt-2">
@@ -140,7 +140,7 @@ export default function DevicesPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             COMPROMISED HOSTS
           </span>
           <div className="font-mono text-3xl font-bold text-rose-700 mt-2">
@@ -152,7 +152,7 @@ export default function DevicesPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             SUSPICIOUS HOSTS
           </span>
           <div className="font-mono text-3xl font-bold text-amber-700 mt-2">
@@ -164,7 +164,7 @@ export default function DevicesPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             HEALTHY CLIENTS
           </span>
           <div className="font-mono text-3xl font-bold text-emerald-700 mt-2">
@@ -180,7 +180,7 @@ export default function DevicesPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               ENDPOINT REGISTRY
             </span>
             <h2 className="text-base font-bold text-slate-900 mt-0.5">
@@ -288,7 +288,7 @@ export default function DevicesPage() {
                         Quarantine
                       </button>
                     ) : (
-                      <span className="font-mono text-[11px] text-slate-400">Normal</span>
+                      <span className="font-mono text-[11px] text-slate-500">Normal</span>
                     )}
                   </td>
                 </tr>

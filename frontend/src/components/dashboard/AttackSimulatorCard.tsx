@@ -67,7 +67,7 @@ export function AttackSimulatorCard({
             <Zap className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">
               VERIFICATION ENGINE
             </span>
             <h2 className="text-sm font-bold text-slate-900 leading-tight">

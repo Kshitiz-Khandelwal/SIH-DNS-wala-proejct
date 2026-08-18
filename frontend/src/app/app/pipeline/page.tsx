@@ -145,7 +145,7 @@ export default function PipelinePage() {
       {/* Left Column: 7 Stages List */}
       <div className="flex w-96 shrink-0 flex-col border-r border-slate-200 bg-white overflow-hidden select-none">
         <div className="border-b border-slate-200 px-5 py-4 bg-slate-50/50">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">
             INTERCEPTOR ENGINE
           </span>
           <h1 className="text-sm font-bold text-slate-900 font-sans mt-0.5">
@@ -180,7 +180,7 @@ export default function PipelinePage() {
                       <span className={cn("font-mono text-[11px] font-bold", isActive ? "text-blue-700" : "text-slate-400")}>
                         STAGE {stage.num}
                       </span>
-                      <span className="font-mono text-[10px] text-slate-400">:{stage.port}</span>
+                      <span className="font-mono text-[10px] text-slate-500">:{stage.port}</span>
                     </div>
                     <div className={cn("text-xs font-bold mt-0.5 line-clamp-1", isActive ? "text-slate-900" : "text-slate-700")}>
                       {stage.shortName}
@@ -232,7 +232,7 @@ export default function PipelinePage() {
         <div className="p-8 space-y-6 w-full">
           {/* Description Card */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               ENGINE ARCHITECTURE &amp; SPECIFICATION
             </span>
             <p className="mt-2 text-sm text-slate-700 leading-relaxed font-sans">
@@ -257,7 +257,7 @@ export default function PipelinePage() {
 
           {/* Algorithm & Mathematical Foundation */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               MATHEMATICAL CORE &amp; ALGORITHM
             </span>
             <div className="mt-2 rounded-lg bg-slate-900 p-3 text-slate-100 font-mono text-xs">
@@ -268,7 +268,7 @@ export default function PipelinePage() {
           {/* Data Contracts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
                 INGESTION PAYLOAD CONTRACT (INPUT)
               </span>
               <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 overflow-x-auto">
@@ -277,7 +277,7 @@ export default function PipelinePage() {
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
                 DECISION RESPONSE CONTRACT (OUTPUT)
               </span>
               <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 overflow-x-auto">

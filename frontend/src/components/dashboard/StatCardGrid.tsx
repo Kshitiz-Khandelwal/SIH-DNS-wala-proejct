@@ -78,7 +78,7 @@ export function StatCardGrid({ items }: { items: StatItem[] }) {
 
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">
                   {item.label}
                 </span>
                 <div className={cn("font-mono text-3xl font-bold mt-2 tracking-tight", textAccent[item.variant])}>

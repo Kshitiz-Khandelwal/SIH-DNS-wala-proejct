@@ -77,7 +77,7 @@ function DomainDetailContent() {
 
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-slate-200 bg-white p-3 text-right shadow-xs">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">Risk Score</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">Risk Score</span>
             <span className="text-2xl font-bold font-mono text-slate-900">{event.risk_score} / 100</span>
           </div>
         </div>

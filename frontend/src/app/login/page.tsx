@@ -76,7 +76,7 @@ export default function LoginPage() {
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               required
             />
           </div>
@@ -90,8 +90,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 border-t border-slate-100 pt-4 text-center text-[11px] text-slate-400">
-          SIH 2024 Â· Explainable DNS Threat Defense System
+        <div className="mt-6 border-t border-slate-100 pt-4 text-center text-[11px] text-slate-500">
+          SIH 2026 · Explainable DNS Threat Defense System
         </div>
       </div>
     </div>

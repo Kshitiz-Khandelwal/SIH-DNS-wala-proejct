@@ -127,7 +127,7 @@ export default function AnalyticsPage() {
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             TOTAL 24H VOLUME
           </span>
           <div className="font-mono text-3xl font-bold text-slate-900 mt-2">
@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             MEAN RESOLUTION LATENCY
           </span>
           <div className="font-mono text-3xl font-bold text-blue-700 mt-2">
@@ -157,7 +157,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             MITIGATION ACCURACY
           </span>
           <div className="font-mono text-3xl font-bold text-rose-700 mt-2">
@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             TRACKED CLIENT IPS
           </span>
           <div className="font-mono text-3xl font-bold text-slate-900 mt-2">
@@ -187,7 +187,7 @@ export default function AnalyticsPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               HISTORICAL VOLUME
             </span>
             <h2 className="text-base font-bold text-slate-900 mt-0.5">
@@ -225,7 +225,7 @@ export default function AnalyticsPage() {
                   <div className="bg-amber-400 w-full" style={{ height: `${Math.max(2, flaggedPct)}%` }} />
                   <div className="bg-rose-500 w-full" style={{ height: `${Math.max(4, blockedPct)}%` }} />
                 </div>
-                <span className="font-mono text-[10px] text-slate-400">{item.time}</span>
+                <span className="font-mono text-[10px] text-slate-500">{item.time}</span>
               </div>
             );
           })}
@@ -236,7 +236,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top TLDs Table */}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
             REPRESENTATION
           </span>
           <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-4">
@@ -289,7 +289,7 @@ export default function AnalyticsPage() {
         {/* Protocol Split */}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               ENCRYPTION ADOPTION
             </span>
             <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-4">
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
 
       {/* Latency Table */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           PERFORMANCE BENCHMARKS
         </span>
         <h2 className="text-base font-bold text-slate-900 mt-0.5 mb-4">

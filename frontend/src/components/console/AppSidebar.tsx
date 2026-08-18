@@ -78,7 +78,7 @@ export function AppSidebar() {
         <nav className="flex-1 px-3 py-5 space-y-6 overflow-y-auto">
           {navGroups.map((group) => (
             <div key={group.label}>
-              <h3 className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 font-mono">
+              <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 font-mono">
                 {group.label}
               </h3>
               <div className="space-y-1">
@@ -116,7 +116,7 @@ export function AppSidebar() {
           <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
             <div className="flex flex-col gap-0.5">
               <span className="font-mono text-[11px] font-bold text-slate-800">Uptime: 99.8%</span>
-              <span className="font-mono text-[10px] text-slate-400">Model v1.0.3 · Online</span>
+              <span className="font-mono text-[10px] text-slate-500">Model v1.0.3 · Online</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           </div>

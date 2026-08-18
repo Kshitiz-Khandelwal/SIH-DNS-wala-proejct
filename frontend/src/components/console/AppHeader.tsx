@@ -24,10 +24,12 @@ export function AppHeader() {
     "/app/pipeline": "Pipeline Architecture",
     "/app/threats": "Threat Intelligence",
     "/app/xai": "XAI Analysis",
+    "/app/models": "Model Rationale",
     "/app/devices": "Devices & Fleet",
     "/app/reports": "Security Reports",
     "/app/settings": "Settings",
-  }[pathname] || "DNS Shield";
+  }[pathname] ||
+    (pathname.startsWith("/app/domain") ? "Domain Inspector" : "DNS Shield");
 
   return (
     <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 md:px-8 sticky top-0 z-20 shadow-2xs">
@@ -45,7 +47,7 @@ export function AppHeader() {
         {/* Live QPS with Sparkline */}
         <div className="hidden sm:flex items-center gap-4 pl-5 border-l border-slate-200">
           <div className="flex flex-col text-right">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">Live QPS</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">Live QPS</span>
             <span className="text-sm font-bold font-mono tracking-tight text-slate-900">
               {mounted ? qps.toLocaleString() : "13,285"}{" "}
               <span className="text-xs font-sans text-slate-400 font-normal">Q/s</span>

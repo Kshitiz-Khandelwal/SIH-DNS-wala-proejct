@@ -49,12 +49,12 @@ export function ThreatDistribution({ data = defaultThreats }: { data?: ThreatBar
     <Card className="rounded-xl border border-slate-200 p-6 shadow-xs bg-white">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">
             CLASSIFICATION
           </span>
           <h2 className="text-sm font-bold text-slate-900 mt-0.5">Threat Distribution</h2>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
           Past 24h
         </span>
       </div>
