@@ -159,7 +159,7 @@ export default function ThreatsPage() {
       </div>
 
       {/* Search IoC Bar */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
           LOCAL REPUTATION LOOKUP
         </span>

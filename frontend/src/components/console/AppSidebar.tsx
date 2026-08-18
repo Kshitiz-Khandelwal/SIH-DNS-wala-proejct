@@ -112,7 +112,7 @@ export function AppSidebar() {
         </nav>
 
         {/* Bottom Status Box */}
-        <div className="p-3.5 m-3 mt-auto bg-slate-50 rounded-xl border border-slate-200/80">
+        <div className="p-4 m-3 mt-auto bg-slate-50 rounded-xl border border-slate-200/80">
           <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
             <div className="flex flex-col gap-0.5">
               <span className="font-mono text-[11px] font-bold text-slate-800">Uptime: 99.8%</span>

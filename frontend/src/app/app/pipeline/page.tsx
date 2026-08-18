@@ -168,7 +168,7 @@ export default function PipelinePage() {
                 key={stage.num}
                 onClick={() => setActiveStage(idx)}
                 className={cn(
-                  "w-full rounded-xl border p-3.5 text-left transition-all duration-150 shadow-2xs",
+                  "w-full rounded-xl border p-4 text-left transition-all duration-150 shadow-2xs",
                   isActive
                     ? "border-blue-500 bg-blue-50/60 shadow-xs ring-2 ring-blue-100"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50",
@@ -267,7 +267,7 @@ export default function PipelinePage() {
 
           {/* Data Contracts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
                 INGESTION PAYLOAD CONTRACT (INPUT)
               </span>
@@ -276,7 +276,7 @@ export default function PipelinePage() {
               </pre>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
                 DECISION RESPONSE CONTRACT (OUTPUT)
               </span>

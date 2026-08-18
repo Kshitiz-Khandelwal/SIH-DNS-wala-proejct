@@ -162,7 +162,7 @@ export default function ModelsRationalePage() {
   const [selectedArch, setSelectedArch] = useState<string>("Random Forest (150 Trees)");
 
   return (
-    <div className="w-full space-y-8 pb-12">
+    <div className="w-full space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between border-b border-slate-200 pb-5">
         <div>

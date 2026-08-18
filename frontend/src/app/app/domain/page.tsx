@@ -55,7 +55,7 @@ function DomainDetailContent() {
   if (!event) return null;
 
   return (
-    <div className="w-full space-y-6 pb-8">
+    <div className="w-full space-y-6 pb-12">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
           <Link
@@ -103,7 +103,7 @@ function DomainDetailContent() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {Object.entries(event.lexical_features).map(([k, v]) => (
-              <div key={k} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+              <div key={k} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <span className="text-[11px] text-slate-500 block capitalize">{k.replace(/_/g, " ")}</span>
                 <span className="font-mono text-sm font-bold text-slate-900 mt-0.5 block">{typeof v === "number" ? v.toFixed(3) : String(v)}</span>
               </div>

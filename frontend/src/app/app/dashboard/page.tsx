@@ -108,7 +108,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="w-full space-y-6 pb-8">
+    <div className="w-full space-y-6 pb-12">
       {/* 1. 4-Column Stat Cards */}
       <StatCardGrid items={statItems} />
 

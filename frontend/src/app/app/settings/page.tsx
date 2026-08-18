@@ -183,7 +183,7 @@ export default function SettingsPage() {
         </div>
 
         {simResult && (
-          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/60 p-3 font-mono text-xs text-blue-900 font-semibold">
+          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/60 p-4 font-mono text-xs text-blue-900 font-semibold">
             {simResult}
           </div>
         )}

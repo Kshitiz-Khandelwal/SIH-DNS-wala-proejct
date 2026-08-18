@@ -86,8 +86,8 @@ export default function QueuePage() {
 
       {/* KPI Stats */}
       {stats && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               ALLOWED (24H)
             </span>
@@ -95,7 +95,7 @@ export default function QueuePage() {
               {stats.allowed_24h.toLocaleString()}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               FLAGGED (24H)
             </span>
@@ -103,7 +103,7 @@ export default function QueuePage() {
               {stats.flagged_24h.toLocaleString()}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               BLOCKED (24H)
             </span>
@@ -111,7 +111,7 @@ export default function QueuePage() {
               {stats.blocked_24h.toLocaleString()}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
               OPEN INCIDENTS
             </span>

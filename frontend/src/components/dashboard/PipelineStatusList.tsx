@@ -38,7 +38,7 @@ export function PipelineStatusList({ items = engines }: { items?: PipelineEngine
         {items.map((s) => (
           <div
             key={s.stage}
-            className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-3.5 py-2 text-xs"
+            className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-4 py-2 text-xs"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
