@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
   const maxTraffic = Math.max(...HOURLY_TRAFFIC.map((t) => t.allowed + t.flagged + t.blocked));
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+    <div className="w-full space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between border-b border-slate-200 pb-5">
         <div>

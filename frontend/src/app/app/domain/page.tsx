@@ -55,7 +55,7 @@ function DomainDetailContent() {
   if (!event) return null;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-8">
+    <div className="w-full space-y-6 pb-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
           <Link

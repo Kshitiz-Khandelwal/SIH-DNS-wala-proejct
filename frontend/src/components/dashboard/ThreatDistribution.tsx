@@ -1,51 +1,79 @@
-﻿import React from "react";
-import { Flame } from "lucide-react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
-interface ThreatCategory {
-  name: string;
-  count: string;
-  pct: number;
-  indicatorColor: string;
+interface ThreatSegment {
+  w: string;
+  c: string;
 }
 
-const defaultThreats: ThreatCategory[] = [
-  { name: "DGA Domain Generation", count: "3,142", pct: 44, indicatorColor: "bg-rose-500" },
-  { name: "Typosquatting & Homoglyphs", count: "1,980", pct: 28, indicatorColor: "bg-amber-500" },
-  { name: "DNS Data Exfiltration (Tunnel)", count: "1,120", pct: 16, indicatorColor: "bg-purple-500" },
-  { name: "C2 Command & Control Beacon", count: "852", pct: 12, indicatorColor: "bg-blue-600" },
+interface ThreatBarItem {
+  label: string;
+  percent: string;
+  segments: ThreatSegment[];
+}
+
+const defaultThreats: ThreatBarItem[] = [
+  {
+    label: "DGA Domains",
+    percent: "35%",
+    segments: [
+      { w: "40%", c: "bg-blue-500" },
+      { w: "35%", c: "bg-amber-400" },
+      { w: "15%", c: "bg-rose-500" },
+      { w: "10%", c: "bg-slate-200" },
+    ],
+  },
+  {
+    label: "Homoglyph Phishing",
+    percent: "25%",
+    segments: [
+      { w: "50%", c: "bg-blue-500" },
+      { w: "30%", c: "bg-amber-400" },
+      { w: "20%", c: "bg-slate-200" },
+    ],
+  },
+  {
+    label: "Data Exfiltration",
+    percent: "15%",
+    segments: [
+      { w: "30%", c: "bg-blue-500" },
+      { w: "25%", c: "bg-amber-400" },
+      { w: "20%", c: "bg-rose-500" },
+      { w: "25%", c: "bg-slate-200" },
+    ],
+  },
 ];
 
-export function ThreatDistribution({ data = defaultThreats }: { data?: ThreatCategory[] }) {
+export function ThreatDistribution({ data = defaultThreats }: { data?: ThreatBarItem[] }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 pb-4">
-        <div className="flex items-center gap-2">
-          <Flame className="h-4 w-4 text-rose-500" />
-          <CardTitle className="text-sm font-bold">Threat Distribution</CardTitle>
+    <Card className="rounded-xl border border-slate-200 p-6 shadow-xs bg-white">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono block">
+            CLASSIFICATION
+          </span>
+          <h2 className="text-sm font-bold text-slate-900 mt-0.5">Threat Distribution</h2>
         </div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
           Past 24h
         </span>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-5">
+      </div>
+
+      <div className="space-y-5">
         {data.map((item) => (
-          <div key={item.name} className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-slate-700">{item.name}</span>
-              <span className="font-mono font-bold text-slate-900">
-                {item.count} ({item.pct}%)
-              </span>
+          <div key={item.label}>
+            <div className="flex justify-between items-end mb-2">
+              <span className="text-xs font-semibold text-slate-700">{item.label}</span>
+              <span className="text-xs font-mono font-bold text-slate-900">{item.percent}</span>
             </div>
-            <Progress
-              value={item.pct}
-              className="h-2"
-              indicatorClassName={item.indicatorColor}
-            />
+            <div className="flex h-2.5 w-full gap-0.5 rounded-full overflow-hidden bg-slate-100">
+              {item.segments.map((seg, i) => (
+                <div key={i} className={`h-full ${seg.c}`} style={{ width: seg.w }} />
+              ))}
+            </div>
           </div>
         ))}
-      </CardContent>
+      </div>
     </Card>
   );
 }

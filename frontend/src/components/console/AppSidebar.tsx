@@ -1,22 +1,21 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Activity,
   Brain,
   Database,
   LayoutDashboard,
-  List,
-  LogOut,
+  FileText,
   Monitor,
   Radio,
   Settings,
   Shield,
   Zap,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { logout } from "@/lib/auth";
 
 interface NavGroup {
   label: string;
@@ -31,8 +30,8 @@ const navGroups: NavGroup[] = [
   {
     label: "MONITORING",
     items: [
-      { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/app/queue", label: "Live Queries", icon: Radio },
+      { href: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/app/queue", label: "Live Traffic", icon: Radio },
       { href: "/app/analytics", label: "Analytics", icon: Activity },
     ],
   },
@@ -40,15 +39,16 @@ const navGroups: NavGroup[] = [
     label: "DETECTION & ML",
     items: [
       { href: "/app/pipeline", label: "Pipeline", icon: Zap },
-      { href: "/app/threats", label: "Threat Intel", icon: Database },
-      { href: "/app/xai", label: "XAI Analysis", icon: Brain },
+      { href: "/app/threats", label: "Threat Models", icon: Database },
+      { href: "/app/xai", label: "XAI Anomalies", icon: Brain },
+      { href: "/app/models", label: "Model Rationale", icon: BookOpen },
     ],
   },
   {
     label: "MANAGEMENT",
     items: [
       { href: "/app/devices", label: "Devices", icon: Monitor },
-      { href: "/app/reports", label: "Reports", icon: List },
+      { href: "/app/reports", label: "Reports & Policies", icon: FileText },
       { href: "/app/settings", label: "Settings", icon: Settings },
     ],
   },
@@ -56,99 +56,74 @@ const navGroups: NavGroup[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  function handleLogout() {
-    logout();
-    router.push("/login");
-  }
 
   return (
     <>
-      {/* Desktop Sidebar â€” 240px fixed width, sidebar-06 pattern */}
-      <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-200/80 bg-white shadow-xs md:flex h-screen">
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-[240px] bg-white border-r border-slate-200 flex-col shrink-0 z-10 md:flex h-screen select-none shadow-xs">
         {/* Brand Header */}
-        <div className="flex h-16 items-center border-b border-slate-100 px-5">
-          <Link href="/app/dashboard" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
-              <Shield className="h-5 w-5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-sans text-sm font-bold tracking-tight text-slate-900 leading-tight">
-                DNS SHIELD
-              </span>
-              <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase leading-tight mt-0.5">
-                AI Threat Defense
-              </span>
-            </div>
-          </Link>
+        <div className="p-5 flex items-center gap-2.5 border-b border-slate-100">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L3 6V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V6L12 2ZM12 10.99H20C19.53 15.34 16.29 19.16 12 20.35V10.99H4V7.3L12 4.34V10.99Z" />
+            </svg>
+          </div>
+          <div>
+            <span className="font-bold text-base tracking-tight text-slate-900 block leading-tight">DNS Shield</span>
+            <span className="font-mono text-[9px] font-bold text-blue-600 uppercase tracking-wider block">Threat Defense</span>
+          </div>
         </div>
 
-        {/* Grouped Nav Items */}
-        <nav className="flex-1 space-y-6 overflow-y-auto p-4">
+        {/* Nav List */}
+        <nav className="flex-1 px-3 py-5 space-y-6 overflow-y-auto">
           {navGroups.map((group) => (
-            <div key={group.label} className="space-y-1">
-              <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div key={group.label}>
+              <h3 className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 font-mono">
                 {group.label}
-              </div>
-              {group.items.map(({ href, label, icon: Icon }) => {
-                const active =
-                  pathname === href ||
-                  (href !== "/app" && pathname.startsWith(href + "/"));
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-                      active
-                        ? "bg-slate-100 font-semibold text-blue-600 shadow-2xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                    )}
-                  >
-                    <Icon
+              </h3>
+              <div className="space-y-1">
+                {group.items.map(({ href, label, icon: Icon }) => {
+                  const active =
+                    pathname === href ||
+                    (href !== "/app" && pathname.startsWith(href + "/"));
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
                       className={cn(
-                        "h-[18px] w-[18px] shrink-0",
-                        active ? "text-blue-600" : "text-slate-400",
+                        "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150",
+                        active
+                          ? "bg-blue-50 text-blue-700 font-bold border border-blue-200/70 shadow-2xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
                       )}
-                    />
-                    <span>{label}</span>
-                  </Link>
-                );
-              })}
+                    >
+                      {active ? (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] shrink-0" />
+                      ) : (
+                        <Icon className="w-4 h-4 text-slate-400 shrink-0" />
+                      )}
+                      <span>{label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </nav>
 
-        {/* Footer Area */}
-        <div className="border-t border-slate-100 p-4 space-y-3 bg-slate-50/50">
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-3">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                SYSTEM PROTECTED
-              </span>
+        {/* Bottom Status Box */}
+        <div className="p-3.5 m-3 mt-auto bg-slate-50 rounded-xl border border-slate-200/80">
+          <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[11px] font-bold text-slate-800">Uptime: 99.8%</span>
+              <span className="font-mono text-[10px] text-slate-400">Model v1.0.3 · Online</span>
             </div>
-            <p className="mt-1 text-xs text-emerald-700 font-medium">All 7 pipeline stages active</p>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           </div>
-
-          <div className="flex items-center justify-between px-1 text-xs text-slate-500">
-            <span>DNS Shield v2.6.1</span>
-            <span className="font-mono text-[11px] text-slate-400">Build 5578</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-900"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Sign out
-          </button>
         </div>
       </aside>
 
-      {/* Mobile Bottom Tab Bar */}
+      {/* Mobile Nav */}
       <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-slate-200 bg-white md:hidden">
         {navGroups[0].items.concat(navGroups[1].items.slice(0, 2)).map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -74,77 +74,41 @@ export default function DashboardPage() {
 
   const statItems: StatItem[] = [
     {
-      label: "TOTAL QUERIES ALLOWED",
-      value: stats ? stats.allowed_24h : 12849,
-      sublabel: "99.2% clean traffic",
-      trend: "+3.8%",
+      label: "CLEAN QUERIES",
+      value: stats ? stats.allowed_24h : "16,971",
+      sublabel: "99.2% benign corporate traffic",
+      trend: "+4.2%",
       trendDirection: "up",
       variant: "allow",
     },
     {
-      label: "SUSPICIOUS FLAGGED",
-      value: stats ? stats.flagged_24h : 344,
+      label: "FLAGGED",
+      value: stats ? stats.flagged_24h : "10,807",
       sublabel: "Heuristic review queue",
-      trend: "-1.4%",
-      trendDirection: "down",
+      trend: "+3.7%",
+      trendDirection: "up",
       variant: "flag",
     },
     {
-      label: "THREATS BLOCKED",
-      value: stats ? stats.blocked_24h : 92,
+      label: "BLOCKED",
+      value: stats ? stats.blocked_24h : "8,007",
       sublabel: "Zero-day DGA & Tunnelling",
-      trend: "+0.8%",
-      trendDirection: "up",
+      trend: "-0.2%",
+      trendDirection: "down",
       variant: "block",
     },
     {
-      label: "ACTIVE INCIDENTS",
-      value: stats ? stats.open_incidents : 17,
-      sublabel: "Requires SOC review",
-      trend: "0 pending",
-      trendDirection: "neutral",
+      label: "TOTAL QUERIES",
+      value: stats ? (stats.allowed_24h + stats.flagged_24h + stats.blocked_24h) : "20,028",
+      sublabel: "Active resolver throughput",
+      trend: "+4.2%",
+      trendDirection: "up",
       variant: "neutral",
     },
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-8">
-      {/* Top Title Banner */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-slate-200/80 pb-5">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl font-sans">
-              DNS Threat Defense Overview
-            </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-xs font-semibold text-emerald-800 shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live Interceptor Active
-            </span>
-          </div>
-          <p className="mt-1.5 text-sm text-slate-600">
-            Real-time heuristic & machine learning pipeline monitoring recursive DNS queries.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={loadData}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:border-slate-300"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin text-blue-600")} />
-            Refresh
-          </button>
-          <Link
-            href="/app/queue"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
-          >
-            View Live Stream
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      </div>
-
+    <div className="w-full space-y-6 pb-8">
       {/* 1. 4-Column Stat Cards */}
       <StatCardGrid items={statItems} />
 
