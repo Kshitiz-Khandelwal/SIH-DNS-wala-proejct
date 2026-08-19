@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Bell, UserCircle } from "lucide-react";
 
 export function AppHeader() {
   const pathname = usePathname();
@@ -32,30 +33,47 @@ export function AppHeader() {
     (pathname.startsWith("/app/domain") ? "Domain Inspector" : "DNS Shield");
 
   return (
-    <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 md:px-8 sticky top-0 z-20 shadow-2xs">
-      <h1 className="text-xl font-bold text-slate-900 tracking-tight">{pageTitle}</h1>
-      
-      <div className="flex items-center gap-4 sm:gap-6">
-        {/* Status Pill */}
-        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100 shadow-2xs">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] font-bold text-emerald-700 tracking-wide uppercase font-mono">
-            Resolver Operational
+    /* Stitch: sticky top-0 z-40, h-[64px], bg-surface/80, backdrop-blur-md, border-b */
+    <header className="sticky top-0 h-16 w-full z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 flex justify-between items-center px-8 shadow-2xs">
+      {/* Left: Title + operational badge */}
+      <div className="flex items-center gap-5">
+        <h2 className="text-[18px] font-bold text-blue-700 tracking-tight leading-none">{pageTitle}</h2>
+        {/* Stitch: resolver operational pill */}
+        <div className="hidden lg:flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="super-heading text-emerald-700 tracking-wider">RESOLVER OPERATIONAL</span>
+        </div>
+      </div>
+
+      {/* Right: QPS counter + notification + user */}
+      <div className="flex items-center gap-5">
+        {/* Stitch: QPS box with sparkline */}
+        <div className="hidden md:flex items-center gap-3 bg-slate-50 border border-slate-200 rounded px-4 py-1.5 technical-shadow">
+          <span className="super-heading text-slate-400">LIVE QPS</span>
+          <span className="mono-number text-[13px] font-bold text-slate-900">
+            {mounted ? qps.toLocaleString() : "13,285"} Q/s
           </span>
+          <svg className="w-12 h-4 text-blue-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 50 20">
+            <path d="M0 10 Q 5 5, 10 10 T 20 10 T 30 15 T 40 5 T 50 10" strokeLinecap="round" strokeWidth="1.5" />
+          </svg>
         </div>
 
-        {/* Live QPS with Sparkline */}
-        <div className="hidden sm:flex items-center gap-4 pl-5 border-l border-slate-200">
-          <div className="flex flex-col text-right">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">Live QPS</span>
-            <span className="text-sm font-bold font-mono tracking-tight text-slate-900">
-              {mounted ? qps.toLocaleString() : "13,285"}{" "}
-              <span className="text-xs font-sans text-slate-400 font-normal">Q/s</span>
-            </span>
-          </div>
-          <svg className="w-12 h-6 text-blue-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M0 20 L20 15 L40 25 L60 10 L80 18 L100 5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        {/* Icon actions */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="text-slate-400 hover:text-blue-600 transition-colors"
+          >
+            <Bell className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Account"
+            className="text-slate-400 hover:text-blue-600 transition-colors"
+          >
+            <UserCircle className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </header>

@@ -16,6 +16,8 @@ import {
   BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logout } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 interface NavGroup {
   label: string;
@@ -56,32 +58,42 @@ const navGroups: NavGroup[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function handleLogout() {
+    logout();
+    router.push("/login");
+  }
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-[240px] bg-white border-r border-slate-200 flex-col shrink-0 z-10 md:flex h-screen select-none shadow-xs">
+      {/* Desktop Sidebar — Stitch layout: fixed, full-height, white, left border */}
+      <aside className="hidden w-[240px] bg-white border-r border-slate-200 flex-col shrink-0 z-50 md:flex h-screen select-none fixed left-0 top-0">
         {/* Brand Header */}
-        <div className="p-5 flex items-center gap-2.5 border-b border-slate-100">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L3 6V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V6L12 2ZM12 10.99H20C19.53 15.34 16.29 19.16 12 20.35V10.99H4V7.3L12 4.34V10.99Z" />
-            </svg>
+        <div className="px-6 py-5 flex items-center gap-3 border-b border-slate-100">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white shadow-xs shrink-0">
+            <Shield className="h-4 w-4" />
           </div>
           <div>
-            <span className="font-bold text-base tracking-tight text-slate-900 block leading-tight">DNS Shield</span>
-            <span className="font-mono text-[9px] font-bold text-blue-600 uppercase tracking-wider block">Threat Defense</span>
+            <h1 className="font-bold text-[17px] text-blue-700 leading-tight tracking-tight">DNS Shield</h1>
+            <p className="font-mono text-[9px] text-slate-400 tracking-widest">v2.6 · Enterprise</p>
           </div>
         </div>
 
-        {/* Nav List */}
-        <nav className="flex-1 px-3 py-5 space-y-6 overflow-y-auto">
+        {/* Operational status pill */}
+        <div className="px-6 py-3 border-b border-slate-100">
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full px-3 py-1 w-max">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="super-heading text-emerald-700">System Operational</span>
+          </div>
+        </div>
+
+        {/* Nav groups */}
+        <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
           {navGroups.map((group) => (
             <div key={group.label}>
-              <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 font-mono">
-                {group.label}
-              </h3>
-              <div className="space-y-1">
+              <h3 className="super-heading text-slate-400 px-4 mb-1.5">{group.label}</h3>
+              <div className="space-y-0.5">
                 {group.items.map(({ href, label, icon: Icon }) => {
                   const active =
                     pathname === href ||
@@ -91,17 +103,13 @@ export function AppSidebar() {
                       key={href}
                       href={href}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150",
+                        "flex items-center gap-3 px-4 py-2 text-[13px] font-medium transition-all duration-120 rounded-r",
                         active
-                          ? "bg-blue-50 text-blue-700 font-bold border border-blue-200/70 shadow-2xs"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                          ? "nav-link-active"
+                          : "nav-link-idle",
                       )}
                     >
-                      {active ? (
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] shrink-0" />
-                      ) : (
-                        <Icon className="w-4 h-4 text-slate-400 shrink-0" />
-                      )}
+                      <Icon className={cn("h-4 w-4 shrink-0", active ? "text-blue-600" : "text-slate-400")} />
                       <span>{label}</span>
                     </Link>
                   );
@@ -111,19 +119,28 @@ export function AppSidebar() {
           ))}
         </nav>
 
-        {/* Bottom Status Box */}
-        <div className="p-4 m-3 mt-auto bg-slate-50 rounded-xl border border-slate-200/80">
-          <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
-            <div className="flex flex-col gap-0.5">
-              <span className="font-mono text-[11px] font-bold text-slate-800">Uptime: 99.8%</span>
-              <span className="font-mono text-[10px] text-slate-500">Model v1.0.3 · Online</span>
+        {/* Bottom: status box + logout */}
+        <div className="border-t border-slate-100 px-3 py-3 space-y-1">
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col gap-0.5">
+                <span className="mono-number text-[11px] font-bold text-slate-800">Uptime: 99.8%</span>
+                <span className="mono-number text-[10px] text-slate-400">Model v1.0.3 · Online</span>
+              </div>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             </div>
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-2 w-full px-4 py-2 text-[12px] text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors"
+          >
+            <span className="text-[14px]">↪</span> Sign out
+          </button>
         </div>
       </aside>
 
-      {/* Mobile Nav */}
+      {/* Mobile bottom tab bar */}
       <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-slate-200 bg-white md:hidden">
         {navGroups[0].items.concat(navGroups[1].items.slice(0, 2)).map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
@@ -133,7 +150,7 @@ export function AppSidebar() {
               href={href}
               className={cn(
                 "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium",
-                active ? "text-blue-600 font-semibold" : "text-slate-500",
+                active ? "text-blue-600 font-semibold" : "text-slate-400",
               )}
             >
               <Icon className="h-4 w-4" />

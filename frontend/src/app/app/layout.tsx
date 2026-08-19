@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -31,11 +31,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isFlush = pathname === "/app/pipeline";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50/50">
+    /* Stitch: ml-[240px] offset for fixed sidebar, min-h-screen, dot-grid background */
+    <div className="flex min-h-screen bg-slate-50 dot-grid">
       <AppSidebar />
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+      {/* Main area offset by fixed sidebar width */}
+      <div className="flex flex-1 flex-col min-h-screen md:ml-[240px]">
         <AppHeader />
-        <main className={isFlush ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto p-6 md:p-8"}>
+        <main className={isFlush ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto p-6 md:p-8 pb-12"}>
           {children}
         </main>
       </div>
