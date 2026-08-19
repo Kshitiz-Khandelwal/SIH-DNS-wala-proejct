@@ -5,6 +5,7 @@ import { getEvents, getStats } from "@/lib/api";
 import type { QueryResult, PipelineStage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Zap, Activity, CheckCircle2, ShieldAlert, Layers, Server, Cpu, Database, Network, ArrowRight } from "lucide-react";
+import { PipelineFlowStrip } from "@/components/PipelineFlowStrip";
 
 // ─── Exhaustive Stage Metadata & Documentation ───────────────
 const STAGE_SPECS = [
@@ -164,38 +165,49 @@ export default function PipelinePage() {
             const color = statusColor(stageContrib);
 
             return (
-              <button
-                key={stage.num}
-                onClick={() => setActiveStage(idx)}
-                className={cn(
-                  "w-full rounded-xl border p-4 text-left transition-all duration-150 shadow-2xs",
-                  isActive
-                    ? "border-blue-500 bg-blue-50/60 shadow-xs ring-2 ring-blue-100"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50",
+              <div key={stage.num}>
+                {idx > 0 && (
+                  <div className="flex justify-start pl-[38px] py-0.5">
+                    <div
+                      className={cn(
+                        "stage-connector h-3 transition-colors duration-300",
+                        idx <= activeStage ? "bg-blue-300" : "",
+                      )}
+                    />
+                  </div>
                 )}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className={cn("font-mono text-[11px] font-bold", isActive ? "text-blue-700" : "text-slate-400")}>
-                        STAGE {stage.num}
-                      </span>
-                      <span className="font-mono text-[10px] text-slate-500">:{stage.port}</span>
+                <button
+                  onClick={() => setActiveStage(idx)}
+                  className={cn(
+                    "w-full rounded-xl border p-4 text-left transition-all duration-150 shadow-2xs",
+                    isActive
+                      ? "border-blue-500 bg-blue-50/60 shadow-xs ring-2 ring-blue-100"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("font-mono text-[11px] font-bold", isActive ? "text-blue-700" : "text-slate-400")}>
+                          STAGE {stage.num}
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500">:{stage.port}</span>
+                      </div>
+                      <div className={cn("text-xs font-bold mt-0.5 line-clamp-1", isActive ? "text-slate-900" : "text-slate-700")}>
+                        {stage.shortName}
+                      </div>
                     </div>
-                    <div className={cn("text-xs font-bold mt-0.5 line-clamp-1", isActive ? "text-slate-900" : "text-slate-700")}>
-                      {stage.shortName}
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-[10px] font-bold uppercase tracking-wider" style={{ color }}>
+                        {label}
+                      </div>
+                      <div className="font-mono text-[11px] font-bold mt-0.5 text-slate-600">
+                        {stage.latency}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-mono text-[10px] font-bold uppercase tracking-wider" style={{ color }}>
-                      {label}
-                    </div>
-                    <div className="font-mono text-[11px] font-bold mt-0.5 text-slate-600">
-                      {stage.latency}
-                    </div>
-                  </div>
-                </div>
-              </button>
+                </button>
+              </div>
             );
           })}
         </div>
@@ -230,6 +242,17 @@ export default function PipelinePage() {
 
         {/* Content Body */}
         <div className="p-8 space-y-6 w-full">
+          {/* Live Cascade Flow Diagram */}
+          <PipelineFlowStrip
+            stages={STAGE_SPECS.map((s, idx) => ({
+              num: s.num,
+              shortName: s.shortName.split(" ").slice(0, 2).join(" "),
+              contribution: latestEvent?.pipeline?.[idx]?.contribution ?? (idx === 3 ? 31 : 0),
+            }))}
+            activeIndex={activeStage}
+            onSelect={setActiveStage}
+          />
+
           {/* Description Card */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
@@ -283,6 +306,43 @@ export default function PipelinePage() {
               <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 overflow-x-auto">
                 {spec.outputSchema}
               </pre>
+            </div>
+          </div>
+
+          {/* Stage Impact on Final Verdict */}
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-5">
+              THIS STAGE'S IMPACT ON LATEST EVALUATED QUERY
+            </span>
+
+            <div className="space-y-5">
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-semibold text-slate-700">Risk Contribution</span>
+                  <span className="font-mono font-bold" style={{ color: statusColor(contrib) }}>
+                    {contrib}%
+                  </span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${contrib}%`, backgroundColor: statusColor(contrib) }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-semibold text-slate-700">Latency Budget (of ~5.7ms total pipeline)</span>
+                  <span className="font-mono font-bold text-blue-600">{spec.latency}</span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-blue-500 transition-all duration-700 ease-out"
+                    style={{ width: `${Math.min((parseFloat(spec.latency) / 5.7) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
