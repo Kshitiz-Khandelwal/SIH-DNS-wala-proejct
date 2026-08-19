@@ -67,8 +67,8 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar — Stitch layout: fixed, full-height, white, left border */}
-      <aside className="hidden w-[240px] bg-white border-r border-slate-200 flex-col shrink-0 z-50 md:flex h-screen select-none fixed left-0 top-0">
+      {/* Desktop Sidebar — Clean sticky flex sidebar (prevents overlap) */}
+      <aside className="hidden w-[240px] bg-white border-r border-slate-200 flex-col shrink-0 z-30 md:flex h-screen select-none sticky top-0">
         {/* Brand Header */}
         <div className="px-6 py-5 flex items-center gap-3 border-b border-slate-100">
           <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white shadow-xs shrink-0">

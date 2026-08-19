@@ -31,11 +31,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isFlush = pathname === "/app/pipeline";
 
   return (
-    /* Stitch: ml-[240px] offset for fixed sidebar, min-h-screen, dot-grid background */
-    <div className="flex min-h-screen bg-slate-50 dot-grid">
+    <div className="flex h-screen overflow-hidden bg-slate-50 dot-grid">
       <AppSidebar />
-      {/* Main area offset by fixed sidebar width */}
-      <div className="flex flex-1 flex-col min-h-screen md:ml-[240px]">
+      <div className="flex flex-1 flex-col h-screen overflow-hidden min-w-0">
         <AppHeader />
         <main className={isFlush ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto p-6 md:p-8 pb-12"}>
           {children}
