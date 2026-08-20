@@ -1,5 +1,8 @@
 # DNS Shield: Machine Learning Dataset & Training Specifications
 
+> **See also**: Full auditable documentation in [DATASET_CARD.md](./DATASET_CARD.md) · [MODEL_CARD.md](./MODEL_CARD.md) · [BENCHMARK_RESULTS.md](./BENCHMARK_RESULTS.md)
+
+
 ## 1. Dataset Overview & Corpus Size
 
 | Dimension | Specification | Notes |
