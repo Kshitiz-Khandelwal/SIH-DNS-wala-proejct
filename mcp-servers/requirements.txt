@@ -1,0 +1,7 @@
+"""
+DNS Shield MCP Servers — Dependencies
+Install with: pip install -r mcp-servers/requirements.txt
+"""
+
+mcp>=1.0.0
+httpx>=0.27.0
