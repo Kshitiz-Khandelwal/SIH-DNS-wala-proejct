@@ -118,25 +118,63 @@
 <!-- Background Dot Grid -->
 <div class="fixed inset-0 pointer-events-none dot-grid z-0"></div>
 <!-- SideNavBar (from JSON) -->
-<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface dark:bg-inverse-surface border-r border-outline-variant dark:border-outline flex flex-col gap-sm py-lg z-20">
-<div class="px-md mb-md">
-<h1 class="font-display-lg text-display-lg font-bold text-primary dark:text-primary-fixed-dim tracking-tight">DNS Shield</h1>
-<p class="font-super-heading text-super-heading text-on-surface-variant dark:text-outline uppercase mt-xs tracking-widest">Enterprise Security</p>
-</div>
-<ul class="flex flex-col gap-xs flex-1 px-sm">
-<li><a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 py-sm px-md rounded-DEFAULT" href="index.html"><span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 0;">dashboard</span> Overview</a></li>
-<li><a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 py-sm px-md rounded-DEFAULT" href="index.html"><span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 0;">security</span> Threat Hunter</a></li>
-<li><a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 py-sm px-md rounded-DEFAULT" href="index.html"><span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 0;">psychology</span> AI Insights</a></li>
-<li><a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 py-sm px-md rounded-DEFAULT" href="index.html"><span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 0;">error</span> Anomalies</a></li>
-<li><a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 py-sm px-md rounded-DEFAULT" href="index.html"><span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 0;">rule</span> DNS Rules</a></li>
-<li><a class="flex items-center gap-md bg-primary-container/10 text-primary font-bold border-l-2 border-primary py-sm px-md rounded-r-DEFAULT" href="index.html"><span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">settings</span> Settings</a></li>
-</ul>
-<div class="px-md mt-auto flex items-center gap-sm">
-<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-headline-md text-headline-md">U</div>
-<div class="flex-1 min-w-0">
-<p class="font-body-sm text-body-sm text-on-surface-variant truncate">User Profile</p>
-</div>
-</div>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col h-full py-6 z-50">
+    <div class="px-6 mb-8 flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-[20px]" data-icon="shield">shield</span>
+        </div>
+        <div>
+            <h1 class="text-headline-md font-headline-md text-primary font-bold">DNS Shield</h1>
+            <p class="text-[10px] font-mono-data text-outline">v2.6.0-Live</p>
+        </div>
+    </div>
+    <div class="px-6 mb-6">
+        <div class="flex items-center gap-2 bg-secondary-container/20 text-secondary border border-secondary/20 rounded-full px-3 py-1 w-max">
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span class="text-[10px] font-super-heading uppercase tracking-wider">System Operational</span>
+        </div>
+    </div>
+    <div class="flex-1 px-3 space-y-1">
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="index.html">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            Overview
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="pipeline.html">
+            <span class="material-symbols-outlined text-[20px]">bolt</span>
+            Pipeline
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="threats.html">
+            <span class="material-symbols-outlined text-[20px]">security</span>
+            Threat Intel
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="xai.html">
+            <span class="material-symbols-outlined text-[20px]">psychology</span>
+            XAI Telemetry
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="models.html">
+            <span class="material-symbols-outlined text-[20px]">menu_book</span>
+            Model Rationale
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="devices.html">
+            <span class="material-symbols-outlined text-[20px]">devices</span>
+            Devices Fleet
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="analytics.html">
+            <span class="material-symbols-outlined text-[20px]">analytics</span>
+            Analytics
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 border-l-2 border-primary bg-primary-container/10 text-primary font-bold rounded-r" href="reports.html">
+            <span class="material-symbols-outlined text-[20px]">description</span>
+            Reports
+        </a>
+    </div>
+    <div class="px-3 mt-auto space-y-1">
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r" href="/app/dashboard">
+            <span class="material-symbols-outlined text-[20px]">sync_alt</span>
+            Switch to React Console
+        </a>
+    </div>
 </nav>
 <!-- TopNavBar (from JSON) -->
 <header class="sticky top-0 right-0 w-[calc(100%-240px)] ml-[240px] z-50 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-md border-b border-outline-variant dark:border-outline flex justify-between items-center h-16 px-margin-desktop shadow-none">

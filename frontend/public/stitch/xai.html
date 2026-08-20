@@ -113,54 +113,63 @@
 </head>
 <body class="bg-background text-on-surface font-body-sm grid-bg min-h-screen">
 <!-- SideNavBar -->
-<nav class="fixed left-0 top-0 h-full w-[240px] flex flex-col py-lg border-r border-outline-variant bg-surface z-50">
-<div class="px-md mb-8">
-<div class="text-headline-md font-headline-md text-primary flex items-center gap-2">
-<img class="w-8 h-8 rounded" data-alt="A stylized minimalist shield icon representing DNS security, using deep blue and pristine white, highly detailed and corporate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBY4HjazIGFwEDKHx1PbDwDH1SqlmmCn8G7IuSzBQ9wpplVUmfFjlN3g4LzqmxLRXz2QTzv0oEqDnEOlWj9oqaD-R9h8fP8qskzeNAxSbV5DjxPxdY_ZlF5_w9ir9FrZq-AHv-nNB4ULWYpmslBUAgeFbobnuBcXTbkmorv_9je_tIr8e-YvWiBqOlqi9WAcLildS6MNSRg0kBV88kmM4lxgd3uotIO4c5eiDtZhceMDVPMHRZVJe8M"/>
-<span class="font-bold">DNS Shield</span>
-</div>
-<div class="text-body-sm font-body-sm text-on-surface-variant mt-1">v2.4.0-Enterprise</div>
-</div>
-<div class="flex-1 flex flex-col gap-1 px-2">
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">dashboard</span>
-<span class="text-body-md font-body-md">Overview</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">security</span>
-<span class="text-body-md font-body-md">Threat Hunter</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-2 border-l-2 border-primary bg-primary-container/10 text-primary font-bold rounded-r transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">psychology</span>
-<span class="text-body-md font-body-md">AI Insights</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">error</span>
-<span class="text-body-md font-body-md">Anomalies</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">settings_ethernet</span>
-<span class="text-body-md font-body-md">DNS Rules</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">settings</span>
-<span class="text-body-md font-body-md">Settings</span>
-</a>
-</div>
-<div class="px-4 py-4 mt-auto">
-<div class="text-body-sm font-body-sm text-secondary-container bg-secondary/10 px-3 py-1.5 rounded-full flex items-center gap-2 mb-4">
-<div class="w-2 h-2 rounded-full bg-secondary"></div>
-        System Operational
-      </div>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">help</span>
-<span class="text-body-md font-body-md">Help</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded transition-colors" href="index.html">
-<span class="material-symbols-outlined text-[20px]">logout</span>
-<span class="text-body-md font-body-md">Logout</span>
-</a>
-</div>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col h-full py-6 z-50">
+    <div class="px-6 mb-8 flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-[20px]" data-icon="shield">shield</span>
+        </div>
+        <div>
+            <h1 class="text-headline-md font-headline-md text-primary font-bold">DNS Shield</h1>
+            <p class="text-[10px] font-mono-data text-outline">v2.6.0-Live</p>
+        </div>
+    </div>
+    <div class="px-6 mb-6">
+        <div class="flex items-center gap-2 bg-secondary-container/20 text-secondary border border-secondary/20 rounded-full px-3 py-1 w-max">
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span class="text-[10px] font-super-heading uppercase tracking-wider">System Operational</span>
+        </div>
+    </div>
+    <div class="flex-1 px-3 space-y-1">
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="index.html">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            Overview
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="pipeline.html">
+            <span class="material-symbols-outlined text-[20px]">bolt</span>
+            Pipeline
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="threats.html">
+            <span class="material-symbols-outlined text-[20px]">security</span>
+            Threat Intel
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 border-l-2 border-primary bg-primary-container/10 text-primary font-bold rounded-r" href="xai.html">
+            <span class="material-symbols-outlined text-[20px]">psychology</span>
+            XAI Telemetry
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="models.html">
+            <span class="material-symbols-outlined text-[20px]">menu_book</span>
+            Model Rationale
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="devices.html">
+            <span class="material-symbols-outlined text-[20px]">devices</span>
+            Devices Fleet
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="analytics.html">
+            <span class="material-symbols-outlined text-[20px]">analytics</span>
+            Analytics
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="reports.html">
+            <span class="material-symbols-outlined text-[20px]">description</span>
+            Reports
+        </a>
+    </div>
+    <div class="px-3 mt-auto space-y-1">
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r" href="/app/dashboard">
+            <span class="material-symbols-outlined text-[20px]">sync_alt</span>
+            Switch to React Console
+        </a>
+    </div>
 </nav>
 <!-- TopNavBar -->
 <header class="sticky top-0 h-[64px] w-[calc(100%-240px)] ml-[240px] z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-margin-desktop">
