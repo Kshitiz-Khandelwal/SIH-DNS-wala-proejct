@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import time
 import uuid
 from collections import Counter, defaultdict, deque
@@ -24,7 +25,7 @@ store = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decod
 WINDOW_SECONDS = int(os.getenv("BEHAVIOR_WINDOW_SECONDS", "60"))
 VOLUME_THRESHOLD = int(os.getenv("BEHAVIOR_VOLUME_THRESHOLD", "50"))
 DEVICE_TTL = int(os.getenv("DEVICE_PROFILE_TTL_SECONDS", str(90 * 24 * 3600)))
-recent_queries: dict[str, deque[tuple[float, str]]] = defaultdict(deque)
+recent_queries: dict[str, deque[tuple[float, str, bool]]] = defaultdict(deque)
 
 
 class Observation(BaseModel):
@@ -32,6 +33,7 @@ class Observation(BaseModel):
     client_ip: str = Field(min_length=1, max_length=64)
     ml_probability: float = Field(default=0, ge=0, le=1)
     threat_hit: bool = False
+    nxdomain: bool = False
 
 
 def parent_domain(domain: str) -> str:
@@ -48,7 +50,7 @@ def shannon_entropy(text: str) -> float:
     return -sum((count / len(text)) * math.log2(count / len(text)) for count in counts.values()) if text else 0.0
 
 
-def prune_window(client_ip: str, now: float) -> deque[tuple[float, str]]:
+def prune_window(client_ip: str, now: float) -> deque[tuple[float, str, bool]]:
     window = recent_queries[client_ip]
     while window and window[0][0] < now - WINDOW_SECONDS:
         window.popleft()
@@ -121,12 +123,20 @@ def observe(observation: Observation):
     now = time.time()
     domain = observation.domain.lower().rstrip(".")
     window = prune_window(observation.client_ip, now)
-    window.append((now, domain))
+    window.append((now, domain, observation.nxdomain))
 
     labels = domain.split(".")
     leftmost = labels[0]
-    unique_tlds = {entry.split(".")[-1] for _, entry in window if "." in entry}
-    unique_parents = {parent_domain(entry) for _, entry in window}
+    unique_tlds = {entry.split(".")[-1] for _, entry, _ in window if "." in entry}
+    unique_parents = {parent_domain(entry) for _, entry, _ in window}
+    
+    # Calculate window metrics
+    nxdomain_count = sum(1 for _, _, nx in window if nx)
+    nxdomain_ratio = nxdomain_count / len(window) if window else 0
+    lengths = [len(entry.split(".")[0]) for _, entry, _ in window]
+    avg_len = sum(lengths) / len(lengths) if lengths else 0
+    max_len = max(lengths) if lengths else 0
+
     signals: list[str] = []
     contribution = 0
 
@@ -139,6 +149,21 @@ def observe(observation: Observation):
     if shannon_entropy(leftmost) > 4.1:
         contribution += 10
         signals.append(f"high subdomain entropy ({shannon_entropy(leftmost):.2f}), possible encoded payload")
+    
+    # New heuristics
+    if re.search(r'[A-Za-z0-9+/=]{30,}', leftmost):
+        contribution += 40
+        signals.append("base64-like encoding signature detected")
+    if re.search(r'(?i)[0-9a-f]{30,}', leftmost):
+        contribution += 40
+        signals.append("hex-like encoding signature detected")
+    if nxdomain_ratio >= 0.5 and len(window) > 10:
+        contribution += 45
+        signals.append(f"high NXDOMAIN ratio ({nxdomain_ratio*100:.1f}%), strong DGA/tunnelling indicator")
+    if avg_len >= 25 and len(window) > 10:
+        contribution += 30
+        signals.append(f"high average label length ({avg_len:.1f}), strong tunnelling indicator")
+
     if len(unique_tlds) >= 10:
         contribution += 20
         signals.append(f"rapid TLD fan-out ({len(unique_tlds)} TLDs), possible DGA scanning")

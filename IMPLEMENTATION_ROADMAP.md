@@ -15,7 +15,7 @@
 | [Phase 3](#phase-3-ml-benchmarking--metrics-hardening) | ML Benchmarking & Metrics Hardening | `✅ Complete` | `feat/ml-benchmarks` |
 | [Phase 4](#phase-4-architecture-protocol--deployment-hardening) | Architecture, Protocol & Deployment Hardening | `✅ Complete` | `feat/architecture-hardening` |
 | [Phase 5](#phase-5-ml-engine-improvements) | ML Engine Improvements | `✅ Complete` | `feat/ml-engine-improvements` |
-| [Phase 6](#phase-6-behavioral--tunnelling-engine-improvements) | Behavioral & Tunnelling Engine Improvements | `⏳ Not Started` | — |
+| [Phase 6](#phase-6-behavioral--tunnelling-engine-improvements) | Behavioral & Tunnelling Engine Improvements | `✅ Complete` | `feat/behavioral-engine-upgrade` |
 | [Phase 7](#phase-7-typosquatting-similarity-engine) | Typosquatting Similarity Engine | `⏳ Not Started` | — |
 | [Phase 8](#phase-8-xai--explainability-engine) | XAI & Explainability Engine | `⏳ Not Started` | — |
 | [Phase 9](#phase-9-active-response--safety-controls) | Active Response & Safety Controls | `⏳ Not Started` | — |

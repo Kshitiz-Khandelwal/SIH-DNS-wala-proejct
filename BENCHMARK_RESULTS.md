@@ -106,6 +106,20 @@
 
 Detailed analysis of 150-tree Random Forest vs XGBoost vs LightGBM, as well as tree-count scaling justification, is documented in [PHASE5_ML_BENCHMARKS.md](./docs/PHASE5_ML_BENCHMARKS.md).
 
+---
+
+## 8. DNS Tunnelling & Exfiltration (Behavioral Engine)
+
+Evaluated via `python ml-training/evaluate_tunnelling.py`, simulating a high-volume 60-second sliding window per host.
+
+| Traffic Profile | Expected Risk Score | Actual Risk Score | Detected Signals |
+|---|---|---|---|
+| Normal Browsing (Benign) | < 50 | 0 | None (Normal baseline) |
+| dnscat2 (Hex encoded + NXDOMAIN) | >= 80 | 100 | Long label, Hex-like encoding, High NXDOMAIN ratio (100%), High average label length (48.0) |
+| Base64 Exfiltration | >= 70 | 100 | Base64-like encoding, Suspicious ML Prediction |
+
+**Conclusion:** The addition of a 60-second sliding window tracking NXDOMAIN ratios, average label lengths, and encoding heuristics successfully catches low-and-slow exfiltration channels that evade single-query lexical analysis.
+
 
 ---
 
