@@ -120,6 +120,21 @@ Evaluated via `python ml-training/evaluate_tunnelling.py`, simulating a high-vol
 
 **Conclusion:** The addition of a 60-second sliding window tracking NXDOMAIN ratios, average label lengths, and encoding heuristics successfully catches low-and-slow exfiltration channels that evade single-query lexical analysis.
 
+---
+
+## 9. Typosquatting Similarity Engine (Phase 7)
+
+Added explicit string similarity features to the ML extraction pipeline to replace generic entropy heuristics when detecting brand impersonation.
+
+**New Features:**
+1. `min_levenshtein_to_brand`: Standard edit distance to a curated dictionary of 39 high-value targets.
+2. `min_dameraulevenshtein_to_brand`: Transposition-aware distance (e.g. `goolge.com`).
+3. `has_homoglyph`: Detects Cyrillic and Greek unicode confusable characters commonly used in IDN homograph attacks.
+4. `tld_risk_score`: Heuristic penalty for abuse-heavy TLDs (`.tk`, `.xyz`, etc.).
+
+**Performance Note**: Damerau-Levenshtein calculation is optimized via a length-difference pre-filter (`abs(len_a - len_b) <= 2`) to ensure O(1) latency per query in the inference service.
+
+
 
 ---
 
