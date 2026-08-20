@@ -1,200 +1,97 @@
 <!DOCTYPE html>
-
-<html lang="en"><head>
+<html class="light" lang="en">
+<head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>DNS Shield - AI Insights</title>
+<title>Pipeline Architecture - DNS Shield</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<style>
-    @font-face {
-      font-family: 'Geist';
-      src: url('https://cdn.jsdelivr.net/gh/fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2') format('woff2');
-      font-weight: 400;
-      font-style: normal;
-    }
-    @font-face {
-      font-family: 'Geist';
-      src: url('https://cdn.jsdelivr.net/gh/fontsource/geist-sans@5.0.1/files/geist-sans-latin-600-normal.woff2') format('woff2');
-      font-weight: 600;
-      font-style: normal;
-    }
-    @font-face {
-      font-family: 'Geist';
-      src: url('https://cdn.jsdelivr.net/gh/fontsource/geist-sans@5.0.1/files/geist-sans-latin-700-normal.woff2') format('woff2');
-      font-weight: 700;
-      font-style: normal;
-    }
-    .bg-dot-grid {
-      background-image: radial-gradient(circle, #c3c6d7 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-  </style>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
+tailwind.config = {
+    darkMode: "class",
+    theme: {
         extend: {
-          "colors": {
-                  "error-container": "#ffdad6",
-                  "tertiary-fixed-dim": "#ffb95f",
-                  "inverse-on-surface": "#eef0ff",
-                  "surface-container-lowest": "#ffffff",
-                  "inverse-primary": "#b4c5ff",
-                  "surface-container-highest": "#dae2fd",
-                  "primary": "#004ac6",
-                  "on-surface-variant": "#434655",
-                  "secondary-container": "#6cf8bb",
-                  "on-secondary-fixed": "#002113",
-                  "primary-fixed": "#dbe1ff",
-                  "on-secondary-container": "#00714d",
-                  "surface-tint": "#0053db",
-                  "inverse-surface": "#283044",
-                  "outline-variant": "#c3c6d7",
-                  "tertiary-fixed": "#ffddb8",
-                  "on-primary-fixed": "#00174b",
-                  "on-primary-container": "#eeefff",
-                  "on-primary": "#ffffff",
-                  "outline": "#737686",
-                  "surface-variant": "#dae2fd",
-                  "tertiary-container": "#996100",
-                  "on-secondary-fixed-variant": "#005236",
-                  "surface-bright": "#faf8ff",
-                  "error": "#ba1a1a",
-                  "surface-container-high": "#e2e7ff",
-                  "on-error": "#ffffff",
-                  "secondary-fixed": "#6ffbbe",
-                  "on-tertiary-fixed-variant": "#653e00",
-                  "on-tertiary-container": "#ffeedd",
-                  "secondary": "#006c49",
-                  "on-surface": "#131b2e",
-                  "on-secondary": "#ffffff",
-                  "on-error-container": "#93000a",
-                  "surface-container": "#eaedff",
-                  "surface": "#faf8ff",
-                  "on-primary-fixed-variant": "#003ea8",
-                  "on-tertiary-fixed": "#2a1700",
-                  "primary-container": "#2563eb",
-                  "primary-fixed-dim": "#b4c5ff",
-                  "surface-container-low": "#f2f3ff",
-                  "surface-dim": "#d2d9f4",
-                  "tertiary": "#784b00",
-                  "background": "#faf8ff",
-                  "secondary-fixed-dim": "#4edea3",
-                  "on-tertiary": "#ffffff",
-                  "on-background": "#131b2e"
-          },
-          "borderRadius": {
-                  "DEFAULT": "0.25rem",
-                  "lg": "0.5rem",
-                  "xl": "0.75rem",
-                  "full": "9999px"
-          },
-          "spacing": {
-                  "lg": "24px",
-                  "xl": "32px",
-                  "sm": "8px",
-                  "xs": "4px",
-                  "margin-desktop": "32px",
-                  "gutter": "16px",
-                  "md": "16px",
-                  "base": "4px",
-                  "margin-mobile": "16px"
-          },
-          "fontFamily": {
-                  "display-lg-mobile": [
-                          "Geist"
-                  ],
-                  "headline-md": [
-                          "Geist"
-                  ],
-                  "body-md": [
-                          "Inter"
-                  ],
-                  "body-sm": [
-                          "Inter"
-                  ],
-                  "super-heading": [
-                          "JetBrains Mono"
-                  ],
-                  "display-lg": [
-                          "Geist"
-                  ],
-                  "mono-data": [
-                          "JetBrains Mono"
-                  ]
-          },
-          "fontSize": {
-                  "display-lg-mobile": [
-                          "24px",
-                          {
-                                  "lineHeight": "32px",
-                                  "letterSpacing": "-0.02em",
-                                  "fontWeight": "600"
-                          }
-                  ],
-                  "headline-md": [
-                          "18px",
-                          {
-                                  "lineHeight": "24px",
-                                  "fontWeight": "600"
-                          }
-                  ],
-                  "body-md": [
-                          "14px",
-                          {
-                                  "lineHeight": "20px",
-                                  "fontWeight": "400"
-                          }
-                  ],
-                  "body-sm": [
-                          "12px",
-                          {
-                                  "lineHeight": "18px",
-                                  "fontWeight": "400"
-                          }
-                  ],
-                  "super-heading": [
-                          "10px",
-                          {
-                                  "lineHeight": "16px",
-                                  "letterSpacing": "0.1em",
-                                  "fontWeight": "700"
-                          }
-                  ],
-                  "display-lg": [
-                          "32px",
-                          {
-                                  "lineHeight": "40px",
-                                  "letterSpacing": "-0.02em",
-                                  "fontWeight": "600"
-                          }
-                  ],
-                  "mono-data": [
-                          "13px",
-                          {
-                                  "lineHeight": "16px",
-                                  "fontWeight": "500"
-                          }
-                  ]
-          }
-  },
-      },
+            colors: {
+                "tertiary-fixed-dim": "#ffb95f",
+                "primary-container": "#2563eb",
+                "primary-fixed-dim": "#b4c5ff",
+                "primary-fixed": "#dbe1ff",
+                "on-error": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "error": "#ba1a1a",
+                "secondary": "#006c49",
+                "inverse-on-surface": "#eef0ff",
+                "secondary-container": "#6cf8bb",
+                "surface-container-highest": "#dae2fd",
+                "outline-variant": "#c3c6d7",
+                "on-secondary-fixed-variant": "#005236",
+                "on-surface": "#131b2e",
+                "on-tertiary-fixed-variant": "#653e00",
+                "surface-bright": "#faf8ff",
+                "surface-container-high": "#e2e7ff",
+                "tertiary-fixed": "#ffddb8",
+                "error-container": "#ffdad6",
+                "surface": "#faf8ff",
+                "surface-dim": "#d2d9f4",
+                "on-secondary-fixed": "#002113",
+                "on-primary-container": "#eeefff",
+                "surface-tint": "#0053db",
+                "background": "#faf8ff",
+                "on-tertiary-container": "#ffeedd",
+                "tertiary": "#784b00",
+                "surface-container": "#eaedff",
+                "on-primary-fixed-variant": "#003ea8",
+                "outline": "#737686",
+                "surface-variant": "#dae2fd",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#00174b",
+                "on-secondary-container": "#00714d",
+                "primary": "#004ac6",
+                "on-surface-variant": "#434655",
+                "secondary-fixed": "#6ffbbe",
+                "inverse-surface": "#283044",
+                "secondary-fixed-dim": "#4edea3",
+                "inverse-primary": "#b4c5ff",
+                "on-secondary": "#ffffff",
+                "on-error-container": "#93000a",
+                "tertiary-container": "#996100",
+                "surface-container-low": "#f2f3ff",
+                "on-background": "#131b2e",
+                "on-tertiary-fixed": "#2a1700",
+                "on-primary": "#ffffff"
+            },
+            fontFamily: {
+                "mono-data": ["JetBrains Mono", "monospace"],
+                "body-sm": ["Inter", "sans-serif"],
+                "body-md": ["Inter", "sans-serif"],
+                "display-lg": ["Geist", "sans-serif"],
+                "headline-md": ["Geist", "sans-serif"],
+                "super-heading": ["JetBrains Mono", "monospace"],
+            }
+        }
     }
-  </script>
+}
+</script>
+<style>
+.dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+    background-size: 24px 24px;
+}
+.technical-border {
+    border: 1px solid #e2e8f0;
+}
+.technical-shadow {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.mono-number {
+    font-family: 'JetBrains Mono', monospace;
+}
+</style>
 </head>
-<body class="bg-background text-on-background font-body-md bg-dot-grid min-h-screen flex">
-<!-- SideNavBar -->
-<aside class="fixed left-0 top-0 h-full w-[240px] bg-surface dark:bg-inverse-surface border-r border-outline-variant dark:border-outline flex flex-col h-full py-lg z-50">
-<div class="px-md mb-lg">
-<div class="text-headline-md font-headline-md text-primary dark:text-inverse-primary flex items-center gap-2">
-<img class="w-8 h-8 rounded-full object-cover" data-alt="A modern, abstract circular logo design with interconnected nodes, representing a secure DNS network. Minimalist, tech-forward, deep blue gradient on a white background, corporate cybersecurity aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDboxYDhm06EU86T2HHA-9cj5ue90F1tkTbDsIqUUO2rJVjQvZ9NtyjL_4vC4yLFabwjLBqJIncWhhc0LvJeGatNIimkrLng042-tp2BmGPQjnWqvQoQCjM7Tofc-YQXPxzVz9wa-4L_SUZdr1vOW8kXLyfd_nY4FSPN20IzvpywpI5YdW8T3BEqVtzg_5JFF4Tj1Ck81YFpG3c4GgI3JzI9B_Pd7m0yStgYfWNZEEpuO3XKR0CO62D"/>
-        DNS Shield
-      </div>
-<div class="text-body-sm text-on-surface-variant mt-1 ml-10">v2.4.0-Enterprise</div>
-</div>
+<body class="bg-surface text-on-surface font-body-md text-body-md dot-grid min-h-screen flex">
 <!-- SideNavBar -->
 <nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col h-full py-6 z-50">
     <div class="px-6 mb-8 flex items-center gap-3">
@@ -209,7 +106,7 @@
     <div class="px-6 mb-6">
         <div class="flex items-center gap-2 bg-secondary-container/20 text-secondary border border-secondary/20 rounded-full px-3 py-1 w-max">
             <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-            <span class="text-[10px] font-super-heading uppercase tracking-wider">System Operational</span>
+            <span class="text-[10px] font-super-heading uppercase tracking-wider font-bold">System Operational</span>
         </div>
     </div>
     <div class="flex-1 px-3 space-y-1">
@@ -246,279 +143,288 @@
             Reports
         </a>
     </div>
-    <div class="px-3 mt-auto space-y-1">
-        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r" href="/app/dashboard">
-            <span class="material-symbols-outlined text-[20px]">sync_alt</span>
-            Switch to React Console
-        </a>
-    </div>
 </nav>
-<div class="px-md py-4 border-t border-outline-variant dark:border-outline">
-<div class="mb-4">
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container text-on-secondary-container">
-<span class="w-2 h-2 mr-1.5 bg-secondary rounded-full"></span>
-          System Operational
-        </span>
-</div>
-<ul class="space-y-1">
-<li>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
-<span class="material-symbols-outlined" data-icon="help">help</span>
-<span class="text-body-md font-body-md">Help</span>
-</a>
-</li>
-<li>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
-<span class="material-symbols-outlined" data-icon="logout">logout</span>
-<span class="text-body-md font-body-md">Logout</span>
-</a>
-</li>
-</ul>
-</div>
-</aside>
-<!-- Main Content Wrapper -->
-<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
-<!-- TopNavBar -->
-<header class="sticky top-0 h-[64px] w-full z-40 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-md border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin-desktop">
-<div class="flex items-center gap-xl">
-<div class="text-headline-md font-headline-md font-bold text-primary">DNS Shield</div>
-<nav class="hidden md:flex gap-6 h-full items-center">
-<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-all" href="index.html">Overview</a>
-</nav>
-</div>
-<div class="flex items-center gap-4">
-<div class="relative">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
-<input class="pl-10 pr-4 py-1.5 bg-surface-container-lowest border border-outline-variant rounded focus:border-primary focus:ring-1 focus:ring-primary text-body-sm w-64" placeholder="Search..." type="text"/>
-</div>
-<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
-<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
-</button>
-<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
-<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
-</button>
-</div>
-</header>
-<!-- Split Screen Layout -->
-<main class="flex-1 flex flex-col md:flex-row p-gutter gap-gutter h-[calc(100vh-64px)] overflow-hidden">
-<!-- Left Column: Pipeline Stages -->
-<section class="w-full md:w-[380px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden shrink-0 shadow-xs">
-<div class="p-md border-b border-outline-variant bg-surface-bright flex justify-between items-center">
-<h2 class="text-headline-md font-headline-md text-on-surface">7-Stage Interceptor Cascade</h2>
-<span class="text-mono-data font-mono-data bg-surface-container px-2 py-1 rounded text-on-surface-variant border border-outline-variant">P99 Latency ~5.7ms</span>
-</div>
-<div class="flex-1 overflow-y-auto p-sm space-y-2">
-<!-- Stage 01 -->
-<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
-<div class="flex justify-between items-center">
-<span class="text-super-heading font-super-heading text-outline uppercase">Stage 01</span>
-<span class="text-mono-data font-mono-data text-on-surface-variant">0.4ms</span>
-</div>
-<div class="text-body-md font-bold text-on-surface">IP REPUTATION FILTER</div>
-<div class="flex gap-2">
-<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8000</span>
-</div>
-</div>
-<!-- Stage 02 -->
-<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
-<div class="flex justify-between items-center">
-<span class="text-super-heading font-super-heading text-outline uppercase">Stage 02</span>
-<span class="text-mono-data font-mono-data text-on-surface-variant">0.8ms</span>
-</div>
-<div class="text-body-md font-bold text-on-surface">DNSSEC VALIDATION</div>
-<div class="flex gap-2">
-<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :53</span>
-</div>
-</div>
-<!-- Stage 03 -->
-<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
-<div class="flex justify-between items-center">
-<span class="text-super-heading font-super-heading text-outline uppercase">Stage 03</span>
-<span class="text-mono-data font-mono-data text-on-surface-variant">1.2ms</span>
-</div>
-<div class="text-body-md font-bold text-on-surface">HEURISTIC ANALYSIS</div>
-<div class="flex gap-2">
-<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8002</span>
-</div>
-</div>
-<!-- Stage 04 (Active) -->
-<div class="p-3 border-l-2 border-l-primary border-t border-r border-b border-outline-variant rounded bg-primary-container/5 cursor-pointer flex flex-col gap-2 relative overflow-hidden">
-<div class="absolute right-0 top-0 bottom-0 w-1 bg-primary"></div>
-<div class="flex justify-between items-center">
-<span class="text-super-heading font-super-heading text-primary uppercase">Stage 04</span>
-<span class="text-mono-data font-mono-data text-primary">1.1ms</span>
-</div>
-<div class="text-body-md font-bold text-primary">DGA RANDOM FOREST ML</div>
-<div class="flex gap-2">
-<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8001</span>
-<span class="text-mono-data font-mono-data text-xs bg-error-container text-on-error-container px-1.5 py-0.5 rounded border border-error-container">+31.2 Risk</span>
-</div>
-</div>
-<!-- Stage 05 -->
-<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
-<div class="flex justify-between items-center">
-<span class="text-super-heading font-super-heading text-outline uppercase">Stage 05</span>
-<span class="text-mono-data font-mono-data text-on-surface-variant">0.9ms</span>
-</div>
-<div class="text-body-md font-bold text-on-surface">SINKHOLE ROUTING</div>
-<div class="flex gap-2">
-<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8080</span>
-</div>
-</div>
-<!-- Stage 06 -->
-<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
-<div class="flex justify-between items-center">
-<span class="text-super-heading font-super-heading text-outline uppercase">Stage 06</span>
-<span class="text-mono-data font-mono-data text-on-surface-variant">0.5ms</span>
-</div>
-<div class="text-body-md font-bold text-on-surface">CACHE UPDATER</div>
-<div class="flex gap-2">
-<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :6379</span>
-</div>
-</div>
-<!-- Stage 07 -->
-<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
-<div class="flex justify-between items-center">
-<span class="text-super-heading font-super-heading text-outline uppercase">Stage 07</span>
-<span class="text-mono-data font-mono-data text-on-surface-variant">0.8ms</span>
-</div>
-<div class="text-body-md font-bold text-on-surface">TELEMETRY EXPORT</div>
-<div class="flex gap-2">
-<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :9090</span>
-</div>
-</div>
-</div>
-</section>
-<!-- Right Column: Details & Visuals -->
-<section class="flex-1 flex flex-col gap-gutter overflow-y-auto min-w-0">
-<!-- Pipeline Flow Strip -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-xs flex items-center justify-between relative">
-<div class="absolute left-10 right-10 top-1/2 h-0.5 bg-outline-variant -translate-y-1/2 z-0"></div>
-<div class="absolute left-10 right-[45%] top-1/2 h-0.5 bg-secondary -translate-y-1/2 z-0"></div>
-<!-- Nodes -->
-<div class="relative z-10 flex flex-col items-center gap-1">
-<div class="w-6 h-6 rounded-full bg-secondary border-2 border-surface-container-lowest flex items-center justify-center text-[10px] text-on-secondary font-bold">1</div>
-</div>
-<div class="relative z-10 flex flex-col items-center gap-1">
-<div class="w-6 h-6 rounded-full bg-secondary border-2 border-surface-container-lowest flex items-center justify-center text-[10px] text-on-secondary font-bold">2</div>
-</div>
-<div class="relative z-10 flex flex-col items-center gap-1">
-<div class="w-6 h-6 rounded-full bg-secondary border-2 border-surface-container-lowest flex items-center justify-center text-[10px] text-on-secondary font-bold">3</div>
-</div>
-<!-- Active Node -->
-<div class="relative z-10 flex flex-col items-center gap-1">
-<div class="w-8 h-8 rounded-full bg-primary border-4 border-primary-container flex items-center justify-center text-xs text-on-primary font-bold shadow-[0_0_15px_rgba(37,99,235,0.5)]">4</div>
-</div>
-<div class="relative z-10 flex flex-col items-center gap-1">
-<div class="w-6 h-6 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center text-[10px] text-on-surface-variant font-bold">5</div>
-</div>
-<div class="relative z-10 flex flex-col items-center gap-1">
-<div class="w-6 h-6 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center text-[10px] text-on-surface-variant font-bold">6</div>
-</div>
-<div class="relative z-10 flex flex-col items-center gap-1">
-<div class="w-6 h-6 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center text-[10px] text-on-surface-variant font-bold">7</div>
-</div>
-</div>
-<!-- Stage Specification Banner -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-lg shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-<div>
-<div class="flex items-center gap-3 mb-2">
-<h1 class="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface">DGA Random Forest ML</h1>
-<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-secondary-container text-on-secondary-container border border-secondary/20">
-<span class="w-2 h-2 mr-1.5 bg-secondary rounded-full animate-pulse"></span>
-                Service Online
-              </span>
-</div>
-<div class="flex gap-4">
-<div class="flex items-center gap-1 text-on-surface-variant">
-<span class="material-symbols-outlined text-[16px]" data-icon="cable">cable</span>
-<span class="text-mono-data font-mono-data">Port :8001</span>
-</div>
-<div class="flex items-center gap-1 text-on-surface-variant">
-<span class="material-symbols-outlined text-[16px]" data-icon="policy">policy</span>
-<span class="text-mono-data font-mono-data bg-surface-container px-1 rounded">MITRE T1568.002</span>
-</div>
-</div>
-</div>
-<button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded text-body-sm font-medium transition-colors border border-transparent">
-            Re-Train Model
-          </button>
-</div>
-<!-- Architecture & Math Split -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
-<!-- Architecture Description Card -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-xs">
-<h3 class="text-headline-md font-headline-md text-on-surface mb-3 border-b border-outline-variant pb-2">Architecture Topology</h3>
-<p class="text-body-md font-body-md text-on-surface-variant mb-4">
-              This stage utilizes an ensemble learning method for classification. It operates by constructing a multitude of decision trees (currently 150) at training time and outputting the class that is the mode of the classes of the individual trees.
-            </p>
-<div class="grid grid-cols-2 gap-4">
-<div class="border border-outline-variant rounded p-3 bg-surface">
-<div class="text-super-heading font-super-heading text-outline mb-1 uppercase">Trees</div>
-<div class="text-mono-data font-mono-data text-on-surface text-lg">150</div>
-</div>
-<div class="border border-outline-variant rounded p-3 bg-surface">
-<div class="text-super-heading font-super-heading text-outline mb-1 uppercase">Max Depth</div>
-<div class="text-mono-data font-mono-data text-on-surface text-lg">24</div>
-</div>
-</div>
-</div>
-<!-- Mathematical Core Box -->
-<div class="bg-[#1e1e1e] border border-[#333] rounded-lg p-md shadow-xs text-[#d4d4d4] flex flex-col">
-<div class="flex justify-between items-center mb-3 border-b border-[#333] pb-2">
-<h3 class="text-body-md font-mono-data font-bold text-[#569cd6]">aggregation_core.py</h3>
-<span class="material-symbols-outlined text-[#858585] text-[18px]" data-icon="content_copy">content_copy</span>
-</div>
-<pre class="text-mono-data font-mono-data overflow-x-auto flex-1"><code><span class="text-[#c586c0]">def</span> <span class="text-[#dcdcaa]">predict_ensemble</span>(x, trees):
-    <span class="text-[#6a9955]"># Random Forest Aggregation Formula</span>
-    predictions = [tree.<span class="text-[#dcdcaa]">predict</span>(x) <span class="text-[#c586c0]">for</span> tree <span class="text-[#c586c0]">in</span> trees]
-    
-    <span class="text-[#c586c0]">return</span> <span class="text-[#4ec9b0]">Counter</span>(predictions).<span class="text-[#dcdcaa]">most_common</span>(<span class="text-[#b5cea8]">1</span>)[<span class="text-[#b5cea8]">0</span>][<span class="text-[#b5cea8]">0</span>]
 
-<span class="text-[#6a9955]"># Output represents majority vote:</span>
-<span class="text-[#6a9955]"># ŷ = argmax_c (1/B) Σ I(T_b(x) == c)</span></code></pre>
-</div>
-</div>
-<!-- Data Contract Grid -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-xs">
-<h3 class="text-headline-md font-headline-md text-on-surface mb-4 border-b border-outline-variant pb-2">Data Contract Specs</h3>
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-md">
-<!-- Ingestion Payload -->
-<div class="border border-outline-variant rounded bg-surface overflow-hidden flex flex-col">
-<div class="bg-surface-container-high px-3 py-2 border-b border-outline-variant flex items-center gap-2">
-<span class="material-symbols-outlined text-[16px] text-outline" data-icon="input">input</span>
-<span class="text-super-heading font-super-heading text-on-surface-variant uppercase">Ingestion Payload</span>
-</div>
-<div class="p-3 bg-surface-bright overflow-x-auto">
-<pre class="text-mono-data font-mono-data text-on-surface-variant text-sm"><code>{
-  "query": <span class="text-primary">"string"</span>,
-  "entropy": <span class="text-secondary">"float"</span>,
-  "len": <span class="text-secondary">"integer"</span>,
-  "vowels": <span class="text-secondary">"integer"</span>,
-  "consonants": <span class="text-secondary">"integer"</span>,
-  "timestamp": <span class="text-secondary">"integer"</span>
+<!-- Main Content Area -->
+<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
+    <!-- TopNavBar -->
+    <header class="sticky top-0 h-[64px] w-full z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-8">
+        <div class="flex items-center gap-6">
+            <h2 class="text-headline-md font-headline-md font-bold text-primary">Pipeline Architecture</h2>
+            <div class="hidden lg:flex items-center gap-2 bg-surface-container border border-outline-variant rounded-full px-3 py-1">
+                <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                <span class="text-[10px] font-super-heading text-secondary tracking-wider uppercase">CASCADE ACTIVE</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-[11px] font-mono-data bg-surface-container px-3 py-1.5 rounded text-on-surface-variant border border-outline-variant font-bold">Total P99 Latency: ~5.7ms</span>
+        </div>
+    </header>
+
+    <!-- Split Screen Layout -->
+    <main class="flex-1 flex flex-col lg:flex-row p-8 gap-6 h-[calc(100vh-64px)] overflow-hidden">
+        <!-- Left Column: Pipeline Stages List -->
+        <section class="w-full lg:w-[360px] flex flex-col bg-white border border-outline-variant rounded-xl overflow-hidden shrink-0 shadow-xs">
+            <div class="p-4 border-b border-outline-variant bg-surface-bright flex justify-between items-center">
+                <h2 class="text-[14px] font-bold text-on-surface">7-Stage Cascade Engine</h2>
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Select Stage</span>
+            </div>
+            <div id="stage-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+                <!-- Dynamically populated stages -->
+            </div>
+        </section>
+
+        <!-- Right Column: Interactive Details -->
+        <section class="flex-1 flex flex-col gap-5 overflow-y-auto min-w-0 pr-1">
+            <!-- Pipeline Flow Strip -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex items-center justify-between relative overflow-hidden">
+                <div class="absolute left-10 right-10 top-1/2 h-1 bg-surface-container -translate-y-1/2 z-0"></div>
+                <div id="flow-progress-bar" class="absolute left-10 top-1/2 h-1 bg-secondary -translate-y-1/2 z-0 transition-all duration-300" style="width: 50%;"></div>
+                <!-- 7 Numbered Nodes -->
+                <div id="flow-nodes" class="relative z-10 flex justify-between w-full">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Stage Specification Banner -->
+            <div class="bg-white border border-outline-variant rounded-xl p-6 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 id="stage-detail-title" class="text-[24px] font-bold text-on-surface tracking-tight">DGA Random Forest ML</h1>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary-container/30 text-secondary border border-secondary/20">
+                            <span class="w-2 h-2 mr-1.5 bg-secondary rounded-full animate-pulse"></span>
+                            Service Online
+                        </span>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex items-center gap-1 text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[16px]">cable</span>
+                            <span id="stage-detail-port" class="text-mono-data font-mono-data font-bold">Port :8001</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[16px]">policy</span>
+                            <span id="stage-detail-rfc" class="text-mono-data font-mono-data bg-surface-container px-2 py-0.5 rounded font-bold">MITRE T1568.002</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[16px]">timer</span>
+                            <span id="stage-detail-latency" class="text-mono-data font-mono-data text-primary font-bold">1.1ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Architecture & Math Split -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <!-- Architecture Description Card -->
+                <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold mb-2">Engine Architecture &amp; Specification</span>
+                    <p id="stage-detail-arch" class="text-[13px] text-on-surface leading-relaxed">
+                        Trained on 1.2M benign and malicious algorithmic domains. Employs 150 parallel decision trees to analyze 38 distinct lexical dimensions at line-rate.
+                    </p>
+                </div>
+
+                <!-- Mathematical Core Card -->
+                <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold mb-2">Mathematical Core &amp; Algorithm</span>
+                    <div class="mt-auto bg-slate-900 rounded-lg p-3.5 text-slate-100 font-mono-data text-[12px] overflow-x-auto">
+                        <code id="stage-detail-math" class="text-emerald-400">P(DGA|X) = (1/T) * SUM( f_tree(x_i) ) > 0.65</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Contracts (Input & Output) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <!-- Input Contract -->
+                <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold mb-2">Ingestion Payload Contract (Input)</span>
+                    <pre class="bg-surface-container-low border border-outline-variant rounded-lg p-3 font-mono-data text-[11px] text-on-surface overflow-x-auto"><code id="stage-detail-input">{
+  "domain": "xk9mqz7p2n.top",
+  "client_ip": "192.168.1.105",
+  "query_type": "A",
+  "entropy_score": 4.82
 }</code></pre>
-</div>
-</div>
-<!-- Decision Response -->
-<div class="border border-outline-variant rounded bg-surface overflow-hidden flex flex-col">
-<div class="bg-surface-container-high px-3 py-2 border-b border-outline-variant flex items-center gap-2">
-<span class="material-symbols-outlined text-[16px] text-outline" data-icon="output">output</span>
-<span class="text-super-heading font-super-heading text-on-surface-variant uppercase">Decision Response</span>
-</div>
-<div class="p-3 bg-surface-bright overflow-x-auto">
-<pre class="text-mono-data font-mono-data text-on-surface-variant text-sm"><code>{
-  "is_dga": <span class="text-[#ba1a1a]">"boolean"</span>,
-  "confidence": <span class="text-secondary">"float"</span>,
-  "risk_score": <span class="text-secondary">"float"</span>,
-  "model_version": <span class="text-primary">"string"</span>,
-  "processing_ms": <span class="text-secondary">"float"</span>
+                </div>
+
+                <!-- Output Contract -->
+                <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold mb-2">Decision Response Contract (Output)</span>
+                    <pre class="bg-surface-container-low border border-outline-variant rounded-lg p-3 font-mono-data text-[11px] text-on-surface overflow-x-auto"><code id="stage-detail-output">{
+  "verdict": "BLOCK",
+  "confidence": 0.94,
+  "action": "NXDOMAIN_REDIRECT",
+  "latency_ms": 1.1
 }</code></pre>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
-</div>
-</div>
-</div>
-</section>
-</main>
-</div>
-</body></html>
+
+<!-- 7 Stages Interactive Controller Script -->
+<script>
+const STAGES = [
+    {
+        num: "01",
+        name: "DETERMINISTIC ALLOWLIST",
+        port: ":6379",
+        latency: "<0.1ms",
+        rfc: "RFC 1034 / Top 10K",
+        risk: "Clean Pass",
+        riskClass: "text-secondary bg-secondary-container/20",
+        arch: "In-memory Redis Murmur3 Bloom filter and LRU cache containing top 100k verified benign enterprise services (Microsoft 365, Google Workspace, Cloudflare, AWS). Bypasses 90%+ of traffic instantly with zero false negatives.",
+        math: "Bloom(Domain) in H(k) -> Hash(Domain, k_i) mod M == 1 -> BYPASS",
+        input: '{\n  "query": "login.microsoft.com",\n  "client_ip": "10.0.4.12",\n  "record_type": "A"\n}',
+        output: '{\n  "verdict": "ALLOW",\n  "cache_hit": true,\n  "bypass_pipeline": true,\n  "latency_ms": 0.08\n}'
+    },
+    {
+        num: "02",
+        name: "THREAT INTEL RPZ FEEDS",
+        port: ":8003",
+        latency: "0.2ms",
+        rfc: "RFC 8805 / RPZ",
+        risk: "Clean Pass",
+        riskClass: "text-secondary bg-secondary-container/20",
+        arch: "Aggregates and syncs 133,000+ live Response Policy Zone (RPZ) indicators from Abuse.ch URLhaus, PhishTank, AlienVault OTX, Emerging Threats, and OpenPhish with automatic 5-minute cache TTL delta updates.",
+        math: "IoC_Match(Domain) in RPZ_RadixTree -> BLOCK / SINKHOLE",
+        input: '{\n  "domain": "malw-c2-01.ru",\n  "source_rpz": "URLhaus_Live"\n}',
+        output: '{\n  "verdict": "BLOCK",\n  "feed_match": "Abuse.ch URLhaus",\n  "threat_type": "Botnet_C2",\n  "latency_ms": 0.18\n}'
+    },
+    {
+        num: "03",
+        name: "LEXICAL & ENTROPY SCAN",
+        port: ":8000",
+        latency: "0.4ms",
+        rfc: "IEEE Infocom 2021",
+        risk: "+22.9 Risk",
+        riskClass: "text-tertiary-fixed-dim bg-tertiary-fixed-dim/10",
+        arch: "Calculates Shannon Entropy H(X), Bi-gram Perplexity, Consonant-to-Vowel Ratios, Subdomain Depth, and vowel distributions to immediately flag randomized or high-complexity domain labels.",
+        math: "H(X) = -SUM( P(x_i) * log2(P(x_i)) ); Consonant_Ratio = N_c / (N_v + 1)",
+        input: '{\n  "domain": "xk9mqz7p2n4r8v3w.top",\n  "subdomain_length": 16\n}',
+        output: '{\n  "shannon_entropy": 4.82,\n  "consonant_ratio": 5.33,\n  "lexical_risk": 22.9\n}'
+    },
+    {
+        num: "04",
+        name: "DGA RANDOM FOREST ML",
+        port: ":8001",
+        latency: "1.1ms",
+        rfc: "MITRE T1568.002",
+        risk: "+31.2 Risk",
+        riskClass: "text-error bg-error-container/30",
+        arch: "Trained on 1.2M benign and malicious algorithmic domains. Employs 150 parallel decision trees to analyze 38 distinct lexical dimensions at line-rate, detecting Dictionary DGAs and Pseudo-Random generators.",
+        math: "P(DGA|X) = (1/T) * SUM( f_tree(x_i) ) > 0.65",
+        input: '{\n  "domain": "xk9mqz7p2n.top",\n  "client_ip": "192.168.1.105",\n  "entropy_score": 4.82\n}',
+        output: '{\n  "verdict": "BLOCK",\n  "confidence": 0.94,\n  "action": "NXDOMAIN_REDIRECT",\n  "latency_ms": 1.1\n}'
+    },
+    {
+        num: "05",
+        name: "HOMOGLYPH & PHISHING",
+        port: ":8002",
+        latency: "0.8ms",
+        rfc: "Unicode TR39 Confusables",
+        risk: "+1.8 Risk",
+        riskClass: "text-secondary bg-secondary-container/20",
+        arch: "Normalizes Cyrillic and Greek Unicode confusables using TR39 skeleton transformations, then computes Jaro-Winkler string similarity against top 10,000 corporate brand registries to intercept typosquatting.",
+        math: "Skeleton(Domain) -> JaroWinkler(S_norm, Brand_Target) > 0.88",
+        input: '{\n  "domain": "gооgle.com",\n  "unicode_punycode": "xn--ggle-p50aa.com"\n}',
+        output: '{\n  "is_homoglyph": true,\n  "target_brand": "google.com",\n  "similarity_score": 0.96\n}'
+    },
+    {
+        num: "06",
+        name: "DNS TUNNELLING DETECTOR",
+        port: ":8004",
+        latency: "1.2ms",
+        rfc: "MITRE T1048.003",
+        risk: "+0.0 Risk",
+        riskClass: "text-secondary bg-secondary-container/20",
+        arch: "Applies sequential Markov transition matrices and byte-entropy frequency clustering across sliding query windows to detect covert data exfiltration tools (Iodine, DNScat2).",
+        math: "Markov_Score = PRODUCT( P(char_t | char_{t-1}) ) < Threshold_Exfil",
+        input: '{\n  "query_stream_burst": 48,\n  "record_type": "TXT",\n  "payload_size_bytes": 512\n}',
+        output: '{\n  "tunnel_detected": false,\n  "byte_entropy": 2.1,\n  "markov_transition_anomaly": 0.02\n}'
+    },
+    {
+        num: "07",
+        name: "SHAP EXPLAINABILITY ARBITER",
+        port: ":8005",
+        latency: "0.9ms",
+        rfc: "Lundberg & Lee TreeSHAP",
+        risk: "Final Gate",
+        riskClass: "text-primary bg-primary-container/10",
+        arch: "TreeSHAP game-theoretic engine that computes exact Shapley feature values (phi_i) in polynomial time, arbitrating the final ALLOW, FLAG, or BLOCK verdict and generating human-interpretable SOC forensic dossiers.",
+        math: "f(x) = phi_0 + SUM( phi_i ) => Final Risk Score [0..100]",
+        input: '{\n  "base_risk": 0.12,\n  "sum_shap_features": 0.81,\n  "policy_thresholds": { "block": 70, "flag": 40 }\n}',
+        output: '{\n  "final_score": 93,\n  "verdict": "BLOCK",\n  "primary_driver": "Shannon Entropy (+0.312)",\n  "audit_trail_ready": true\n}'
+    }
+];
+
+let activeIdx = 3; // Default to Stage 04 (DGA)
+
+function renderStages() {
+    // Render Left list
+    const listEl = document.getElementById('stage-list');
+    listEl.innerHTML = STAGES.map((st, idx) => {
+        const isActive = (idx === activeIdx);
+        const borderCls = isActive ? 'border-primary bg-primary-container/5 border-l-4' : 'border-outline-variant hover:bg-surface-container-low';
+        const textCls = isActive ? 'text-primary font-bold' : 'text-on-surface font-semibold';
+        
+        return `
+        <div onclick="selectStage(${idx})" class="p-3 border rounded-lg cursor-pointer transition-all ${borderCls} flex flex-col gap-1.5">
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-super-heading uppercase font-bold ${isActive ? 'text-primary' : 'text-outline'}">Stage ${st.num}</span>
+                <span class="text-[11px] font-mono-data ${isActive ? 'text-primary font-bold' : 'text-outline'}">${st.latency}</span>
+            </div>
+            <div class="text-[13px] ${textCls}">${st.name}</div>
+            <div class="flex gap-2 items-center">
+                <span class="text-[10px] font-mono-data bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant font-bold">Port ${st.port}</span>
+                <span class="text-[10px] font-mono-data px-1.5 py-0.5 rounded font-bold ${st.riskClass}">${st.risk}</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Render Nodes in flow strip
+    const nodesEl = document.getElementById('flow-nodes');
+    nodesEl.innerHTML = STAGES.map((st, idx) => {
+        const isActive = (idx === activeIdx);
+        const isPast = (idx < activeIdx);
+        
+        let nodeCls = 'bg-white text-on-surface-variant border-2 border-outline-variant w-7 h-7 text-[11px]';
+        if (isActive) {
+            nodeCls = 'bg-primary text-white border-4 border-primary-container w-9 h-9 text-[13px] font-bold shadow-[0_0_15px_rgba(37,99,235,0.6)]';
+        } else if (isPast) {
+            nodeCls = 'bg-secondary text-white border-2 border-white w-7 h-7 text-[11px] font-bold';
+        }
+
+        return `
+        <button onclick="selectStage(${idx})" class="flex flex-col items-center gap-1 group">
+            <div class="rounded-full flex items-center justify-center font-bold transition-all ${nodeCls}">
+                ${idx + 1}
+            </div>
+            <span class="text-[9px] font-mono-data font-bold uppercase ${isActive ? 'text-primary' : 'text-outline group-hover:text-on-surface'}">Stage ${st.num}</span>
+        </button>`;
+    }).join('');
+
+    // Progress bar width
+    const pct = ((activeIdx) / (STAGES.length - 1)) * 88 + 5;
+    document.getElementById('flow-progress-bar').style.width = pct + '%';
+
+    // Update Detail Panel
+    const cur = STAGES[activeIdx];
+    document.getElementById('stage-detail-title').textContent = cur.name;
+    document.getElementById('stage-detail-port').textContent = 'Port ' + cur.port;
+    document.getElementById('stage-detail-rfc').textContent = cur.rfc;
+    document.getElementById('stage-detail-latency').textContent = cur.latency;
+    document.getElementById('stage-detail-arch').textContent = cur.arch;
+    document.getElementById('stage-detail-math').textContent = cur.math;
+    document.getElementById('stage-detail-input').textContent = cur.input;
+    document.getElementById('stage-detail-output').textContent = cur.output;
+}
+
+function selectStage(idx) {
+    activeIdx = idx;
+    renderStages();
+}
+
+// Init
+renderStages();
+</script>
+</body>
+</html>
