@@ -20,7 +20,7 @@
 | Confidence levels | `LOW`, `MEDIUM`, `HIGH` |
 | Primary metric | Per-stage explainability (XAI) + weighted F1 of ML stage |
 | ML algorithm | Random Forest + FeatureUnion (char TF-IDF + engineered features) |
-| Threat intelligence | STIX 2.1 IOC database (URLhaus feed + CERT-In compatible) + Disk persistence |
+| Threat intelligence | STIX 2.1 IOC database (URLhaus feed + CERT-In-format-compatible `[LAB SIMULATED 🔬]`) + Disk persistence |
 | Resilience | Deterministic offline local rules + API degradation graceful fallbacks |
 | Adversarial ML | Evaluated and hardened against 7 evasion mutations (vowel inject, etc.) |
 | Dashboard | Next.js SOC console with live stream + 3D threat globe |

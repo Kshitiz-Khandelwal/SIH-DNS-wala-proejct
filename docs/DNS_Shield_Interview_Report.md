@@ -48,7 +48,7 @@ And to guarantee stability, the entire pipeline is wrapped in a **Resilience Lay
 | Services | 7 independent FastAPI microservices |
 | ML algorithm | Random Forest + char TF-IDF + 11 engineered features (Hardened against 7 evasive mutations) |
 | Threat intel format | STIX 2.1 (industry standard), disk-backed persistence |
-| Feed sources | URLhaus (Abuse.ch), CERT-In-compatible indicators |
+| Feed sources | URLhaus (Abuse.ch) `[IMPLEMENTED ✅]`, CERT-In-format-compatible IOC ingestion `[LAB SIMULATED 🔬]` |
 | Demo latency | ~3 seconds end-to-end (local dev) |
 | Dashboard | Next.js SOC console with live XAI pipeline visualization |
 
@@ -137,7 +137,8 @@ Stage 2 maintains a database of known-bad indicators:
 
 - **Format**: STIX 2.1 (Structured Threat Information eXpression — industry standard used by MITRE, CISA, CERT-In)
 - **Feed types**: Domain indicators, IP indicators, URL indicators
-- **Sources**: URLhaus (live malware hosting URLs), compatible with CERT-In TAXII feeds
+- **Sources**: URLhaus (live malware hosting URLs `[IMPLEMENTED ✅]`); CERT-In format-compatible STIX 2.1 ingestion `[LAB SIMULATED 🔬]`
+  > ⚠️ **Disclosure**: CERT-In does not maintain a publicly accessible STIX/TAXII endpoint. DNS Shield ingests URLhaus indicators natively and is engineered to accept STIX 2.1 bundles in the format of CERT-In advisories. A live CERT-In TAXII connection would require a bilateral agreement with CERT-In.
 - **Export**: The entire indicator database can be exported as a STIX 2.1 bundle via `GET /stix/bundle` — this is a deliverable for integrating with national CERT infrastructure
 
 ---
@@ -193,7 +194,7 @@ Those are production enterprise products. DNS Shield is built from first princip
 A: For a domain name string of <30 characters, the feature space is small and well-understood. Random Forest with engineered features is faster, more interpretable, and doesn't require GPU. The per-tree vote distribution directly gives a calibrated probability score. If we had a large labeled dataset (millions of domains), an LSTM or character-level transformer would be the next step.
 
 **Q: What is STIX 2.1 and why did you use it?**  
-A: STIX (Structured Threat Information eXpression) is the industry-standard JSON format for sharing threat intelligence, used by MITRE ATT&CK, CISA, and national CERTs. Using it means the threat intel layer can natively ingest feeds from CERT-In's TAXII server — which is directly relevant to the SIH problem statement.
+A: STIX (Structured Threat Information eXpression) is the industry-standard JSON format for sharing threat intelligence, used by MITRE ATT&CK, CISA, and national CERTs including CERT-In. DNS Shield's threat intelligence layer exports and accepts STIX 2.1 bundles natively. A live TAXII connection to CERT-In's infrastructure would require a formal bilateral agreement — CERT-In does not expose a public TAXII endpoint. The architectural compatibility is real; the live feed integration is a planned future capability.
 
 **Q: How does DNS tunnelling actually work, and how do you detect it?**  
 A: DNS tunnelling encodes binary data in the subdomain portion of a query. For example, `aGVsbG8gd29ybGQ.evil.com` contains "hello world" base64-encoded. Detection signals: very long labels (>45 chars), high entropy subdomains, unusually high query frequency from one device, and unusual parent domain diversity. The behavioral engine tracks all four.

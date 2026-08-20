@@ -7,6 +7,8 @@
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=flat&logo=scikit-learn&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+**Live Demo**: [https://sih-dns-wala-proejct-mchj-opnxlvdsq.vercel.app/console/index.html](https://sih-dns-wala-proejct-mchj-opnxlvdsq.vercel.app/console/index.html)
+
 DNS Shield is a microservice-based DNS security platform built for the **Smart India Hackathon (SIH) 2026**. 
 
 It intercepts DNS requests and evaluates them through a **7-stage detection pipeline** combining Threat Intelligence (STIX 2.1), Adversarially-Hardened Machine Learning, and Device Behavioral Analysis. Rather than returning a "black-box" block, DNS Shield provides a fully transparent, explainable trace (XAI) of exactly *why* a domain was blocked, making it the perfect tool for modern SOC analysts.
@@ -34,11 +36,11 @@ See the full **[DEPLOYMENT.md](./DEPLOYMENT.md)** for step-by-step instructions 
 ## Tech Stack
 
 - **Backend / Microservices**: Python 3.11, FastAPI, Uvicorn
-- **Machine Learning**: scikit-learn, NumPy, Pandas (150-Tree Random Forest + Exact TreeSHAP)
+- **Machine Learning**: scikit-learn, NumPy, Pandas (150-Tree Random Forest + Exact TreeSHAP) `[IMPLEMENTED ✅]`
 - **Training Dataset**: **1.35 Million FQDNs** (142.8 MB Parquet / 485 MB raw) across Tranco Top 1M, BAM DGA Corpus, and Abuse.ch URLhaus
 - **State & Caching**: Redis (Murmur3 Bloom Filter + LRU Cache)
-- **Frontend SOC Dashboard**: Next.js 16, TypeScript, Google Stitch UI Design System
-- **Threat Intelligence**: STIX 2.1 format, Abuse.ch URLhaus, CERT-In integration, RFC 8805 RPZ feeds
+- **Frontend SOC Dashboard**: Next.js 16, TypeScript, Tailwind CSS, Cyber SOC UI System
+- **Threat Intelligence**: STIX 2.1 format, Abuse.ch URLhaus, CERT-In-format-compatible IOC ingestion `[LAB SIMULATED 🔬]`, RFC 8805 RPZ feeds
 
 ---
 
@@ -50,7 +52,8 @@ For detailed academic benchmarks, feature matrices, and dataset citations, see *
 - **Dataset Storage Size**: **142.8 MB** (Compressed Parquet) / **485.4 MB** (Raw Text/JSON)
 - **Model Artifact Size**: **28.4 MB** (`dga_rf_150.joblib` / ONNX format)
 - **Extracted Feature Dimensions**: **38 Features** (Shannon Entropy, Bi-gram Perplexity, Consonant-to-Vowel Ratio, Unicode TR39 Skeletons)
-- **Empirical Accuracy**: **99.42%** | **F1-Score**: **0.9918** | **False Positive Rate (FPR)**: **<0.01%** | **Inference Latency**: **1.1 ms**
+- **Reported Training-Set Metrics**: Accuracy **99.42%** · Precision **0.9931** · Recall **0.9905** · F1 **0.9918** · FPR **<0.01%** · Inference **1.1 ms** (single-domain, CPU)
+  > ⚠️ These metrics are computed on the internal 80/20 train-test split. Independent cross-family and adversarial holdout evaluation is documented in [BENCHMARK_RESULTS.md](./BENCHMARK_RESULTS.md) (in progress). Do not cite the 99.42% figure in isolation without the full precision/recall context.
 
 ---
 
@@ -80,6 +83,47 @@ graph TD
     ANL --> VERDICT["Verdict Assembly<br/>ALLOW / FLAG / BLOCK<br/>+ XAI pipeline array"]
     VERDICT --> DASH["SOC Dashboard :3000<br/>Next.js live query stream<br/>XAI panel + Threat Globe"]
 ```
+
+---
+
+## Capability Status
+
+> All claimed features are transparently labelled so judges and reviewers can immediately distinguish what is live, what runs in a controlled lab, and what is on the roadmap.
+
+| Capability | Status |
+|---|---|
+| 7-Stage Detection Pipeline | `[IMPLEMENTED ✅]` |
+| Lexical ML Classifier (Random Forest + TF-IDF) | `[IMPLEMENTED ✅]` |
+| TreeSHAP Explainability | `[IMPLEMENTED ✅]` |
+| Redis Bloom Filter + LRU Cache | `[IMPLEMENTED ✅]` |
+| Adversarial Hardening (7 mutation strategies) | `[IMPLEMENTED ✅]` |
+| URLhaus Threat Feed (Abuse.ch) | `[IMPLEMENTED ✅]` |
+| STIX 2.1 IOC Export via `/stix/bundle` | `[IMPLEMENTED ✅]` |
+| DNS-over-UDP (Port 53) via Resolver-Core | `[IMPLEMENTED ✅]` |
+| SOC Dashboard (Next.js live stream + XAI panel) | `[IMPLEMENTED ✅]` |
+| Behavioral Sliding Window (Volume, Tunnelling) | `[IMPLEMENTED ✅]` |
+| Geo/ASN Enrichment (GeoLite2) | `[IMPLEMENTED ✅]` |
+| Active Response: Sinkholing | `[LAB SIMULATED 🔬]` |
+| Active Response: Host Quarantine | `[LAB SIMULATED 🔬]` |
+| CERT-In STIX 2.1 Format-Compatible Ingestion | `[LAB SIMULATED 🔬]` — No public CERT-In TAXII endpoint exists; DNS Shield accepts STIX 2.1 bundles in CERT-In advisory format |
+| DNS-over-TLS (Port 853) | `[LAB SIMULATED 🔬]` — TLS termination implemented; requires CA cert in production |
+| DNS-over-HTTPS (Port 443, RFC 8484) | `[LAB SIMULATED 🔬]` — HTTPS resolver endpoint implemented; requires enterprise HTTPS enforcement |
+| DNS-over-QUIC (RFC 9250) | `[PLANNED 🗺️]` |
+| Cross-Family / Adversarial Benchmark Report | `[PLANNED 🗺️]` — in [`BENCHMARK_RESULTS.md`](./BENCHMARK_RESULTS.md) |
+| Model Lifecycle / Drift Monitoring | `[PLANNED 🗺️]` |
+| Analyst Approval Workflow for Quarantine | `[PLANNED 🗺️]` |
+
+---
+
+## Protocol Architecture Note
+
+DNS Shield operates as an **inline recursive resolver / forwarder**. It terminates DNS sessions on three ports:
+
+- **Port 53** (UDP/TCP) — Standard DNS
+- **Port 853** (TCP + TLS) — DNS-over-TLS (DoT, RFC 7858)
+- **Port 443** (HTTPS HTTP/2) — DNS-over-HTTPS (DoH, RFC 8484)
+
+TLS sessions are terminated at the resolver, allowing full lexical and behavioral inspection of the domain name before forwarding to an upstream resolver. Enterprise enforcement requires a firewall policy blocking outbound ports 53/853/443 to all hosts except the DNS Shield resolver IP.
 
 ---
 

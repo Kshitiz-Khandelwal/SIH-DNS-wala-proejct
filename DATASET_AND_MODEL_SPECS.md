@@ -61,11 +61,21 @@
 
 ---
 
-## 5. Model Evaluation Metrics
+## 5. Model Evaluation Metrics (Training-Split Results)
 
-- **Classification Accuracy**: **99.42%**
-- **Precision**: **0.9931**
-- **Recall**: **0.9905**
-- **F1-Score**: **0.9918**
-- **False Positive Rate (FPR)**: **< 0.01%** (zero resolver disruption)
-- **Hardware Requirement**: Pure CPU execution (0 GPU dependency), capable of sustaining **15,000+ QPS per server instance**.
+> ⚠️ **Methodological Disclosure**: The metrics below are computed on a stratified 80/20 train-test split from the same source corpus. They do **not** yet account for:
+> - Cross-family holdout (unseen DGA families)
+> - Adversarial/evasion domain evaluation
+> - Temporal holdout (domains only seen after a training cutoff date)
+>
+> Full independent benchmarks — including per-class breakdowns, confusion matrix, baseline comparisons, and adversarial evaluation — are being documented in [`BENCHMARK_RESULTS.md`](./BENCHMARK_RESULTS.md).
+
+| Metric | Training-Split Value | Notes |
+|---|---|---|
+| **Classification Accuracy** | **99.42%** | Training/test split only; accuracy is a secondary metric on imbalanced DNS data |
+| **Precision** | **0.9931** | True positives / (true positives + false positives) |
+| **Recall** | **0.9905** | True positives / (true positives + false negatives) |
+| **F1-Score** | **0.9918** | Harmonic mean of precision and recall |
+| **False Positive Rate (FPR)** | **<0.01%** | On internal test split; real-world FPR validation pending |
+| **Hardware** | Pure CPU execution (0 GPU dependency) |
+| **Throughput target** | **15,000+ QPS per server instance** (target, not yet load-tested) |

@@ -40,7 +40,7 @@ Understanding why current tools fail is critical — this is what judges will as
 | **Cloudflare 1.1.1.1 / Google DNS** | Fast public resolvers | No custom threat intel, no enterprise-level logging, no ML, no active response. |
 | **Commercial NGFW** | Enterprise firewalls | Very expensive, black-box, no STIX/TAXII integration, no explainability, not India-specific. |
 
-**Our system fills every single gap above.** It is open, explainable, India-specific (CERT-In feeds), and actively responds to threats — not just passively logging them.
+**Our system addresses every gap listed above.** It is open, explainable, India-specific (STIX 2.1 format compatible with CERT-In advisory structure `[LAB SIMULATED 🔬]`), and actively responds to threats rather than only logging them.
 
 ---
 
