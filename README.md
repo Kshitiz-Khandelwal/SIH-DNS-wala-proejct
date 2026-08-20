@@ -13,13 +13,21 @@ It intercepts DNS requests and evaluates them through a **7-stage detection pipe
 
 ## Table of Contents
 1. [Tech Stack](#tech-stack)
-2. [Architecture Overview](#architecture-overview)
-3. [Key Features](#key-features)
-4. [Getting Started / Installation](#getting-started--installation)
-5. [Usage & Simulation](#usage--simulation)
+2. [Dataset & Model Training Specifications](#-dataset--model-training-specifications)
+3. [Cloud Deployment Guide](#-cloud-deployment-guide)
+4. [Architecture Overview](#architecture-overview)
+5. [Getting Started / Installation](#getting-started--installation)
 6. [Repository Structure](#repository-structure)
-7. [Contributing Guidelines](#contributing-guidelines)
-8. [License & Credits](#license--credits)
+7. [License & Credits](#license--credits)
+
+---
+
+## 🚀 Cloud Deployment Guide
+
+See the full **[DEPLOYMENT.md](./DEPLOYMENT.md)** for step-by-step instructions on:
+- **1-Click Free Vercel Hosting** (instant live web app)
+- **Full-Stack Docker Compose** (`docker-compose -f infra/docker-compose.yml up -d --build`)
+- **Render / Railway / AWS Cloud VPS** setups
 
 ---
 
