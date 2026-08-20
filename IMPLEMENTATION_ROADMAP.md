@@ -13,7 +13,7 @@
 | [Phase 1](#phase-1-credibility-language--documentation-cleanup) | Credibility, Language & Documentation Cleanup | `✅ Complete` | `fix/credibility-language-cleanup` |
 | [Phase 2](#phase-2-dataset-documentation--model-card) | Dataset Documentation & Model Card | `✅ Complete` | `feat/dataset-model-card` |
 | [Phase 3](#phase-3-ml-benchmarking--metrics-hardening) | ML Benchmarking & Metrics Hardening | `✅ Complete` | `feat/ml-benchmarks` |
-| [Phase 4](#phase-4-architecture-protocol--deployment-hardening) | Architecture, Protocol & Deployment Hardening | `⏳ Not Started` | — |
+| [Phase 4](#phase-4-architecture-protocol--deployment-hardening) | Architecture, Protocol & Deployment Hardening | `✅ Complete` | `feat/architecture-hardening` |
 | [Phase 5](#phase-5-ml-engine-improvements) | ML Engine Improvements | `⏳ Not Started` | — |
 | [Phase 6](#phase-6-behavioral--tunnelling-engine-improvements) | Behavioral & Tunnelling Engine Improvements | `⏳ Not Started` | — |
 | [Phase 7](#phase-7-typosquatting-similarity-engine) | Typosquatting Similarity Engine | `⏳ Not Started` | — |

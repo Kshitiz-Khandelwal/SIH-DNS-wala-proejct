@@ -1,221 +1,106 @@
 # DNS Shield — System Architecture
 
-## Project
-Real-Time Explainable DNS Threat Detection System  
-Smart India Hackathon (SIH) 2026 — Problem Statement SIH260003
+> **Version**: 2.0  
+> **Last Updated**: 2026-08-20  
+> **Status**: `[IMPLEMENTED ✅]` Architecture topology and synchronous orchestrator. Active response enforcement is `[LAB SIMULATED 🔬]`.
 
----
+## 1. High-Level Topology (4-Layer Model)
 
-## System Layout
+DNS Shield operates as an inline, synchronous security perimeter. It does not rely on passive SPAN port tapping; it is in the critical path for DNS resolution.
 
-```
-DNS Client → API Gateway (8080) → [7-Stage Pipeline] → Verdict + XAI trace
-                                            ↓ (fallback)
-                                     [Local Rules]
-                                            ↓
-                              Analytics Store (8005) → SOC Dashboard (3001)
-```
+```mermaid
+flowchart TD
+    %% Layer 1
+    subgraph L1 [Layer 1: Protocol Gateway]
+        C1[Client UDP/TCP 53] --> R[Core DNS Resolver\nGo/miekg]
+        C2[Client DoT 853] --> R
+        C3[Client DoH 443] --> R
+        R -.->|Cache Miss| A[API Gateway Orchestrator\nPort 8080]
+    end
 
----
+    %% Layer 2
+    subgraph L2 [Layer 2: Fast Path / Threat Intel]
+        A --> Redis[(Redis Cache)]
+        A --> TI[Threat Intel Service\nPort 8003]
+        A --> Geo[Geo Enrichment\nPort 8002]
+    end
 
-## Service Map
+    %% Layer 3
+    subgraph L3 [Layer 3: Deep Analysis]
+        A --> ML[ML Lexical Engine\nPort 8000]
+        A --> BE[Behavioral Engine\nPort 8001]
+    end
 
-| Service | Port | File | Role |
-|---|---|---|---|
-| API Gateway | 8080 | `services/api-gateway/app.py` | Orchestrates all 7 stages, exposes REST API, handles caching, auth, rate-limiting |
-| ML Inference | 8000 | `services/ml-inference/app.py` | Loads sklearn pipeline, runs `predict_proba([domain])` |
-| Behavioral Engine | 8001 | `services/behavioral-engine/app.py` | Per-device sliding window, tunnelling + volume anomalies |
-| Geo Intel | 8002 | `services/geo-intel/app.py` | IP → Country/ASN enrichment via GeoLite2 |
-| Threat Intel | 8003 | `services/threat-intel/app.py` | STIX 2.1 IOC database, URLhaus feed ingestion |
-| Active Response | 8004 | `services/active-response/app.py` | Lab-only sinkhole and device quarantine |
-| Analytics Store | 8005 | `services/analytics-store/app_local.py` | In-memory event persistence (Redis-backed for demo) |
-| SOC Dashboard | 3001 | `frontend/` | Next.js 16 TypeScript SOC console |
+    %% Layer 4
+    subgraph L4 [Layer 4: Decision & Response]
+        A --> AR[Active Response\nPort 8004]
+        A --> DB[(Analytics Store)]
+    end
 
----
-
-## Shared Module — `dns_shield_features.py`
-
-Location: project root (must be on `PYTHONPATH` for both training and inference)
-
-```python
-ENGINEERED_FEATURE_NAMES: list[str]   # 11 feature names in order
-
-def entropy(domain: str) -> float:    # Shannon entropy of character distribution
-def domain_features(domains) -> np.ndarray:  # Accepts any flat iterable of strings
-                                              # Returns (n_samples, 11) feature matrix
-```
-
-**Why it is separate**: joblib serializes `FunctionTransformer` by reference to function name + module. Defined in `train.py`'s `__main__`, it unpickles as `__main__.domain_features` — which fails in the inference service. A standalone module resolves to `dns_shield_features.domain_features` in any process.
-
----
-
-## ML Pipeline API Signatures
-
-### `ml-training/train.py`
-
-```python
-def build_model(algorithm: str) -> sklearn.pipeline.Pipeline:
-    """Constructs FeatureUnion([tfidf, engineered]) + classifier Pipeline.
-    Both branches accept a flat list of strings."""
-
-def tuning_grid(algorithm: str) -> dict:
-    """Hyperparameter search space for RandomizedSearchCV."""
-
-def resolve_cv_folds(labels: list[int], requested: int) -> int:
-    """Caps CV folds at smallest class count to prevent crashes on imbalanced data."""
-
-def _verify_artifact_reloads_standalone(artifact_path: Path, sample_domain: str) -> None:
-    """Spawns a subprocess and calls predict_proba([domain]) on the saved artifact.
-    Raises RuntimeError if pickle contract is broken."""
-```
-
-### `ml-training/adversarial_eval.py`
-
-```python
-def generate_evasive_candidates(domain: str) -> list[tuple[str, str]]:
-    """Applies 7 mutation strategies (e.g. vowel_inject, tld_swap) to a domain."""
-
-# CLI Entrypoint:
-# Generates evasive variants, identifies baseline model failures, augments the
-# training dataset with hard negatives, and triggers a retraining cycle.
-```
-
-### `services/ml-inference/app.py`
-
-```python
-@app.post("/predict")
-async def predict(body: PredictRequest) -> PredictResponse:
-    """body.domain: str
-    Uses: model.predict_proba([body.domain])
-    Returns: dga_probability, typosquat_probability, contribution, reasons, model_version"""
-```
-
-### `services/api-gateway/app.py`
-
-```python
-@app.post("/v1/query")
-async def query_domain(body: QueryRequest, request: Request) -> QueryResponse:
-    """Runs all 7 stages. Every service call is timeout-guarded (1.0s).
-    Failed services logged as degraded_dependencies. Never raises HTTP 500."""
-
-@app.post("/v1/passive/pcap")
-async def passive_pcap(file: UploadFile) -> PassiveResponse:
-    """Extracts DNS queries from PCAP, replays through pipeline."""
-```
-
-### `services/behavioral-engine/app.py`
-
-```python
-@app.post("/observe")
-async def observe(body: ObserveRequest) -> ObserveResponse:
-    """body: {domain, client_ip, ml_probability, threat_hit}
-    Maintains per-device deque in Redis (60s window).
-    Detects: volume spike, tunnelling, TLD fan-out, high entropy subdomain.
-    Returns: contribution (0–65), signals_triggered[], device_risk_profile"""
+    %% Flow
+    L1 --> L2
+    L2 --> L3
+    L3 --> L4
+    AR -.->|Block Verdict| R
+    AR -.->|Allow Verdict| Upstream[(Upstream Resolver\n1.1.1.1 / 8.8.8.8)]
+    R --> Upstream
 ```
 
 ---
 
-## Verdict Decision Logic
+## 2. Component Specifications & Failure Modes
 
-```python
-# In api-gateway/app.py — assemble_verdict()
+The system is designed to **fail open**. If a security service crashes, resolution continues (degraded), ensuring the network does not go down.
 
-if threat_hit:
-    return "BLOCK", 100, "HIGH"
+### Layer 1: Protocol Gateway (Resolver Core)
+- **Port Bindings**: UDP/TCP 53, TCP 853 (TLS), TCP 443 (HTTPS)
+- **Tech Stack**: Go (`miekg/dns`), Nginx for TLS termination
+- **TLS Termination**: Terminated locally at the resolver proxy before inspection.
+- **Failure Mode**: If the Go resolver dies, local devices lose DNS. (Must be deployed as a highly-available pair via VRRP/Keepalived).
+- **Fallback**: If the API Gateway orchestrator times out (>100ms), the resolver **fails open** and resolves the query via upstream without inspection.
 
-total_risk = sum(stage.contribution for stage in pipeline)
+### Layer 2: Fast Path (Caching & Threat Intel)
+- **Port Bindings**: Redis (6379), Threat Intel (8003), Geo (8002)
+- **Tech Stack**: Python FastAPI, Redis Bloom Filter, MaxMind GeoLite2
+- **Failure Mode**: If Redis dies, every query triggers full ML/Intel evaluation (latency spikes).
+- **Fallback**: API Gateway falls back to local in-memory LRU cache if Redis is unreachable. If Threat Intel is down, system relies purely on ML.
 
-if total_risk >= 71:
-    verdict = "BLOCK"
-elif total_risk >= 41:
-    verdict = "FLAG"
-else:
-    verdict = "ALLOW"
+### Layer 3: Deep Analysis (Machine Learning & Behavioral)
+- **Port Bindings**: ML Inference (8000), Behavioral (8001)
+- **Tech Stack**: Scikit-Learn (Random Forest), joblib, Redis (Sliding windows)
+- **Failure Mode**: If ML service dies, unknown zero-day domains cannot be scored.
+- **Fallback**: API Gateway catches `503 Service Unavailable`, logs the error, and applies `ALLOW` verdict based solely on Threat Intel blocklists.
 
-# Confidence calculation
-ml_prob = pipeline[2].contribution / 70  # Stage 3 contribution
-if ml_prob > 0.75:   confidence = "HIGH"
-elif ml_prob > 0.45: confidence = "MEDIUM"
-else:                confidence = "LOW"
-
-# Graceful degradation
-if "ml-lexical" in degraded_deps and verdict == "BLOCK":
-    verdict = "FLAG"  # Never BLOCK on uncertainty alone
-
-# Resilience Mode Output
-event.update({
-    "resilience_mode": "local-fallback" if degraded_deps else "full-pipeline",
-    "local_rules_active": LOCAL_RULES_AVAILABLE
-})
-```
+### Layer 4: Decision & Active Response
+- **Port Bindings**: Active Response (8004), Analytics (8005)
+- **Tech Stack**: Python, ClickHouse/PostgreSQL (simulated by Redis for lab)
+- **Failure Mode**: If Analytics store dies, queries are processed and returned, but telemetry is dropped.
+- **Fallback**: Asynchronous fire-and-forget logging. Analytics failure never blocks the critical DNS resolution path.
 
 ---
 
-## Artifact Naming Convention
+## 3. Deployment Firewall Enforcements
 
-All ML artifacts are versioned with `{name}-v{version}.*`:
+For DNS Shield to be effective in an enterprise, standard DNS bypass must be blocked at the perimeter firewall:
 
-| File | Contents |
-|---|---|
-| `dga-v1.joblib` | Serialized sklearn Pipeline. Loaded by ml-inference via `joblib.load()` |
-| `dga-v1.metrics.json` | `classification_report` output: per-class precision, recall, F1, weighted avg |
-| `dga-v1.feature-baseline.json` | Schema version, dataset stats, engineered feature means |
-| `dga-v1.metadata.json` | Full training provenance: SHA-256, algorithm, split strategy, hyperparameter tuning results, runtime compatibility note |
-| `typosquat-v1.joblib` | Typosquat classifier (same architecture) |
-| `typosquat-v1.metadata.json` | Typosquat provenance |
+| Rule Name | Action | Source | Destination | Protocol | Port | Description |
+|---|---|---|---|---|---|---|
+| `ALLOW_DNS_SHIELD_OUT` | **ALLOW** | DNS Shield Node | Any | UDP/TCP | 53, 853, 443 | Allow the Shield to query upstream (1.1.1.1, 9.9.9.9) |
+| `BLOCK_ROGUE_DNS_53` | **DROP** | Any Internal | Any External | UDP/TCP | 53 | Prevent endpoints from bypassing the Shield via standard DNS |
+| `BLOCK_ROGUE_DOT_853` | **DROP** | Any Internal | Any External | TCP | 853 | Prevent DNS-over-TLS bypass |
+| `BLOCK_KNOWN_DOH_IPS` | **DROP** | Any Internal | Known DoH IPs | TCP | 443 | Prevent DoH bypass (requires maintaining a list of public DoH provider IPs) |
 
 ---
 
-## Frontend — Next.js 16 Component Map
+## 4. Shared Modules & Libraries
 
-| Component | Path | Purpose |
-|---|---|---|
-| `ConsoleNav` | `components/console/ConsoleNav.tsx` | Left sidebar (9 nav items) + `StatusStrip` (live QPS, uptime, clock) |
-| `PipelineCascade` | `components/PipelineCascade.tsx` | Inline XAI breakdown for expanded queue rows |
-| `LexicalScan` | `components/LexicalScan.tsx` | Character-by-character heat-map animation in ML stage |
-| `VerdictBadge` | `components/VerdictBadge.tsx` | ALLOW / FLAG / BLOCK styled badge with optional glow |
-| `RiskScore` | `components/RiskScore.tsx` | Risk score (0–100) with mini progress bar |
-| `KPIStrip` | `components/KPIStrip.tsx` | 4-card stat strip (Allowed, Flagged, Blocked, Open Incidents) |
-| `DomainCell` | `components/DomainCell.tsx` | Domain displayed in JetBrains Mono |
-| Pipeline page | `app/app/pipeline/page.tsx` | 3D holographic cylinder pipeline + stage detail panel |
-| Queue page | `app/app/queue/page.tsx` | Live query stream table with expandable XAI rows |
-| Models page | `app/app/models/page.tsx` | ML model metadata + feed health |
-| Settings page | `app/app/settings/page.tsx` | Thresholds + lab simulators |
+### `dns_shield_features.py`
+Located at project root. Used by both `ml-training` and `services/ml-inference`.
+- **Why it is separate**: `joblib` serializes `FunctionTransformer` by reference to function name + module. If defined in `train.py`'s `__main__`, it fails to unpickle in the inference service. A standalone module resolves identically in both environments.
+
+### `domain_mutations.py`
+Used for adversarial ML evaluation. Modifies raw domain strings to test model resilience against evasion tactics.
 
 ---
 
-## Data Flow — Redis Usage
-
-| Usage | Key Pattern | TTL | Service |
-|---|---|---|---|
-| Verdict cache | `verdict:{domain}` | 300s | API Gateway |
-| Device query history | `device:{ip}:queries` | Session | Behavioral Engine |
-| Device risk score | `device:{ip}:risk` | Session | Behavioral Engine |
-| Quarantine list | `quarantine:{ip}` | User-set | Active Response |
-| Event store (demo) | `events:list` | None | Analytics Store (local) |
-| Threat indicators | `ioc:{domain}` | Feed-synced | Threat Intel |
-
----
-
-## Prometheus Metrics (at `/metrics`)
-
-| Metric | Type | Description |
-|---|---|---|
-| `dnsshield_requests_total` | Counter | All requests labeled by method + path + status |
-| `dnsshield_pipeline_verdicts_total` | Counter | ALLOW / FLAG / BLOCK counts |
-| `dnsshield_latency_ms_p50` | Gauge | Median pipeline latency |
-| `dnsshield_latency_ms_p95` | Gauge | 95th percentile pipeline latency |
-| `dnsshield_degraded_requests_total` | Counter | Requests with at least one degraded service |
-
----
-
-## Security Considerations
-
-| Concern | Mitigation |
-|---|---|
-| API key exposure | Optional bearer token via `GATEWAY_API_KEY` env var. Empty = no auth (demo mode) |
-| Rate limiting | Per-IP rate limit enforced at gateway. Default: 240 req/min |
-| Active Response safety | Only acts on IPs in `LAB_SUBNET` (env var). Never executes on prod traffic |
-| Data exfiltration via domain logs | Domain strings logged are hashed in production. Full strings only in dev/demo |
-| Reverse proxy trust | `TRUST_PROXY_HEADERS=false` by default. Must be explicitly enabled |
+> **Note on Fail-Closed capability**: Some high-security environments require **fail-closed** (block all resolution if ML is offline). This is a `[PLANNED 🗺️]` configuration toggle in `api-gateway`.

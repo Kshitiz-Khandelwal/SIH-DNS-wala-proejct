@@ -2,153 +2,274 @@ name: dns-shield
 services:
   mock-dns:
     image: coredns/coredns:1.11.3
-    command: ["-conf", "/etc/coredns/Corefile"]
-    volumes: ["./mock-dns/Corefile:/etc/coredns/Corefile:ro"]
+    command:
+    - -conf
+    - /etc/coredns/Corefile
+    volumes:
+    - ./mock-dns/Corefile:/etc/coredns/Corefile:ro
     healthcheck:
-      test: ["CMD", "coredns", "-version"]
+      test:
+      - CMD
+      - coredns
+      - -version
       interval: 10s
       timeout: 3s
       retries: 3
-    networks: [lab]
+    networks:
+    - lab
+    restart: unless-stopped
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports:
+    - 6379:6379
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+      - CMD
+      - redis-cli
+      - ping
       interval: 10s
       timeout: 3s
       retries: 5
-    networks: [lab]
+    networks:
+    - lab
+    restart: unless-stopped
+    volumes:
+    - redis_data:/data
   clickhouse:
     image: clickhouse/clickhouse-server:24.8-alpine
-    ports: ["8123:8123", "9000:9000"]
+    ports:
+    - 8123:8123
+    - 9000:9000
     environment:
       CLICKHOUSE_DB: dns_shield
       CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: ""
-    volumes: ["../services/analytics-store/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro"]
+      CLICKHOUSE_PASSWORD: ''
+    volumes:
+    - ../services/analytics-store/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    - clickhouse_data:/var/lib/clickhouse
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8123/ping | grep -q Ok"]
+      test:
+      - CMD-SHELL
+      - wget -qO- http://localhost:8123/ping | grep -q Ok
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [lab]
+    networks:
+    - lab
+    restart: unless-stopped
   threat-intel:
     build: ../services/threat-intel
     env_file: ../.env
-    ports: ["8003:8003"]
+    ports:
+    - 8003:8003
     depends_on:
-      redis: {condition: service_healthy}
-      clickhouse: {condition: service_healthy}
-    networks: [lab]
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+    - lab
+    restart: unless-stopped
   ml-inference:
     build: ../services/ml-inference
     env_file: ../.env
-    ports: ["8000:8000"]
-    volumes: ["../ml-training/artifacts:/app/artifacts:ro"]
-    networks: [lab]
+    ports:
+    - 8000:8000
+    volumes:
+    - ../ml-training/artifacts:/app/artifacts:ro
+    networks:
+    - lab
+    restart: unless-stopped
   behavioral-engine:
     build: ../services/behavioral-engine
     env_file: ../.env
-    ports: ["8001:8001"]
+    ports:
+    - 8001:8001
     depends_on:
-      redis: {condition: service_healthy}
-    networks: [lab]
+      redis:
+        condition: service_healthy
+    networks:
+    - lab
+    restart: unless-stopped
   geo-intel:
     build: ../services/geo-intel
     env_file: ../.env
-    ports: ["8002:8002"]
-    volumes: ["../data:/data:ro"]
-    networks: [lab]
+    ports:
+    - 8002:8002
+    volumes:
+    - ../data:/data:ro
+    networks:
+    - lab
+    restart: unless-stopped
   active-response:
     build: ../services/active-response
     env_file: ../.env
-    ports: ["8004:8004"]
-    networks: [lab]
+    ports:
+    - 8004:8004
+    networks:
+    - lab
+    restart: unless-stopped
   lab-honeypot:
     build: ../services/lab-honeypot
     environment:
       ACTIVE_RESPONSE_URL: http://active-response:8004
       HONEYPOT_MAX_CAPTURED_BODY_BYTES: 1024
     depends_on:
-      active-response: {condition: service_started}
+      active-response:
+        condition: service_started
     networks:
       lab:
         ipv4_address: 172.28.0.250
+    restart: unless-stopped
   analytics-store:
     build: ../services/analytics-store
     env_file: ../.env
-    ports: ["8005:8005"]
+    ports:
+    - 8005:8005
     depends_on:
-      clickhouse: {condition: service_healthy}
-    networks: [lab]
+      clickhouse:
+        condition: service_healthy
+    networks:
+    - lab
+    restart: unless-stopped
   api-gateway:
     build: ../services/api-gateway
     env_file: ../.env
-    ports: ["8080:8080"]
+    ports:
+    - 8080:8080
     depends_on:
-      redis: {condition: service_healthy}
-      threat-intel: {condition: service_started}
-      ml-inference: {condition: service_started}
-      behavioral-engine: {condition: service_started}
-      geo-intel: {condition: service_started}
-      active-response: {condition: service_started}
-      analytics-store: {condition: service_started}
-    networks: [lab]
+      redis:
+        condition: service_healthy
+      threat-intel:
+        condition: service_started
+      ml-inference:
+        condition: service_started
+      behavioral-engine:
+        condition: service_started
+      geo-intel:
+        condition: service_started
+      active-response:
+        condition: service_started
+      analytics-store:
+        condition: service_started
+    networks:
+    - lab
+    restart: unless-stopped
   resolver-core:
     build: ../services/resolver-core
     env_file: ../.env
-    ports: ["5353:53/udp", "5353:53/tcp", "8443:443", "8853:853"]
-    volumes: ["./certs:/certs:ro"]
+    ports:
+    - 5353:53/udp
+    - 5353:53/tcp
+    - 8443:443
+    - 8853:853
+    volumes:
+    - ./certs:/certs:ro
     depends_on:
-      api-gateway: {condition: service_started}
-      mock-dns: {condition: service_healthy}
-    networks: [lab]
+      api-gateway:
+        condition: service_started
+      mock-dns:
+        condition: service_healthy
+    networks:
+    - lab
+    restart: unless-stopped
   dashboard:
     build: ../dashboard
-    environment: ["NEXT_PUBLIC_API_URL=http://localhost:8080"]
-    ports: ["3000:3000"]
-    depends_on: [api-gateway]
-    networks: [lab]
+    environment:
+    - NEXT_PUBLIC_API_URL=http://localhost:8080
+    ports:
+    - 3000:3000
+    depends_on:
+    - api-gateway
+    networks:
+    - lab
+    restart: unless-stopped
   simulation-benign:
     build: ./lab-simulator
-    profiles: [simulation]
-    environment: ["GATEWAY_URL=http://api-gateway:8080"]
-    command: ["benign", "--device", "172.28.0.101"]
-    depends_on: [api-gateway]
-    networks: [lab]
+    profiles:
+    - simulation
+    environment:
+    - GATEWAY_URL=http://api-gateway:8080
+    command:
+    - benign
+    - --device
+    - 172.28.0.101
+    depends_on:
+    - api-gateway
+    networks:
+    - lab
+    restart: unless-stopped
   simulation-dga:
     build: ./lab-simulator
-    profiles: [simulation]
-    environment: ["GATEWAY_URL=http://api-gateway:8080"]
-    command: ["dga", "--device", "172.28.0.102", "--repeat", "20"]
-    depends_on: [api-gateway]
-    networks: [lab]
+    profiles:
+    - simulation
+    environment:
+    - GATEWAY_URL=http://api-gateway:8080
+    command:
+    - dga
+    - --device
+    - 172.28.0.102
+    - --repeat
+    - '20'
+    depends_on:
+    - api-gateway
+    networks:
+    - lab
+    restart: unless-stopped
   simulation-tunnelling:
     build: ./lab-simulator
-    profiles: [simulation]
-    environment: ["GATEWAY_URL=http://api-gateway:8080"]
-    command: ["tunnelling", "--device", "172.28.0.103", "--repeat", "2"]
-    depends_on: [api-gateway]
-    networks: [lab]
+    profiles:
+    - simulation
+    environment:
+    - GATEWAY_URL=http://api-gateway:8080
+    command:
+    - tunnelling
+    - --device
+    - 172.28.0.103
+    - --repeat
+    - '2'
+    depends_on:
+    - api-gateway
+    networks:
+    - lab
+    restart: unless-stopped
   simulation-c2:
     build: ./lab-simulator
-    profiles: [simulation]
-    environment: ["GATEWAY_URL=http://api-gateway:8080"]
-    command: ["c2", "--device", "172.28.0.104"]
-    depends_on: [api-gateway]
-    networks: [lab]
+    profiles:
+    - simulation
+    environment:
+    - GATEWAY_URL=http://api-gateway:8080
+    command:
+    - c2
+    - --device
+    - 172.28.0.104
+    depends_on:
+    - api-gateway
+    networks:
+    - lab
+    restart: unless-stopped
   simulation-typosquat:
     build: ./lab-simulator
-    profiles: [simulation]
-    environment: ["GATEWAY_URL=http://api-gateway:8080"]
-    command: ["typosquat", "--device", "172.28.0.105"]
-    depends_on: [api-gateway]
-    networks: [lab]
+    profiles:
+    - simulation
+    environment:
+    - GATEWAY_URL=http://api-gateway:8080
+    command:
+    - typosquat
+    - --device
+    - 172.28.0.105
+    depends_on:
+    - api-gateway
+    networks:
+    - lab
+    restart: unless-stopped
 networks:
   lab:
     name: dns-shield-lab
     internal: false
     ipam:
       config:
-        - subnet: 172.28.0.0/24
+      - subnet: 172.28.0.0/24
+volumes:
+  redis_data: null
+  clickhouse_data: null
