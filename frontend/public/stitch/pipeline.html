@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DNS Shield - AI Insights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    @font-face {
+      font-family: 'Geist';
+      src: url('https://cdn.jsdelivr.net/gh/fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Geist';
+      src: url('https://cdn.jsdelivr.net/gh/fontsource/geist-sans@5.0.1/files/geist-sans-latin-600-normal.woff2') format('woff2');
+      font-weight: 600;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Geist';
+      src: url('https://cdn.jsdelivr.net/gh/fontsource/geist-sans@5.0.1/files/geist-sans-latin-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+    .bg-dot-grid {
+      background-image: radial-gradient(circle, #c3c6d7 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "error-container": "#ffdad6",
+                  "tertiary-fixed-dim": "#ffb95f",
+                  "inverse-on-surface": "#eef0ff",
+                  "surface-container-lowest": "#ffffff",
+                  "inverse-primary": "#b4c5ff",
+                  "surface-container-highest": "#dae2fd",
+                  "primary": "#004ac6",
+                  "on-surface-variant": "#434655",
+                  "secondary-container": "#6cf8bb",
+                  "on-secondary-fixed": "#002113",
+                  "primary-fixed": "#dbe1ff",
+                  "on-secondary-container": "#00714d",
+                  "surface-tint": "#0053db",
+                  "inverse-surface": "#283044",
+                  "outline-variant": "#c3c6d7",
+                  "tertiary-fixed": "#ffddb8",
+                  "on-primary-fixed": "#00174b",
+                  "on-primary-container": "#eeefff",
+                  "on-primary": "#ffffff",
+                  "outline": "#737686",
+                  "surface-variant": "#dae2fd",
+                  "tertiary-container": "#996100",
+                  "on-secondary-fixed-variant": "#005236",
+                  "surface-bright": "#faf8ff",
+                  "error": "#ba1a1a",
+                  "surface-container-high": "#e2e7ff",
+                  "on-error": "#ffffff",
+                  "secondary-fixed": "#6ffbbe",
+                  "on-tertiary-fixed-variant": "#653e00",
+                  "on-tertiary-container": "#ffeedd",
+                  "secondary": "#006c49",
+                  "on-surface": "#131b2e",
+                  "on-secondary": "#ffffff",
+                  "on-error-container": "#93000a",
+                  "surface-container": "#eaedff",
+                  "surface": "#faf8ff",
+                  "on-primary-fixed-variant": "#003ea8",
+                  "on-tertiary-fixed": "#2a1700",
+                  "primary-container": "#2563eb",
+                  "primary-fixed-dim": "#b4c5ff",
+                  "surface-container-low": "#f2f3ff",
+                  "surface-dim": "#d2d9f4",
+                  "tertiary": "#784b00",
+                  "background": "#faf8ff",
+                  "secondary-fixed-dim": "#4edea3",
+                  "on-tertiary": "#ffffff",
+                  "on-background": "#131b2e"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "lg": "24px",
+                  "xl": "32px",
+                  "sm": "8px",
+                  "xs": "4px",
+                  "margin-desktop": "32px",
+                  "gutter": "16px",
+                  "md": "16px",
+                  "base": "4px",
+                  "margin-mobile": "16px"
+          },
+          "fontFamily": {
+                  "display-lg-mobile": [
+                          "Geist"
+                  ],
+                  "headline-md": [
+                          "Geist"
+                  ],
+                  "body-md": [
+                          "Inter"
+                  ],
+                  "body-sm": [
+                          "Inter"
+                  ],
+                  "super-heading": [
+                          "JetBrains Mono"
+                  ],
+                  "display-lg": [
+                          "Geist"
+                  ],
+                  "mono-data": [
+                          "JetBrains Mono"
+                  ]
+          },
+          "fontSize": {
+                  "display-lg-mobile": [
+                          "24px",
+                          {
+                                  "lineHeight": "32px",
+                                  "letterSpacing": "-0.02em",
+                                  "fontWeight": "600"
+                          }
+                  ],
+                  "headline-md": [
+                          "18px",
+                          {
+                                  "lineHeight": "24px",
+                                  "fontWeight": "600"
+                          }
+                  ],
+                  "body-md": [
+                          "14px",
+                          {
+                                  "lineHeight": "20px",
+                                  "fontWeight": "400"
+                          }
+                  ],
+                  "body-sm": [
+                          "12px",
+                          {
+                                  "lineHeight": "18px",
+                                  "fontWeight": "400"
+                          }
+                  ],
+                  "super-heading": [
+                          "10px",
+                          {
+                                  "lineHeight": "16px",
+                                  "letterSpacing": "0.1em",
+                                  "fontWeight": "700"
+                          }
+                  ],
+                  "display-lg": [
+                          "32px",
+                          {
+                                  "lineHeight": "40px",
+                                  "letterSpacing": "-0.02em",
+                                  "fontWeight": "600"
+                          }
+                  ],
+                  "mono-data": [
+                          "13px",
+                          {
+                                  "lineHeight": "16px",
+                                  "fontWeight": "500"
+                          }
+                  ]
+          }
+  },
+      },
+    }
+  </script>
+</head>
+<body class="bg-background text-on-background font-body-md bg-dot-grid min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[240px] bg-surface dark:bg-inverse-surface border-r border-outline-variant dark:border-outline flex flex-col h-full py-lg z-50">
+<div class="px-md mb-lg">
+<div class="text-headline-md font-headline-md text-primary dark:text-inverse-primary flex items-center gap-2">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A modern, abstract circular logo design with interconnected nodes, representing a secure DNS network. Minimalist, tech-forward, deep blue gradient on a white background, corporate cybersecurity aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDboxYDhm06EU86T2HHA-9cj5ue90F1tkTbDsIqUUO2rJVjQvZ9NtyjL_4vC4yLFabwjLBqJIncWhhc0LvJeGatNIimkrLng042-tp2BmGPQjnWqvQoQCjM7Tofc-YQXPxzVz9wa-4L_SUZdr1vOW8kXLyfd_nY4FSPN20IzvpywpI5YdW8T3BEqVtzg_5JFF4Tj1Ck81YFpG3c4GgI3JzI9B_Pd7m0yStgYfWNZEEpuO3XKR0CO62D"/>
+        DNS Shield
+      </div>
+<div class="text-body-sm text-on-surface-variant mt-1 ml-10">v2.4.0-Enterprise</div>
+</div>
+<nav class="flex-1 overflow-y-auto py-2">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-body-md font-body-md">Overview</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="text-body-md font-body-md">Threat Hunter</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 border-l-2 border-primary bg-primary-container/10 text-primary font-bold hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="text-body-md font-body-md">AI Insights</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="error">error</span>
+<span class="text-body-md font-body-md">Anomalies</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="settings_ethernet">settings_ethernet</span>
+<span class="text-body-md font-body-md">DNS Rules</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-body-md font-body-md">Settings</span>
+</a>
+</li>
+</ul>
+</nav>
+<div class="px-md py-4 border-t border-outline-variant dark:border-outline">
+<div class="mb-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container text-on-secondary-container">
+<span class="w-2 h-2 mr-1.5 bg-secondary rounded-full"></span>
+          System Operational
+        </span>
+</div>
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-body-md font-body-md">Help</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors" href="index.html">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="text-body-md font-body-md">Logout</span>
+</a>
+</li>
+</ul>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="sticky top-0 h-[64px] w-full z-40 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-md border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin-desktop">
+<div class="flex items-center gap-xl">
+<div class="text-headline-md font-headline-md font-bold text-primary">DNS Shield</div>
+<nav class="hidden md:flex gap-6 h-full items-center">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-all" href="index.html">Overview</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-surface-container-lowest border border-outline-variant rounded focus:border-primary focus:ring-1 focus:ring-primary text-body-sm w-64" placeholder="Search..." type="text"/>
+</div>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Split Screen Layout -->
+<main class="flex-1 flex flex-col md:flex-row p-gutter gap-gutter h-[calc(100vh-64px)] overflow-hidden">
+<!-- Left Column: Pipeline Stages -->
+<section class="w-full md:w-[380px] flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden shrink-0 shadow-xs">
+<div class="p-md border-b border-outline-variant bg-surface-bright flex justify-between items-center">
+<h2 class="text-headline-md font-headline-md text-on-surface">7-Stage Interceptor Cascade</h2>
+<span class="text-mono-data font-mono-data bg-surface-container px-2 py-1 rounded text-on-surface-variant border border-outline-variant">P99 Latency ~5.7ms</span>
+</div>
+<div class="flex-1 overflow-y-auto p-sm space-y-2">
+<!-- Stage 01 -->
+<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-super-heading font-super-heading text-outline uppercase">Stage 01</span>
+<span class="text-mono-data font-mono-data text-on-surface-variant">0.4ms</span>
+</div>
+<div class="text-body-md font-bold text-on-surface">IP REPUTATION FILTER</div>
+<div class="flex gap-2">
+<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8000</span>
+</div>
+</div>
+<!-- Stage 02 -->
+<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-super-heading font-super-heading text-outline uppercase">Stage 02</span>
+<span class="text-mono-data font-mono-data text-on-surface-variant">0.8ms</span>
+</div>
+<div class="text-body-md font-bold text-on-surface">DNSSEC VALIDATION</div>
+<div class="flex gap-2">
+<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :53</span>
+</div>
+</div>
+<!-- Stage 03 -->
+<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-super-heading font-super-heading text-outline uppercase">Stage 03</span>
+<span class="text-mono-data font-mono-data text-on-surface-variant">1.2ms</span>
+</div>
+<div class="text-body-md font-bold text-on-surface">HEURISTIC ANALYSIS</div>
+<div class="flex gap-2">
+<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8002</span>
+</div>
+</div>
+<!-- Stage 04 (Active) -->
+<div class="p-3 border-l-2 border-l-primary border-t border-r border-b border-outline-variant rounded bg-primary-container/5 cursor-pointer flex flex-col gap-2 relative overflow-hidden">
+<div class="absolute right-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex justify-between items-center">
+<span class="text-super-heading font-super-heading text-primary uppercase">Stage 04</span>
+<span class="text-mono-data font-mono-data text-primary">1.1ms</span>
+</div>
+<div class="text-body-md font-bold text-primary">DGA RANDOM FOREST ML</div>
+<div class="flex gap-2">
+<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8001</span>
+<span class="text-mono-data font-mono-data text-xs bg-error-container text-on-error-container px-1.5 py-0.5 rounded border border-error-container">+31.2 Risk</span>
+</div>
+</div>
+<!-- Stage 05 -->
+<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-super-heading font-super-heading text-outline uppercase">Stage 05</span>
+<span class="text-mono-data font-mono-data text-on-surface-variant">0.9ms</span>
+</div>
+<div class="text-body-md font-bold text-on-surface">SINKHOLE ROUTING</div>
+<div class="flex gap-2">
+<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :8080</span>
+</div>
+</div>
+<!-- Stage 06 -->
+<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-super-heading font-super-heading text-outline uppercase">Stage 06</span>
+<span class="text-mono-data font-mono-data text-on-surface-variant">0.5ms</span>
+</div>
+<div class="text-body-md font-bold text-on-surface">CACHE UPDATER</div>
+<div class="flex gap-2">
+<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :6379</span>
+</div>
+</div>
+<!-- Stage 07 -->
+<div class="p-3 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-super-heading font-super-heading text-outline uppercase">Stage 07</span>
+<span class="text-mono-data font-mono-data text-on-surface-variant">0.8ms</span>
+</div>
+<div class="text-body-md font-bold text-on-surface">TELEMETRY EXPORT</div>
+<div class="flex gap-2">
+<span class="text-mono-data font-mono-data text-xs bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant">Port :9090</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Column: Details & Visuals -->
+<section class="flex-1 flex flex-col gap-gutter overflow-y-auto min-w-0">
+<!-- Pipeline Flow Strip -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-xs flex items-center justify-between relative">
+<div class="absolute left-10 right-10 top-1/2 h-0.5 bg-outline-variant -translate-y-1/2 z-0"></div>
+<div class="absolute left-10 right-[45%] top-1/2 h-0.5 bg-secondary -translate-y-1/2 z-0"></div>
+<!-- Nodes -->
+<div class="relative z-10 flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-secondary border-2 border-surface-container-lowest flex items-center justify-center text-[10px] text-on-secondary font-bold">1</div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-secondary border-2 border-surface-container-lowest flex items-center justify-center text-[10px] text-on-secondary font-bold">2</div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-secondary border-2 border-surface-container-lowest flex items-center justify-center text-[10px] text-on-secondary font-bold">3</div>
+</div>
+<!-- Active Node -->
+<div class="relative z-10 flex flex-col items-center gap-1">
+<div class="w-8 h-8 rounded-full bg-primary border-4 border-primary-container flex items-center justify-center text-xs text-on-primary font-bold shadow-[0_0_15px_rgba(37,99,235,0.5)]">4</div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center text-[10px] text-on-surface-variant font-bold">5</div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center text-[10px] text-on-surface-variant font-bold">6</div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center text-[10px] text-on-surface-variant font-bold">7</div>
+</div>
+</div>
+<!-- Stage Specification Banner -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-lg shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<h1 class="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface">DGA Random Forest ML</h1>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-secondary-container text-on-secondary-container border border-secondary/20">
+<span class="w-2 h-2 mr-1.5 bg-secondary rounded-full animate-pulse"></span>
+                Service Online
+              </span>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="cable">cable</span>
+<span class="text-mono-data font-mono-data">Port :8001</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="policy">policy</span>
+<span class="text-mono-data font-mono-data bg-surface-container px-1 rounded">MITRE T1568.002</span>
+</div>
+</div>
+</div>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded text-body-sm font-medium transition-colors border border-transparent">
+            Re-Train Model
+          </button>
+</div>
+<!-- Architecture & Math Split -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+<!-- Architecture Description Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-xs">
+<h3 class="text-headline-md font-headline-md text-on-surface mb-3 border-b border-outline-variant pb-2">Architecture Topology</h3>
+<p class="text-body-md font-body-md text-on-surface-variant mb-4">
+              This stage utilizes an ensemble learning method for classification. It operates by constructing a multitude of decision trees (currently 150) at training time and outputting the class that is the mode of the classes of the individual trees.
+            </p>
+<div class="grid grid-cols-2 gap-4">
+<div class="border border-outline-variant rounded p-3 bg-surface">
+<div class="text-super-heading font-super-heading text-outline mb-1 uppercase">Trees</div>
+<div class="text-mono-data font-mono-data text-on-surface text-lg">150</div>
+</div>
+<div class="border border-outline-variant rounded p-3 bg-surface">
+<div class="text-super-heading font-super-heading text-outline mb-1 uppercase">Max Depth</div>
+<div class="text-mono-data font-mono-data text-on-surface text-lg">24</div>
+</div>
+</div>
+</div>
+<!-- Mathematical Core Box -->
+<div class="bg-[#1e1e1e] border border-[#333] rounded-lg p-md shadow-xs text-[#d4d4d4] flex flex-col">
+<div class="flex justify-between items-center mb-3 border-b border-[#333] pb-2">
+<h3 class="text-body-md font-mono-data font-bold text-[#569cd6]">aggregation_core.py</h3>
+<span class="material-symbols-outlined text-[#858585] text-[18px]" data-icon="content_copy">content_copy</span>
+</div>
+<pre class="text-mono-data font-mono-data overflow-x-auto flex-1"><code><span class="text-[#c586c0]">def</span> <span class="text-[#dcdcaa]">predict_ensemble</span>(x, trees):
+    <span class="text-[#6a9955]"># Random Forest Aggregation Formula</span>
+    predictions = [tree.<span class="text-[#dcdcaa]">predict</span>(x) <span class="text-[#c586c0]">for</span> tree <span class="text-[#c586c0]">in</span> trees]
+    
+    <span class="text-[#c586c0]">return</span> <span class="text-[#4ec9b0]">Counter</span>(predictions).<span class="text-[#dcdcaa]">most_common</span>(<span class="text-[#b5cea8]">1</span>)[<span class="text-[#b5cea8]">0</span>][<span class="text-[#b5cea8]">0</span>]
+
+<span class="text-[#6a9955]"># Output represents majority vote:</span>
+<span class="text-[#6a9955]"># ŷ = argmax_c (1/B) Σ I(T_b(x) == c)</span></code></pre>
+</div>
+</div>
+<!-- Data Contract Grid -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-xs">
+<h3 class="text-headline-md font-headline-md text-on-surface mb-4 border-b border-outline-variant pb-2">Data Contract Specs</h3>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-md">
+<!-- Ingestion Payload -->
+<div class="border border-outline-variant rounded bg-surface overflow-hidden flex flex-col">
+<div class="bg-surface-container-high px-3 py-2 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="input">input</span>
+<span class="text-super-heading font-super-heading text-on-surface-variant uppercase">Ingestion Payload</span>
+</div>
+<div class="p-3 bg-surface-bright overflow-x-auto">
+<pre class="text-mono-data font-mono-data text-on-surface-variant text-sm"><code>{
+  "query": <span class="text-primary">"string"</span>,
+  "entropy": <span class="text-secondary">"float"</span>,
+  "len": <span class="text-secondary">"integer"</span>,
+  "vowels": <span class="text-secondary">"integer"</span>,
+  "consonants": <span class="text-secondary">"integer"</span>,
+  "timestamp": <span class="text-secondary">"integer"</span>
+}</code></pre>
+</div>
+</div>
+<!-- Decision Response -->
+<div class="border border-outline-variant rounded bg-surface overflow-hidden flex flex-col">
+<div class="bg-surface-container-high px-3 py-2 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="output">output</span>
+<span class="text-super-heading font-super-heading text-on-surface-variant uppercase">Decision Response</span>
+</div>
+<div class="p-3 bg-surface-bright overflow-x-auto">
+<pre class="text-mono-data font-mono-data text-on-surface-variant text-sm"><code>{
+  "is_dga": <span class="text-[#ba1a1a]">"boolean"</span>,
+  "confidence": <span class="text-secondary">"float"</span>,
+  "risk_score": <span class="text-secondary">"float"</span>,
+  "model_version": <span class="text-primary">"string"</span>,
+  "processing_ms": <span class="text-secondary">"float"</span>
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Security Analytics &amp; Telemetry - DNS Shield</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary": "#006c49",
+                  "surface-variant": "#dae2fd",
+                  "on-tertiary-fixed-variant": "#653e00",
+                  "secondary-container": "#6cf8bb",
+                  "error": "#ba1a1a",
+                  "primary-fixed-dim": "#b4c5ff",
+                  "surface-container-low": "#f2f3ff",
+                  "secondary-fixed-dim": "#4edea3",
+                  "tertiary-fixed": "#ffddb8",
+                  "on-surface-variant": "#434655",
+                  "on-secondary": "#ffffff",
+                  "on-primary-container": "#eeefff",
+                  "surface-container-lowest": "#ffffff",
+                  "inverse-on-surface": "#eef0ff",
+                  "on-tertiary-container": "#ffeedd",
+                  "surface": "#faf8ff",
+                  "on-error": "#ffffff",
+                  "surface-bright": "#faf8ff",
+                  "surface-container-highest": "#dae2fd",
+                  "on-surface": "#131b2e",
+                  "on-background": "#131b2e",
+                  "on-secondary-container": "#00714d",
+                  "surface-dim": "#d2d9f4",
+                  "surface-container": "#eaedff",
+                  "on-secondary-fixed-variant": "#005236",
+                  "on-primary-fixed-variant": "#003ea8",
+                  "primary-container": "#2563eb",
+                  "on-tertiary-fixed": "#2a1700",
+                  "inverse-primary": "#b4c5ff",
+                  "on-primary": "#ffffff",
+                  "background": "#faf8ff",
+                  "primary-fixed": "#dbe1ff",
+                  "error-container": "#ffdad6",
+                  "tertiary-fixed-dim": "#ffb95f",
+                  "on-error-container": "#93000a",
+                  "tertiary-container": "#996100",
+                  "on-secondary-fixed": "#002113",
+                  "tertiary": "#784b00",
+                  "on-tertiary": "#ffffff",
+                  "surface-container-high": "#e2e7ff",
+                  "surface-tint": "#0053db",
+                  "outline-variant": "#c3c6d7",
+                  "outline": "#737686",
+                  "inverse-surface": "#283044",
+                  "primary": "#004ac6",
+                  "on-primary-fixed": "#00174b",
+                  "secondary-fixed": "#6ffbbe"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "xs": "4px",
+                  "margin-mobile": "16px",
+                  "base": "4px",
+                  "margin-desktop": "32px",
+                  "md": "16px",
+                  "gutter": "16px",
+                  "xl": "32px",
+                  "lg": "24px",
+                  "sm": "8px"
+          },
+          "fontFamily": {
+                  "mono-data": [
+                          "JetBrains Mono"
+                  ],
+                  "super-heading": [
+                          "JetBrains Mono"
+                  ],
+                  "display-lg-mobile": [
+                          "Geist"
+                  ],
+                  "body-sm": [
+                          "Inter"
+                  ],
+                  "display-lg": [
+                          "Geist"
+                  ],
+                  "headline-md": [
+                          "Geist"
+                  ],
+                  "body-md": [
+                          "Inter"
+                  ]
+          },
+          "fontSize": {
+                  "mono-data": [
+                          "13px",
+                          {
+                                  "lineHeight": "16px",
+                                  "fontWeight": "500"
+                          }
+                  ],
+                  "super-heading": [
+                          "10px",
+                          {
+                                  "lineHeight": "16px",
+                                  "letterSpacing": "0.1em",
+                                  "fontWeight": "700"
+                          }
+                  ],
+                  "display-lg-mobile": [
+                          "24px",
+                          {
+                                  "lineHeight": "32px",
+                                  "letterSpacing": "-0.02em",
+                                  "fontWeight": "600"
+                          }
+                  ],
+                  "body-sm": [
+                          "12px",
+                          {
+                                  "lineHeight": "18px",
+                                  "fontWeight": "400"
+                          }
+                  ],
+                  "display-lg": [
+                          "32px",
+                          {
+                                  "lineHeight": "40px",
+                                  "letterSpacing": "-0.02em",
+                                  "fontWeight": "600"
+                          }
+                  ],
+                  "headline-md": [
+                          "18px",
+                          {
+                                  "lineHeight": "24px",
+                                  "fontWeight": "600"
+                          }
+                  ],
+                  "body-md": [
+                          "14px",
+                          {
+                                  "lineHeight": "20px",
+                                  "fontWeight": "400"
+                          }
+                  ]
+          },
+          "backgroundImage": {
+            "dot-pattern": "radial-gradient(#e5e7eb 1px, transparent 1px)"
+          }
+        },
+      }
+    }
+  </script>
+<style>
+    body {
+      background-size: 24px 24px;
+      background-image: radial-gradient(#c3c6d7 1px, transparent 1px);
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface dark:bg-background border-r border-outline-variant flex flex-col h-full py-md z-50">
+<div class="px-4 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary font-bold">DS</div>
+<div>
+<h1 class="font-display-lg text-headline-md font-bold text-primary leading-none">DNS Shield</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">Enterprise Threat Defense</p>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto scrollbar-hide">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 bg-primary-fixed text-on-primary-fixed-variant border-l-2 border-primary py-2 px-4" href="index.html">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container py-2 px-4 hover:bg-surface-container-high transition-colors duration-150 cursor-pointer active:opacity-80" href="index.html">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span>Threat Intelligence</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container py-2 px-4 hover:bg-surface-container-high transition-colors duration-150 cursor-pointer active:opacity-80" href="index.html">
+<span class="material-symbols-outlined" data-icon="policy">policy</span>
+<span>Policies</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container py-2 px-4 hover:bg-surface-container-high transition-colors duration-150 cursor-pointer active:opacity-80" href="index.html">
+<span class="material-symbols-outlined" data-icon="lan">lan</span>
+<span>Assets</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container py-2 px-4 hover:bg-surface-container-high transition-colors duration-150 cursor-pointer active:opacity-80" href="index.html">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span>Deployment</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container py-2 px-4 hover:bg-surface-container-high transition-colors duration-150 cursor-pointer active:opacity-80" href="index.html">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="mt-auto px-4 pt-4 border-t border-outline-variant/30 space-y-4">
+<button class="w-full bg-primary text-on-primary py-2 rounded font-body-sm font-medium hover:bg-primary/90 transition-colors">Upgrade Plan</button>
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 text-on-surface-variant text-body-sm hover:bg-surface-container py-1.5 px-2 rounded hover:bg-surface-container-high transition-colors duration-150 cursor-pointer active:opacity-80" href="index.html">
+<span class="material-symbols-outlined text-[18px]" data-icon="help">help</span>
+<span>Support</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface-variant text-body-sm hover:bg-surface-container py-1.5 px-2 rounded hover:bg-surface-container-high transition-colors duration-150 cursor-pointer active:opacity-80" href="index.html">
+<span class="material-symbols-outlined text-[18px]" data-icon="code">code</span>
+<span>API Docs</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-[240px] flex-1 min-w-0 flex flex-col">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-40 w-full bg-surface/80 dark:bg-background/80 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-lg py-sm">
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="pl-9 pr-4 py-1.5 bg-surface-container border border-outline-variant rounded-full text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-64 transition-all" placeholder="Search DNS logs..." type="text"/>
+</div>
+<nav class="hidden md:flex items-center gap-4">
+<a class="text-primary border-b-2 border-primary pb-1 font-body-sm font-medium cursor-pointer active:scale-95" href="index.html">Global View</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:text-primary transition-colors duration-200 pb-1 font-body-sm font-medium cursor-pointer active:scale-95" href="index.html">Logs</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:text-primary transition-colors duration-200 pb-1 font-body-sm font-medium cursor-pointer active:scale-95" href="index.html">Alerts</a>
+</nav>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">history</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">account_circle</span></button>
+</div>
+</header>
+<div class="p-lg space-y-gutter">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">Security Analytics &amp; Telemetry</h2>
+<div class="flex items-center gap-3">
+<div class="flex bg-surface-container rounded-full p-1 border border-outline-variant">
+<button class="px-3 py-1 rounded-full bg-primary text-on-primary font-body-sm text-xs font-medium shadow-sm">24H</button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface font-body-sm text-xs font-medium transition-colors">7D</button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface font-body-sm text-xs font-medium transition-colors">30D</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded bg-surface hover:bg-surface-container-low transition-colors font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-[18px]">download</span>
+            Export Data
+          </button>
+</div>
+</div>
+<!-- KPI Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- KPI 1 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<h3 class="font-super-heading text-super-heading text-on-surface-variant mb-2 uppercase tracking-wider">Total 24h Volume</h3>
+<div class="flex items-end gap-2">
+<span class="font-mono-data text-2xl text-on-surface leading-none">13,285</span>
+<span class="font-mono-data text-[10px] text-secondary flex items-center bg-secondary-container/30 px-1 py-0.5 rounded">
+<span class="material-symbols-outlined text-[10px]">trending_up</span> +4.2%
+            </span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<h3 class="font-super-heading text-super-heading text-on-surface-variant mb-2 uppercase tracking-wider">Mean Resolution Latency</h3>
+<div class="flex flex-col gap-1">
+<div class="flex items-end gap-2">
+<span class="font-mono-data text-2xl text-on-surface leading-none">1.24<span class="text-sm text-outline ml-0.5">ms</span></span>
+<span class="font-mono-data text-[10px] text-secondary flex items-center bg-secondary-container/30 px-1 py-0.5 rounded">
+<span class="material-symbols-outlined text-[10px]">trending_down</span> -12%
+              </span>
+</div>
+<span class="font-mono-data text-[10px] text-outline">P99: 4.8ms</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<h3 class="font-super-heading text-super-heading text-on-surface-variant mb-2 uppercase tracking-wider">Mitigation Accuracy</h3>
+<div class="flex flex-col gap-1">
+<div class="flex items-end gap-2">
+<span class="font-mono-data text-2xl text-on-surface leading-none">99.82<span class="text-sm text-outline ml-0.5">%</span></span>
+</div>
+<span class="font-mono-data text-[10px] text-outline">FP &lt;0.01%</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<h3 class="font-super-heading text-super-heading text-on-surface-variant mb-2 uppercase tracking-wider">Tracked Client IPs</h3>
+<div class="flex flex-col gap-1">
+<div class="flex items-end gap-2">
+<span class="font-mono-data text-2xl text-on-surface leading-none">48</span>
+<span class="font-body-sm text-xs text-outline mb-0.5">Hosts</span>
+</div>
+<span class="font-mono-data text-[10px] text-error flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+              3 isolated
+            </span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
