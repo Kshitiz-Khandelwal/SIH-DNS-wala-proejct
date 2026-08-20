@@ -1,119 +1,97 @@
 <!DOCTYPE html>
-
-<html class="light" lang="en"><head>
+<html class="light" lang="en">
+<head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>DNS Shield - Threat Intelligence &amp; RPZ Feeds</title>
+<title>Threat Intelligence &amp; RPZ Feeds - DNS Shield</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "tertiary-fixed-dim": "#ffb95f",
-                        "on-secondary": "#ffffff",
-                        "on-error-container": "#93000a",
-                        "inverse-surface": "#283044",
-                        "surface-container-low": "#f2f3ff",
-                        "on-secondary-fixed": "#002113",
-                        "on-primary": "#ffffff",
-                        "on-secondary-container": "#00714d",
-                        "outline": "#737686",
-                        "on-tertiary-fixed-variant": "#653e00",
-                        "secondary": "#006c49",
-                        "tertiary": "#784b00",
-                        "on-background": "#131b2e",
-                        "on-tertiary": "#ffffff",
-                        "error-container": "#ffdad6",
-                        "primary-container": "#2563eb",
-                        "secondary-container": "#6cf8bb",
-                        "on-secondary-fixed-variant": "#005236",
-                        "on-tertiary-fixed": "#2a1700",
-                        "surface-bright": "#faf8ff",
-                        "on-surface-variant": "#434655",
-                        "secondary-fixed-dim": "#4edea3",
-                        "tertiary-container": "#996100",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container": "#eaedff",
-                        "surface-tint": "#0053db",
-                        "on-tertiary-container": "#ffeedd",
-                        "secondary-fixed": "#6ffbbe",
-                        "inverse-primary": "#b4c5ff",
-                        "surface": "#faf8ff",
-                        "tertiary-fixed": "#ffddb8",
-                        "on-surface": "#131b2e",
-                        "on-primary-fixed-variant": "#003ea8",
-                        "on-primary-fixed": "#00174b",
-                        "inverse-on-surface": "#eef0ff",
-                        "primary-fixed-dim": "#b4c5ff",
-                        "background": "#faf8ff",
-                        "outline-variant": "#c3c6d7",
-                        "primary": "#004ac6",
-                        "error": "#ba1a1a",
-                        "on-primary-container": "#eeefff",
-                        "primary-fixed": "#dbe1ff",
-                        "surface-dim": "#d2d9f4",
-                        "on-error": "#ffffff",
-                        "surface-container-high": "#e2e7ff",
-                        "surface-variant": "#dae2fd",
-                        "surface-container-highest": "#dae2fd"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    "spacing": {
-                        "md": "16px",
-                        "margin-desktop": "32px",
-                        "margin-mobile": "16px",
-                        "lg": "24px",
-                        "xl": "32px",
-                        "sm": "8px",
-                        "base": "4px",
-                        "xs": "4px",
-                        "gutter": "16px"
-                    },
-                    "fontFamily": {
-                        "super-heading": ["JetBrains Mono"],
-                        "body-sm": ["Inter"],
-                        "body-md": ["Inter"],
-                        "mono-data": ["JetBrains Mono"],
-                        "headline-md": ["Geist"],
-                        "display-lg": ["Geist"],
-                        "display-lg-mobile": ["Geist"]
-                    },
-                    "fontSize": {
-                        "super-heading": ["10px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
-                        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
-                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
-                        "mono-data": ["13px", { "lineHeight": "16px", "fontWeight": "500" }],
-                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
-                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
-                        "display-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
-                    }
-                }
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "tertiary-fixed-dim": "#ffb95f",
+                "primary-container": "#2563eb",
+                "primary-fixed-dim": "#b4c5ff",
+                "primary-fixed": "#dbe1ff",
+                "on-error": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "error": "#ba1a1a",
+                "secondary": "#006c49",
+                "inverse-on-surface": "#eef0ff",
+                "secondary-container": "#6cf8bb",
+                "surface-container-highest": "#dae2fd",
+                "outline-variant": "#c3c6d7",
+                "on-secondary-fixed-variant": "#005236",
+                "on-surface": "#131b2e",
+                "on-tertiary-fixed-variant": "#653e00",
+                "surface-bright": "#faf8ff",
+                "surface-container-high": "#e2e7ff",
+                "tertiary-fixed": "#ffddb8",
+                "error-container": "#ffdad6",
+                "surface": "#faf8ff",
+                "surface-dim": "#d2d9f4",
+                "on-secondary-fixed": "#002113",
+                "on-primary-container": "#eeefff",
+                "surface-tint": "#0053db",
+                "background": "#faf8ff",
+                "on-tertiary-container": "#ffeedd",
+                "tertiary": "#784b00",
+                "surface-container": "#eaedff",
+                "on-primary-fixed-variant": "#003ea8",
+                "outline": "#737686",
+                "surface-variant": "#dae2fd",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#00174b",
+                "on-secondary-container": "#00714d",
+                "primary": "#004ac6",
+                "on-surface-variant": "#434655",
+                "secondary-fixed": "#6ffbbe",
+                "inverse-surface": "#283044",
+                "secondary-fixed-dim": "#4edea3",
+                "inverse-primary": "#b4c5ff",
+                "on-secondary": "#ffffff",
+                "on-error-container": "#93000a",
+                "tertiary-container": "#996100",
+                "surface-container-low": "#f2f3ff",
+                "on-background": "#131b2e",
+                "on-tertiary-fixed": "#2a1700",
+                "on-primary": "#ffffff"
+            },
+            fontFamily: {
+                "mono-data": ["JetBrains Mono", "monospace"],
+                "body-sm": ["Inter", "sans-serif"],
+                "body-md": ["Inter", "sans-serif"],
+                "display-lg": ["Geist", "sans-serif"],
+                "headline-md": ["Geist", "sans-serif"],
+                "super-heading": ["JetBrains Mono", "monospace"],
             }
         }
-    </script>
+    }
+}
+</script>
 <style>
-        .grid-bg {
-            background-image: radial-gradient(var(--tw-colors-outline-variant) 1px, transparent 1px);
-            background-size: 24px 24px;
-        }
-        .card-border {
-            border: 1px solid var(--tw-colors-outline-variant);
-        }
-    </style>
+.dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+    background-size: 24px 24px;
+}
+.technical-border {
+    border: 1px solid #e2e8f0;
+}
+.technical-shadow {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.mono-number {
+    font-family: 'JetBrains Mono', monospace;
+}
+</style>
 </head>
-<body class="bg-surface text-on-surface font-body-md min-h-screen grid-bg">
-<!-- SideNavBar -->
-<!-- SideNavBar -->
+<body class="bg-surface text-on-surface font-body-md text-body-md dot-grid min-h-screen flex">
 <!-- SideNavBar -->
 <nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col h-full py-6 z-50">
     <div class="px-6 mb-8 flex items-center gap-3">
@@ -166,168 +144,189 @@
         </a>
     </div>
 </nav>
-<!-- Main Content -->
-<main class="ml-[240px] min-h-screen">
-<!-- TopAppBar -->
-<header class="sticky top-0 h-[64px] w-full z-40 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-md border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin-desktop w-[calc(100%-240px)] ml-[240px]">
-<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-inverse-primary">Threat Intelligence &amp; RPZ Feeds</h1>
-<div class="flex items-center gap-4">
-<button class="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-DEFAULT text-body-md font-medium hover:bg-primary-fixed-variant transition-colors shadow-xs">
-<span class="material-symbols-outlined text-[18px]">sync</span>
-                    Sync All Feeds
-                </button>
+
+<!-- Main Content Area -->
+<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
+    <!-- TopNavBar -->
+    <header class="sticky top-0 h-[64px] w-full z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-8">
+        <div class="flex items-center gap-6">
+            <h2 class="text-headline-md font-headline-md font-bold text-primary">Threat Intelligence &amp; RPZ Feeds</h2>
+            <div class="hidden lg:flex items-center gap-2 bg-surface-container border border-outline-variant rounded-full px-3 py-1">
+                <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                <span class="text-[10px] font-super-heading text-secondary tracking-wider uppercase font-bold">5/5 FEEDS IN SYNC</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="syncFeedsBtn" onclick="syncAllFeeds()" class="flex items-center gap-2 bg-primary hover:bg-primary-container text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-xs">
+                <span id="sync-icon" class="material-symbols-outlined text-[18px]">sync</span>
+                <span id="sync-text">Sync All Feeds</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Canvas -->
+    <main class="flex-1 p-8 space-y-6">
+        <!-- KPIs Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Total Cached IoCs</span>
+                <div id="ioc-total-count" class="text-[28px] font-bold text-primary mono-number mt-2">133,720</div>
+                <span class="text-[11px] text-outline mt-1 font-mono-data">5-min Radix TTL Sync</span>
+            </div>
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Match Hit Rate</span>
+                <div class="text-[28px] font-bold text-on-surface mono-number mt-2">3.4%</div>
+                <span class="text-[11px] text-secondary font-bold mt-1">Interception Line-Rate</span>
+            </div>
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Mean Lookup Time</span>
+                <div class="text-[28px] font-bold text-secondary mono-number mt-2">0.18ms</div>
+                <span class="text-[11px] text-outline font-mono-data mt-1">O(L) Trie Prefix</span>
+            </div>
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Feed Sync Health</span>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="w-3 h-3 rounded-full bg-secondary animate-pulse"></span>
+                    <span class="text-[22px] font-bold text-secondary font-sans">100% Online</span>
+                </div>
+                <span class="text-[11px] text-outline font-mono-data mt-1">Zero Stale Records</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Interactive Lookup (1 Col) -->
+            <div class="lg:col-span-1 bg-white rounded-xl border border-outline-variant shadow-xs flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-outline-variant bg-surface-bright">
+                    <span class="text-[10px] font-super-heading text-outline uppercase font-bold block">REAL-TIME RADIX SEARCH</span>
+                    <h3 class="text-[15px] font-bold text-on-surface mt-0.5">Local Indicator Lookup</h3>
+                </div>
+                <div class="p-5 flex-1 flex flex-col gap-4">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+                        <input id="ioc-search-input" oninput="searchIocLive()" class="w-full bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-2.5 text-xs font-mono-data font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Enter FQDN or IP to check..." type="text" value="malw-c2-01.ru"/>
+                    </div>
+                    <div id="ioc-result-box" class="p-4 bg-error-container/20 border border-error/20 rounded-lg">
+                        <div class="text-xs text-outline mb-1">Lookup Target: <span id="ioc-target-label" class="font-mono-data font-bold text-on-surface">malw-c2-01.ru</span></div>
+                        <div id="ioc-status-banner" class="flex items-center gap-2 text-error font-bold text-xs mt-2">
+                            <span class="material-symbols-outlined text-[18px]">block</span>
+                            <span>MATCH FOUND — Threat: Botnet C2 (Abuse.ch URLhaus)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscribed Providers Table (2 Cols) -->
+            <div class="lg:col-span-2 bg-white rounded-xl border border-outline-variant shadow-xs overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-outline-variant bg-surface-bright flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] font-super-heading text-outline uppercase font-bold block">CONNECTED RESPONSE POLICY ZONE (RPZ) SOURCES</span>
+                        <h3 class="text-[15px] font-bold text-on-surface mt-0.5">Subscribed Threat Providers</h3>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-outline-variant bg-surface-container-low text-[10px] font-super-heading text-outline uppercase font-bold">
+                                <th class="px-5 py-3">Feed Provider</th>
+                                <th class="px-5 py-3">Indicator Count</th>
+                                <th class="px-5 py-3">Last Sync</th>
+                                <th class="px-5 py-3">Ingestion Latency</th>
+                                <th class="px-5 py-3 text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="providers-table-body" class="text-[13px] font-mono-data divide-y divide-outline-variant/30">
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-on-surface font-sans">Abuse.ch URLhaus</td>
+                                <td class="px-5 py-3.5 font-bold text-primary">58,420</td>
+                                <td class="px-5 py-3.5 text-outline">Just now</td>
+                                <td class="px-5 py-3.5 text-outline">45ms</td>
+                                <td class="px-5 py-3.5 text-right"><span class="px-2.5 py-0.5 bg-secondary-container/30 text-secondary border border-secondary/20 rounded-full text-[10px] font-bold">ONLINE</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-on-surface font-sans">PhishTank Live Feed</td>
+                                <td class="px-5 py-3.5 font-bold text-primary">34,200</td>
+                                <td class="px-5 py-3.5 text-outline">1m ago</td>
+                                <td class="px-5 py-3.5 text-outline">32ms</td>
+                                <td class="px-5 py-3.5 text-right"><span class="px-2.5 py-0.5 bg-secondary-container/30 text-secondary border border-secondary/20 rounded-full text-[10px] font-bold">ONLINE</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-on-surface font-sans">AlienVault OTX Community</td>
+                                <td class="px-5 py-3.5 font-bold text-primary">22,150</td>
+                                <td class="px-5 py-3.5 text-outline">3m ago</td>
+                                <td class="px-5 py-3.5 text-outline">58ms</td>
+                                <td class="px-5 py-3.5 text-right"><span class="px-2.5 py-0.5 bg-secondary-container/30 text-secondary border border-secondary/20 rounded-full text-[10px] font-bold">ONLINE</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-on-surface font-sans">Emerging Threats (Proofpoint)</td>
+                                <td class="px-5 py-3.5 font-bold text-primary">12,650</td>
+                                <td class="px-5 py-3.5 text-outline">4m ago</td>
+                                <td class="px-5 py-3.5 text-outline">28ms</td>
+                                <td class="px-5 py-3.5 text-right"><span class="px-2.5 py-0.5 bg-secondary-container/30 text-secondary border border-secondary/20 rounded-full text-[10px] font-bold">ONLINE</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-on-surface font-sans">OpenPhish Community</td>
+                                <td class="px-5 py-3.5 font-bold text-primary">6,300</td>
+                                <td class="px-5 py-3.5 text-outline">2m ago</td>
+                                <td class="px-5 py-3.5 text-outline">21ms</td>
+                                <td class="px-5 py-3.5 text-right"><span class="px-2.5 py-0.5 bg-secondary-container/30 text-secondary border border-secondary/20 rounded-full text-[10px] font-bold">ONLINE</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
-</header>
-<div class="p-margin-desktop max-w-[1440px] mx-auto space-y-md">
-<!-- KPIs -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-md">
-<div class="bg-surface rounded-lg p-lg card-border shadow-xs hover:bg-surface-container-low transition-colors">
-<div class="text-super-heading font-super-heading text-outline mb-2 uppercase">Total Cached IoCs</div>
-<div class="text-display-lg font-display-lg text-primary font-mono-data">133,720</div>
-</div>
-<div class="bg-surface rounded-lg p-lg card-border shadow-xs hover:bg-surface-container-low transition-colors">
-<div class="text-super-heading font-super-heading text-outline mb-2 uppercase">Match Hit Rate</div>
-<div class="text-display-lg font-display-lg text-primary-container font-mono-data">3.4%</div>
-</div>
-<div class="bg-surface rounded-lg p-lg card-border shadow-xs hover:bg-surface-container-low transition-colors">
-<div class="text-super-heading font-super-heading text-outline mb-2 uppercase">Mean Lookup Time</div>
-<div class="text-display-lg font-display-lg text-secondary font-mono-data">0.2ms</div>
-</div>
-<div class="bg-surface rounded-lg p-lg card-border shadow-xs hover:bg-surface-container-low transition-colors relative overflow-hidden">
-<div class="text-super-heading font-super-heading text-outline mb-2 uppercase">Feed Sync Health</div>
-<div class="flex items-center gap-3">
-<span class="w-4 h-4 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,108,73,0.6)] animate-pulse"></span>
-<div class="text-headline-md font-headline-md text-secondary">100% Online</div>
-</div>
-</div>
-</div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
-<!-- Interactive Lookup -->
-<div class="lg:col-span-1 bg-surface rounded-lg card-border shadow-xs flex flex-col">
-<div class="p-4 border-b border-outline-variant bg-surface-container-lowest rounded-t-lg">
-<h2 class="text-super-heading font-super-heading text-on-surface-variant uppercase">Local Indicator Lookup</h2>
-</div>
-<div class="p-lg flex-1 flex flex-col gap-4">
-<div class="relative">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-<input class="w-full bg-surface border border-outline-variant rounded-DEFAULT pl-10 pr-4 py-2 text-mono-data font-mono-data focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline/50" placeholder="Query IOC..." type="text"/>
-</div>
-<div class="mt-4 p-4 bg-error-container/20 border border-error-container rounded-DEFAULT">
-<div class="text-body-sm text-outline mb-1">Result for: <span class="font-mono-data text-on-surface">malware-cnc-domain.xyz</span></div>
-<div class="flex items-center gap-2 text-error font-bold text-body-md mt-2">
-<span class="material-symbols-outlined text-[18px]">block</span>
-                                MATCH FOUND - Status: BLOCKED
-                            </div>
-</div>
-</div>
-</div>
-<!-- Subscribed Providers -->
-<div class="lg:col-span-2 bg-surface rounded-lg card-border shadow-xs overflow-hidden">
-<div class="p-4 border-b border-outline-variant bg-surface-container-lowest">
-<h2 class="text-super-heading font-super-heading text-on-surface-variant uppercase">Subscribed Providers</h2>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-left border-collapse">
-<thead>
-<tr class="border-b border-outline-variant bg-surface-container-low/50">
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium">Feed Provider</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium">Indicator Count</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium">Last Sync</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium">Latency</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium">Status</th>
-</tr>
-</thead>
-<tbody class="text-body-sm divide-y divide-outline-variant/50">
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 font-medium text-on-surface">Abuse.ch URLhaus</td>
-<td class="p-sm px-4 font-mono-data text-outline">28,420</td>
-<td class="p-sm px-4 text-outline">2m ago</td>
-<td class="p-sm px-4 font-mono-data text-outline">45ms</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-secondary-container/30 text-secondary rounded-full text-[10px] font-bold tracking-wider">ONLINE</span></td>
-</tr>
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 font-medium text-on-surface">PhishTank</td>
-<td class="p-sm px-4 font-mono-data text-outline">14,200</td>
-<td class="p-sm px-4 text-outline">15m ago</td>
-<td class="p-sm px-4 font-mono-data text-outline">110ms</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-secondary-container/30 text-secondary rounded-full text-[10px] font-bold tracking-wider">ONLINE</span></td>
-</tr>
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 font-medium text-on-surface">AlienVault OTX</td>
-<td class="p-sm px-4 font-mono-data text-outline">62,900</td>
-<td class="p-sm px-4 text-outline">8m ago</td>
-<td class="p-sm px-4 font-mono-data text-outline">88ms</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-secondary-container/30 text-secondary rounded-full text-[10px] font-bold tracking-wider">ONLINE</span></td>
-</tr>
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 font-medium text-on-surface">Emerging Threats</td>
-<td class="p-sm px-4 font-mono-data text-outline">19,800</td>
-<td class="p-sm px-4 text-outline">1h ago</td>
-<td class="p-sm px-4 font-mono-data text-outline">92ms</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-secondary-container/30 text-secondary rounded-full text-[10px] font-bold tracking-wider">ONLINE</span></td>
-</tr>
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 font-medium text-on-surface">OpenPhish</td>
-<td class="p-sm px-4 font-mono-data text-outline">8,400</td>
-<td class="p-sm px-4 text-outline">45s ago</td>
-<td class="p-sm px-4 font-mono-data text-outline">34ms</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-secondary-container/30 text-secondary rounded-full text-[10px] font-bold tracking-wider">ONLINE</span></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-<!-- Ingestion Log -->
-<div class="bg-surface rounded-lg card-border shadow-xs overflow-hidden">
-<div class="p-4 border-b border-outline-variant bg-surface-container-lowest flex justify-between items-center">
-<h2 class="text-super-heading font-super-heading text-on-surface-variant uppercase">Real-Time Ingestion Stream</h2>
-<span class="flex items-center gap-1 text-super-heading font-super-heading text-secondary"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span> LIVE</span>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-left border-collapse">
-<thead>
-<tr class="border-b border-outline-variant bg-surface-container-low/50">
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium w-32">Timestamp</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium">Indicator</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium w-40">Type</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium w-40">Source</th>
-<th class="p-sm px-4 text-super-heading font-super-heading text-outline uppercase font-medium w-24">Action</th>
-</tr>
-</thead>
-<tbody class="text-body-sm font-mono-data divide-y divide-outline-variant/50">
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 text-outline">10:42:01.05</td>
-<td class="p-sm px-4 text-on-surface">login-verify-secure11.com</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-tertiary-container/20 text-tertiary rounded text-[10px]">Phishing</span></td>
-<td class="p-sm px-4 text-outline text-body-sm font-body-sm">PhishTank</td>
-<td class="p-sm px-4 text-error">BLOCK</td>
-</tr>
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 text-outline">10:41:59.22</td>
-<td class="p-sm px-4 text-on-surface">192.168.x.x (Masked)</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-error-container/40 text-error rounded text-[10px]">C2</span></td>
-<td class="p-sm px-4 text-outline text-body-sm font-body-sm">Abuse.ch URLhaus</td>
-<td class="p-sm px-4 text-error">BLOCK</td>
-</tr>
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 text-outline">10:41:45.88</td>
-<td class="p-sm px-4 text-on-surface">update-payload-bin.net</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-primary-container/20 text-primary-container rounded text-[10px]">Malware Dist</span></td>
-<td class="p-sm px-4 text-outline text-body-sm font-body-sm">AlienVault OTX</td>
-<td class="p-sm px-4 text-error">BLOCK</td>
-</tr>
-<tr class="hover:bg-surface-container-lowest transition-colors">
-<td class="p-sm px-4 text-outline">10:41:30.12</td>
-<td class="p-sm px-4 text-on-surface">secure-billing-update.org</td>
-<td class="p-sm px-4"><span class="px-2 py-0.5 bg-tertiary-container/20 text-tertiary rounded text-[10px]">Phishing</span></td>
-<td class="p-sm px-4 text-outline text-body-sm font-body-sm">OpenPhish</td>
-<td class="p-sm px-4 text-error">BLOCK</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</main>
-</body></html>
+
+<script>
+const KNOWN_THREATS = {
+    'malw-c2-01.ru': 'Botnet C2 Callback (Abuse.ch URLhaus)',
+    'exfil-data-drop.net': 'Data Exfiltration Destination (AlienVault OTX)',
+    'xk9mqz7p2n.top': 'Algorithmic DGA Domain (BAM Dataset)',
+    'gooogle-login.security-update.com': 'Homoglyph Phishing Impersonation (PhishTank)',
+    'a7f3b2.data.exfil-tunnel.internal.net': 'DNS Tunnelling Beacon (Emerging Threats)'
+};
+
+function searchIocLive() {
+    const val = document.getElementById('ioc-search-input').value.trim().toLowerCase();
+    document.getElementById('ioc-target-label').textContent = val || '(empty)';
+    const box = document.getElementById('ioc-result-box');
+    const banner = document.getElementById('ioc-status-banner');
+
+    if (!val) {
+        box.className = 'p-4 bg-surface-container border border-outline-variant rounded-lg';
+        banner.className = 'flex items-center gap-2 text-outline text-xs mt-2';
+        banner.innerHTML = '<span class="material-symbols-outlined text-[18px]">info</span> Type a domain above to check local RPZ cache.';
+        return;
+    }
+
+    if (KNOWN_THREATS[val] || val.includes('malw') || val.includes('exfil') || val.includes('payload') || val.includes('phish') || val.endsWith('.top') || val.endsWith('.ru')) {
+        const threatName = KNOWN_THREATS[val] || 'Identified Malicious IoC (RPZ Cache Hit)';
+        box.className = 'p-4 bg-error-container/20 border border-error/20 rounded-lg';
+        banner.className = 'flex items-center gap-2 text-error font-bold text-xs mt-2';
+        banner.innerHTML = `<span class="material-symbols-outlined text-[18px]">block</span> MATCH FOUND — ${threatName}`;
+    } else {
+        box.className = 'p-4 bg-secondary-container/20 border border-secondary/20 rounded-lg';
+        banner.className = 'flex items-center gap-2 text-secondary font-bold text-xs mt-2';
+        banner.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span> NO LOCAL THREAT MATCH — Clean in RPZ feeds.';
+    }
+}
+
+function syncAllFeeds() {
+    const btnText = document.getElementById('sync-text');
+    const icon = document.getElementById('sync-icon');
+    icon.classList.add('animate-spin');
+    btnText.textContent = 'Syncing 5 RPZ Feeds...';
+
+    setTimeout(() => {
+        icon.classList.remove('animate-spin');
+        btnText.textContent = 'Feeds Synced!';
+        document.getElementById('ioc-total-count').textContent = '134,180';
+        setTimeout(() => {
+            btnText.textContent = 'Sync All Feeds';
+        }, 2000);
+    }, 1200);
+}
+</script>
+</body>
+</html>
