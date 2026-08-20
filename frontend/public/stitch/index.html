@@ -465,7 +465,7 @@ function renderTable() {
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-super-heading border ${verdictCls} font-bold">${ev.verdict}</span>
             </td>
             <td class="px-4 py-2.5 text-right">
-                <a class="text-primary hover:underline text-[12px] font-semibold" href="xai.html">Inspect</a>
+                <a class="text-primary hover:underline text-[12px] font-semibold" href="xai.html?domain=${encodeURIComponent(ev.domain)}">Inspect</a>
             </td>
         </tr>`;
     }).join('');
