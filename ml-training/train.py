@@ -43,14 +43,16 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
-from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, train_test_split
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, train_test_split, GroupShuffleSplit
 from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 
 from dns_shield_features import ENGINEERED_FEATURE_NAMES, domain_features, entropy
 
 
-def build_model(algorithm: str) -> Pipeline:
+def build_model(algorithm: str, tree_count: int = None) -> Pipeline:
     features = FeatureUnion([
         ("tfidf", TfidfVectorizer(analyzer="char", ngram_range=(2, 4), lowercase=True, sublinear_tf=True)),
         ("engineered", Pipeline([
@@ -60,16 +62,24 @@ def build_model(algorithm: str) -> Pipeline:
     ])
     if algorithm == "logreg":
         classifier = LogisticRegression(max_iter=2000, class_weight="balanced", random_state=42)
-    else:
-        classifier = RandomForestClassifier(class_weight="balanced", random_state=42, n_jobs=-1)
+    elif algorithm == "xgboost":
+        classifier = XGBClassifier(n_estimators=tree_count or 100, random_state=42, n_jobs=-1, eval_metric="logloss")
+    elif algorithm == "lgbm":
+        classifier = LGBMClassifier(n_estimators=tree_count or 100, class_weight="balanced", random_state=42, n_jobs=-1)
+    else: # rf
+        classifier = RandomForestClassifier(n_estimators=tree_count or 150, class_weight="balanced", random_state=42, n_jobs=-1)
     return Pipeline([("features", features), ("classifier", classifier)])
 
 
 def tuning_grid(algorithm: str) -> dict:
     if algorithm == "logreg":
         return {"classifier__C": [0.1, 0.3, 1.0, 3.0, 10.0]}
+    elif algorithm in ("xgboost", "lgbm"):
+        return {
+            "classifier__max_depth": [3, 5, 8],
+            "classifier__learning_rate": [0.01, 0.1, 0.2]
+        }
     return {
-        "classifier__n_estimators": [200, 300, 500],
         "classifier__max_depth": [None, 8, 16, 32],
         "classifier__min_samples_leaf": [1, 2, 4],
         "classifier__max_features": ["sqrt", "log2", None],
@@ -94,13 +104,22 @@ def load_rows(path: Path) -> list[dict]:
         domain = row["domain"].lower().strip().rstrip(".")
         if not domain or int(row["label"]) not in (0, 1):
             raise ValueError(f"invalid domain/label at CSV row {number}")
-        cleaned.append({"domain": domain, "label": int(row["label"]), "observed_at": row.get("observed_at", "")})
+        cleaned.append({"domain": domain, "label": int(row["label"]), "observed_at": row.get("observed_at", ""), "family": row.get("family", "unknown")})
     if len({row["label"] for row in cleaned}) != 2:
         raise ValueError("training data requires both benign (0) and positive (1) labels")
     return cleaned
 
 
-def split_rows(rows: list[dict], test_size: float, chronological: bool):
+def split_rows(rows: list[dict], test_size: float, chronological: bool, cross_family: bool):
+    if cross_family:
+        families = list(set(r["family"] for r in rows if r["family"] != "benign"))
+        import random
+        random.seed(42)
+        holdout_families = set(random.sample(families, min(3, len(families))))
+        train = [r for r in rows if r["family"] not in holdout_families]
+        test = [r for r in rows if r["family"] in holdout_families or (r["family"] == "benign" and random.random() < test_size)]
+        return train, test, f"cross-family-holdout:{','.join(holdout_families)}"
+        
     if chronological:
         if not all(row["observed_at"] for row in rows):
             raise ValueError("--chronological requires an observed_at value for every row")
@@ -110,6 +129,7 @@ def split_rows(rows: list[dict], test_size: float, chronological: bool):
         if len({row["label"] for row in train}) != 2 or len({row["label"] for row in test}) != 2:
             raise ValueError("chronological split must retain both labels in train and holdout")
         return train, test, "chronological"
+        
     train, test = train_test_split(rows, test_size=test_size, random_state=42, stratify=[row["label"] for row in rows])
     return train, test, "stratified-random-random_state_42"
 
@@ -128,23 +148,25 @@ parser.add_argument("--version", default="1", help="artifact version such as 1 o
 parser.add_argument("--source", required=True, help="human-readable dataset source/license reference")
 parser.add_argument("--test-size", type=float, default=.20)
 parser.add_argument("--chronological", action="store_true", help="use observed_at order for the holdout split")
-parser.add_argument("--algorithm", choices=["rf", "logreg"], default="rf", help="rf (default, recommended) or logreg")
+parser.add_argument("--cross-family", action="store_true", help="hold out specific families for evaluation")
+parser.add_argument("--algorithm", choices=["rf", "logreg", "xgboost", "lgbm"], default="rf", help="rf (default, recommended), xgboost, lgbm, or logreg")
+parser.add_argument("--tree-count", type=int, default=None, help="override tree count for ensemble models")
 parser.add_argument("--tune", dest="tune", action="store_true", default=True, help="run RandomizedSearchCV (default: on)")
 parser.add_argument("--no-tune", dest="tune", action="store_false", help="skip hyperparameter search, use library defaults")
 parser.add_argument("--tune-iterations", type=int, default=25, help="RandomizedSearchCV candidate count")
 parser.add_argument("--cv-folds", type=int, default=5, help="requested CV folds; auto-capped to the smallest class size")
 args = parser.parse_args()
 
-if not 0.05 <= args.test_size < .50:
+if not 0.05 <= args.test_size < .50 and not args.cross_family:
     raise ValueError("--test-size must be between 0.05 and 0.49")
 
 data_path = Path(args.data)
 rows = load_rows(data_path)
-train_rows, test_rows, split_strategy = split_rows(rows, args.test_size, args.chronological)
+train_rows, test_rows, split_strategy = split_rows(rows, args.test_size, args.chronological, args.cross_family)
 train_domains, train_labels = [row["domain"] for row in train_rows], [row["label"] for row in train_rows]
 test_domains, test_labels = [row["domain"] for row in test_rows], [row["label"] for row in test_rows]
 
-base_model = build_model(args.algorithm)
+base_model = build_model(args.algorithm, args.tree_count)
 
 tuning_used = False
 cv_folds_used = None

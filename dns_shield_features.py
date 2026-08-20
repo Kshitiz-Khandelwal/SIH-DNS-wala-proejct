@@ -33,6 +33,10 @@ ENGINEERED_FEATURE_NAMES = [
     "longest_digit_run",
     "label_count",
     "has_digit",
+    "punycode",
+    "risky_tld",
+    "alexa_rank_simulated",
+    "nrd_age_simulated"
 ]
 
 
@@ -69,6 +73,12 @@ def domain_features(domains) -> np.ndarray:
         consonants = letters - vowels
         unique_chars = len(set(domain))
         hyphens = domain.count("-")
+        punycode = 1.0 if "xn--" in raw else 0.0
+        risky_tld = 1.0 if any(raw.endswith(t) for t in [".tk", ".cn", ".ru", ".biz", ".info"]) else 0.0
+        # Simulated features for offline training
+        alexa_rank = 0.0
+        nrd_age = 0.0
+        
         rows.append([
             length,
             entropy(domain),
@@ -81,5 +91,9 @@ def domain_features(domains) -> np.ndarray:
             _longest_run(domain, str.isdigit),
             domain.count(".") + 1 if domain else 0,
             1.0 if digits else 0.0,
+            punycode,
+            risky_tld,
+            alexa_rank,
+            nrd_age
         ])
     return np.asarray(rows, dtype=float)
