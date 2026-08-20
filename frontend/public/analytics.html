@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Security Analytics &amp; Telemetry - DNS Shield</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "tertiary-fixed-dim": "#ffb95f",
+                "primary-container": "#2563eb",
+                "primary-fixed-dim": "#b4c5ff",
+                "primary-fixed": "#dbe1ff",
+                "on-error": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "error": "#ba1a1a",
+                "secondary": "#006c49",
+                "inverse-on-surface": "#eef0ff",
+                "secondary-container": "#6cf8bb",
+                "surface-container-highest": "#dae2fd",
+                "outline-variant": "#c3c6d7",
+                "on-secondary-fixed-variant": "#005236",
+                "on-surface": "#131b2e",
+                "on-tertiary-fixed-variant": "#653e00",
+                "surface-bright": "#faf8ff",
+                "surface-container-high": "#e2e7ff",
+                "tertiary-fixed": "#ffddb8",
+                "error-container": "#ffdad6",
+                "surface": "#faf8ff",
+                "surface-dim": "#d2d9f4",
+                "on-secondary-fixed": "#002113",
+                "on-primary-container": "#eeefff",
+                "surface-tint": "#0053db",
+                "background": "#faf8ff",
+                "on-tertiary-container": "#ffeedd",
+                "tertiary": "#784b00",
+                "surface-container": "#eaedff",
+                "on-primary-fixed-variant": "#003ea8",
+                "outline": "#737686",
+                "surface-variant": "#dae2fd",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#00174b",
+                "on-secondary-container": "#00714d",
+                "primary": "#004ac6",
+                "on-surface-variant": "#434655",
+                "secondary-fixed": "#6ffbbe",
+                "inverse-surface": "#283044",
+                "secondary-fixed-dim": "#4edea3",
+                "inverse-primary": "#b4c5ff",
+                "on-secondary": "#ffffff",
+                "on-error-container": "#93000a",
+                "tertiary-container": "#996100",
+                "surface-container-low": "#f2f3ff",
+                "on-background": "#131b2e",
+                "on-tertiary-fixed": "#2a1700",
+                "on-primary": "#ffffff"
+            },
+            fontFamily: {
+                "mono-data": ["JetBrains Mono", "monospace"],
+                "body-sm": ["Inter", "sans-serif"],
+                "body-md": ["Inter", "sans-serif"],
+                "display-lg": ["Geist", "sans-serif"],
+                "headline-md": ["Geist", "sans-serif"],
+                "super-heading": ["JetBrains Mono", "monospace"],
+            }
+        }
+    }
+}
+</script>
+<style>
+.dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+    background-size: 24px 24px;
+}
+.technical-border {
+    border: 1px solid #e2e8f0;
+}
+.technical-shadow {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.mono-number {
+    font-family: 'JetBrains Mono', monospace;
+}
+</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md dot-grid min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col h-full py-6 z-50">
+    <div class="px-6 mb-8 flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-[20px]" data-icon="shield">shield</span>
+        </div>
+        <div>
+            <h1 class="text-headline-md font-headline-md text-primary font-bold">DNS Shield</h1>
+            <p class="text-[10px] font-mono-data text-outline">v2.6.0-Live</p>
+        </div>
+    </div>
+    <div class="px-6 mb-6">
+        <div class="flex items-center gap-2 bg-secondary-container/20 text-secondary border border-secondary/20 rounded-full px-3 py-1 w-max">
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span class="text-[10px] font-super-heading uppercase tracking-wider font-bold">System Operational</span>
+        </div>
+    </div>
+    <div class="flex-1 px-3 space-y-1">
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="index.html">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            Overview
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="pipeline.html">
+            <span class="material-symbols-outlined text-[20px]">bolt</span>
+            Pipeline
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="threats.html">
+            <span class="material-symbols-outlined text-[20px]">security</span>
+            Threat Intel
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="xai.html">
+            <span class="material-symbols-outlined text-[20px]">psychology</span>
+            XAI Telemetry
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="models.html">
+            <span class="material-symbols-outlined text-[20px]">menu_book</span>
+            Model Rationale
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="devices.html">
+            <span class="material-symbols-outlined text-[20px]">devices</span>
+            Devices Fleet
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 border-l-2 border-primary bg-primary-container/10 text-primary font-bold rounded-r" href="analytics.html">
+            <span class="material-symbols-outlined text-[20px]">analytics</span>
+            Analytics
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="reports.html">
+            <span class="material-symbols-outlined text-[20px]">description</span>
+            Reports
+        </a>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
+    <!-- TopNavBar -->
+    <header class="sticky top-0 h-[64px] w-full z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-8">
+        <div class="flex items-center gap-6">
+            <h2 class="text-headline-md font-headline-md font-bold text-primary">Security Analytics &amp; Telemetry</h2>
+            <div class="hidden lg:flex items-center gap-2 bg-surface-container border border-outline-variant rounded-full px-3 py-1">
+                <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                <span class="text-[10px] font-super-heading text-secondary tracking-wider uppercase font-bold">STREAM ONLINE</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center bg-surface-container border border-outline-variant rounded-lg overflow-hidden p-0.5">
+                <button class="px-3 py-1 bg-white text-primary rounded font-mono-data text-xs font-bold shadow-xs">24H</button>
+                <button class="px-3 py-1 text-on-surface-variant font-mono-data text-xs font-bold hover:text-primary">7D</button>
+                <button class="px-3 py-1 text-on-surface-variant font-mono-data text-xs font-bold hover:text-primary">30D</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Canvas -->
+    <main class="flex-1 p-8 space-y-6">
+        <!-- KPI Metrics Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- KPI 1 -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold">TOTAL 24H VOLUME</span>
+                    <span class="material-symbols-outlined text-outline text-[20px]">data_usage</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <div>
+                        <span id="analytics-total" class="text-[28px] font-bold text-on-surface mono-number">20,028</span>
+                        <span class="text-[11px] text-outline block mt-0.5">Avg ~154 QPS</span>
+                    </div>
+                    <span class="text-[11px] font-mono-data text-secondary bg-secondary-container/20 border border-secondary/20 px-2 py-0.5 rounded-full font-bold">+4.2%</span>
+                </div>
+            </div>
+
+            <!-- KPI 2 -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold">MEAN RESOLUTION LATENCY</span>
+                    <span class="material-symbols-outlined text-outline text-[20px]">speed</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <div>
+                        <span class="text-[28px] font-bold text-on-surface mono-number">1.24 <span class="text-sm text-outline">ms</span></span>
+                        <span class="text-[11px] text-outline block mt-0.5">P99: 4.8ms</span>
+                    </div>
+                    <span class="text-[11px] font-mono-data text-secondary bg-secondary-container/20 border border-secondary/20 px-2 py-0.5 rounded-full font-bold">-12%</span>
+                </div>
+            </div>
+
+            <!-- KPI 3 -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold">MITIGATION ACCURACY</span>
+                    <span class="material-symbols-outlined text-outline text-[20px]">check_circle</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <div>
+                        <span class="text-[28px] font-bold text-secondary mono-number">99.82%</span>
+                        <span class="text-[11px] text-outline block mt-0.5">FP Rate &lt;0.01%</span>
+                    </div>
+                    <span class="text-[11px] font-mono-data text-secondary bg-secondary-container/20 border border-secondary/20 px-2 py-0.5 rounded-full font-bold">Optimal</span>
+                </div>
+            </div>
+
+            <!-- KPI 4 -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold">ACTIVE ENDPOINT FLEET</span>
+                    <span class="material-symbols-outlined text-outline text-[20px]">lan</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <div>
+                        <span class="text-[28px] font-bold text-on-surface mono-number">48 Hosts</span>
+                        <span class="text-[11px] text-error block mt-0.5 font-bold">3 quarantined</span>
+                    </div>
+                    <span class="text-[11px] font-mono-data text-error bg-error-container/30 border border-error/20 px-2 py-0.5 rounded-full font-bold">Protected</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historical Volume Stacked Bar Chart -->
+        <div class="bg-white border border-outline-variant rounded-xl p-6 shadow-xs flex flex-col">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant pb-4 mb-4 gap-2">
+                <div>
+                    <span class="text-[10px] font-super-heading text-outline uppercase font-bold block">TEMPORAL RESOLVER ACTIVITY</span>
+                    <h3 class="text-[16px] font-bold text-on-surface mt-0.5">Historical Query Stream &amp; Mitigation Breakdown</h3>
+                </div>
+                <div class="flex gap-4 text-xs font-mono-data font-bold">
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span> Clean Queries (84.7%)</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim"></span> Flagged (10.1%)</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-error"></span> Blocked (5.2%)</div>
+                </div>
+            </div>
+            <!-- Stacked Bars Grid -->
+            <div class="h-60 w-full bg-surface-container-low/40 border border-outline-variant rounded-xl flex items-end justify-between p-4 gap-2 relative overflow-hidden">
+                <!-- 12 Hourly Bars -->
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="00:00 - 850 Q/s"><div class="bg-error w-full rounded-t" style="height: 4%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 8%;"></div><div class="bg-secondary w-full rounded-b" style="height: 60%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="02:00 - 620 Q/s"><div class="bg-error w-full rounded-t" style="height: 2%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 5%;"></div><div class="bg-secondary w-full rounded-b" style="height: 45%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="04:00 - 410 Q/s"><div class="bg-error w-full rounded-t" style="height: 1%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 4%;"></div><div class="bg-secondary w-full rounded-b" style="height: 35%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="06:00 - 1,120 Q/s"><div class="bg-error w-full rounded-t" style="height: 6%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 12%;"></div><div class="bg-secondary w-full rounded-b" style="height: 55%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="08:00 - 3,450 Q/s"><div class="bg-error w-full rounded-t" style="height: 8%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 15%;"></div><div class="bg-secondary w-full rounded-b" style="height: 70%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="10:00 - 4,890 Q/s"><div class="bg-error w-full rounded-t" style="height: 12%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 14%;"></div><div class="bg-secondary w-full rounded-b" style="height: 74%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="12:00 - 5,210 Q/s"><div class="bg-error w-full rounded-t" style="height: 14%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 16%;"></div><div class="bg-secondary w-full rounded-b" style="height: 70%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="14:00 - 4,920 Q/s"><div class="bg-error w-full rounded-t" style="height: 9%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 11%;"></div><div class="bg-secondary w-full rounded-b" style="height: 75%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="16:00 - 4,680 Q/s"><div class="bg-error w-full rounded-t" style="height: 7%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 9%;"></div><div class="bg-secondary w-full rounded-b" style="height: 80%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="18:00 - 3,210 Q/s"><div class="bg-error w-full rounded-t" style="height: 10%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 8%;"></div><div class="bg-secondary w-full rounded-b" style="height: 65%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="20:00 - 2,450 Q/s"><div class="bg-error w-full rounded-t" style="height: 5%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 7%;"></div><div class="bg-secondary w-full rounded-b" style="height: 55%;"></div></div>
+                <div class="flex-1 flex flex-col justify-end gap-0.5 h-full group cursor-pointer" title="22:00 - 1,840 Q/s"><div class="bg-error w-full rounded-t" style="height: 4%;"></div><div class="bg-tertiary-fixed-dim w-full" style="height: 6%;"></div><div class="bg-secondary w-full rounded-b" style="height: 50%;"></div></div>
+            </div>
+            <div class="flex justify-between mt-2.5 font-mono-data text-outline text-[11px] font-bold">
+                <span>00:00</span>
+                <span>04:00</span>
+                <span>08:00</span>
+                <span>12:00 (Peak)</span>
+                <span>16:00</span>
+                <span>20:00</span>
+                <span>23:59</span>
+            </div>
+        </div>
+
+        <!-- Split 2-Column: TLD Distribution & Protocol Breakdown -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Top Queried TLDs -->
+            <div class="bg-white border border-outline-variant rounded-xl flex flex-col shadow-xs overflow-hidden">
+                <div class="border-b border-outline-variant px-5 py-4 bg-surface-bright flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] font-super-heading text-outline uppercase font-bold block">TOP LEVEL DOMAIN PROFILE</span>
+                        <h3 class="text-[15px] font-bold text-on-surface mt-0.5">Top Queried TLDs</h3>
+                    </div>
+                    <span class="material-symbols-outlined text-outline text-[20px]">public</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-surface-container-low text-[10px] font-super-heading text-outline uppercase tracking-wider font-bold border-b border-outline-variant">
+                                <th class="px-5 py-3">TLD</th>
+                                <th class="px-5 py-3 text-right">SHARE</th>
+                                <th class="px-5 py-3 text-right">QUERIES</th>
+                                <th class="px-5 py-3 text-center">RISK PROFILE</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-[13px] font-mono-data text-on-surface divide-y divide-outline-variant/30">
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-primary">.com</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-on-surface-variant">54%</td>
+                                <td class="px-5 py-3.5 text-right font-bold">10,815</td>
+                                <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container/30 text-secondary border border-secondary/20">Clean</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-error">.top</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-on-surface-variant">18%</td>
+                                <td class="px-5 py-3.5 text-right font-bold">3,605</td>
+                                <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-error-container/30 text-error border border-error/20">High Risk (DGA)</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-primary">.net</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-on-surface-variant">12%</td>
+                                <td class="px-5 py-3.5 text-right font-bold">2,403</td>
+                                <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container/30 text-secondary border border-secondary/20">Clean</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-tertiary-fixed-dim">.xyz</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-on-surface-variant">9%</td>
+                                <td class="px-5 py-3.5 text-right font-bold">1,802</td>
+                                <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim border border-tertiary-fixed-dim/30">Moderate (Phish)</span></td>
+                            </tr>
+                            <tr class="hover:bg-surface-container/30 transition-colors">
+                                <td class="px-5 py-3.5 font-bold text-primary">.org</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-on-surface-variant">7%</td>
+                                <td class="px-5 py-3.5 text-right font-bold">1,401</td>
+                                <td class="px-5 py-3.5 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container/30 text-secondary border border-secondary/20">Clean</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Protocol Split -->
+            <div class="bg-white border border-outline-variant rounded-xl flex flex-col shadow-xs p-5">
+                <div class="flex justify-between items-center mb-4 border-b border-outline-variant pb-3">
+                    <div>
+                        <span class="text-[10px] font-super-heading text-outline uppercase font-bold block">TRANSPORT SECURITY</span>
+                        <h3 class="text-[15px] font-bold text-on-surface mt-0.5">DNS Protocol Distribution</h3>
+                    </div>
+                    <span class="material-symbols-outlined text-outline text-[20px]">dns</span>
+                </div>
+                <div class="flex-1 flex flex-col justify-center gap-5">
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs font-mono-data font-bold">
+                            <span class="text-on-surface">Standard UDP (Port 53)</span>
+                            <span class="text-primary font-bold">64% (12,817 Q)</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-surface-container rounded-full overflow-hidden">
+                            <div class="bg-primary h-full rounded-full" style="width: 64%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs font-mono-data font-bold">
+                            <span class="text-on-surface">DNS over HTTPS (DoH / RFC 8484)</span>
+                            <span class="text-secondary font-bold">24% (4,806 Q)</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-surface-container rounded-full overflow-hidden">
+                            <div class="bg-secondary h-full rounded-full" style="width: 24%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs font-mono-data font-bold">
+                            <span class="text-on-surface">DNS over TLS (DoT / RFC 7858)</span>
+                            <span class="text-tertiary-fixed-dim font-bold">12% (2,403 Q)</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-surface-container rounded-full overflow-hidden">
+                            <div class="bg-tertiary-fixed-dim h-full rounded-full" style="width: 12%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+async function fetchAnalyticsStats() {
+    try {
+        const res = await fetch('/api/v1/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        const total = (data.allowed_24h || 0) + (data.flagged_24h || 0) + (data.blocked_24h || 0);
+        document.getElementById('analytics-total').textContent = (total || 20028).toLocaleString();
+    } catch(e) { console.error(e); }
+}
+fetchAnalyticsStats();
+</script>
+</body>
+</html>

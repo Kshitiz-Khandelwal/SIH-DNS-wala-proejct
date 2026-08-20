@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Device Fleet &amp; Endpoint Quarantine - DNS Shield</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "tertiary-fixed-dim": "#ffb95f",
+                "primary-container": "#2563eb",
+                "primary-fixed-dim": "#b4c5ff",
+                "primary-fixed": "#dbe1ff",
+                "on-error": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "error": "#ba1a1a",
+                "secondary": "#006c49",
+                "inverse-on-surface": "#eef0ff",
+                "secondary-container": "#6cf8bb",
+                "surface-container-highest": "#dae2fd",
+                "outline-variant": "#c3c6d7",
+                "on-secondary-fixed-variant": "#005236",
+                "on-surface": "#131b2e",
+                "on-tertiary-fixed-variant": "#653e00",
+                "surface-bright": "#faf8ff",
+                "surface-container-high": "#e2e7ff",
+                "tertiary-fixed": "#ffddb8",
+                "error-container": "#ffdad6",
+                "surface": "#faf8ff",
+                "surface-dim": "#d2d9f4",
+                "on-secondary-fixed": "#002113",
+                "on-primary-container": "#eeefff",
+                "surface-tint": "#0053db",
+                "background": "#faf8ff",
+                "on-tertiary-container": "#ffeedd",
+                "tertiary": "#784b00",
+                "surface-container": "#eaedff",
+                "on-primary-fixed-variant": "#003ea8",
+                "outline": "#737686",
+                "surface-variant": "#dae2fd",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#00174b",
+                "on-secondary-container": "#00714d",
+                "primary": "#004ac6",
+                "on-surface-variant": "#434655",
+                "secondary-fixed": "#6ffbbe",
+                "inverse-surface": "#283044",
+                "secondary-fixed-dim": "#4edea3",
+                "inverse-primary": "#b4c5ff",
+                "on-secondary": "#ffffff",
+                "on-error-container": "#93000a",
+                "tertiary-container": "#996100",
+                "surface-container-low": "#f2f3ff",
+                "on-background": "#131b2e",
+                "on-tertiary-fixed": "#2a1700",
+                "on-primary": "#ffffff"
+            },
+            fontFamily: {
+                "mono-data": ["JetBrains Mono", "monospace"],
+                "body-sm": ["Inter", "sans-serif"],
+                "body-md": ["Inter", "sans-serif"],
+                "display-lg": ["Geist", "sans-serif"],
+                "headline-md": ["Geist", "sans-serif"],
+                "super-heading": ["JetBrains Mono", "monospace"],
+            }
+        }
+    }
+}
+</script>
+<style>
+.dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+    background-size: 24px 24px;
+}
+.technical-border {
+    border: 1px solid #e2e8f0;
+}
+.technical-shadow {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.mono-number {
+    font-family: 'JetBrains Mono', monospace;
+}
+</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md dot-grid min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col h-full py-6 z-50">
+    <div class="px-6 mb-8 flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-[20px]" data-icon="shield">shield</span>
+        </div>
+        <div>
+            <h1 class="text-headline-md font-headline-md text-primary font-bold">DNS Shield</h1>
+            <p class="text-[10px] font-mono-data text-outline">v2.6.0-Live</p>
+        </div>
+    </div>
+    <div class="px-6 mb-6">
+        <div class="flex items-center gap-2 bg-secondary-container/20 text-secondary border border-secondary/20 rounded-full px-3 py-1 w-max">
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span class="text-[10px] font-super-heading uppercase tracking-wider font-bold">System Operational</span>
+        </div>
+    </div>
+    <div class="flex-1 px-3 space-y-1">
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="index.html">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            Overview
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="pipeline.html">
+            <span class="material-symbols-outlined text-[20px]">bolt</span>
+            Pipeline
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="threats.html">
+            <span class="material-symbols-outlined text-[20px]">security</span>
+            Threat Intel
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="xai.html">
+            <span class="material-symbols-outlined text-[20px]">psychology</span>
+            XAI Telemetry
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="models.html">
+            <span class="material-symbols-outlined text-[20px]">menu_book</span>
+            Model Rationale
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 border-l-2 border-primary bg-primary-container/10 text-primary font-bold rounded-r" href="devices.html">
+            <span class="material-symbols-outlined text-[20px]">devices</span>
+            Devices Fleet
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="analytics.html">
+            <span class="material-symbols-outlined text-[20px]">analytics</span>
+            Analytics
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="reports.html">
+            <span class="material-symbols-outlined text-[20px]">description</span>
+            Reports
+        </a>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
+    <!-- TopNavBar -->
+    <header class="sticky top-0 h-[64px] w-full z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-8">
+        <div class="flex items-center gap-6">
+            <h2 class="text-headline-md font-headline-md font-bold text-primary">Device Fleet &amp; Endpoint Quarantine</h2>
+            <div class="hidden lg:flex items-center gap-2 bg-surface-container border border-outline-variant rounded-full px-3 py-1">
+                <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                <span class="text-[10px] font-super-heading text-secondary tracking-wider uppercase font-bold">EDR CONNECTOR ACTIVE</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Content Canvas -->
+    <main class="flex-1 p-8 space-y-6">
+        <div>
+            <p class="text-xs text-on-surface-variant">Monitor corporate endpoint hosts, evaluate real-time client risk vectors, and execute surgical DNS-level network quarantine.</p>
+        </div>
+
+        <!-- KPI Row (4 Bento Cards) -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <!-- KPI: Active Clients -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-outline uppercase font-bold">ACTIVE CLIENTS</span>
+                    <span class="material-symbols-outlined text-outline text-[20px]">devices</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <span class="text-[28px] font-bold text-on-surface mono-number">48 Hosts</span>
+                    <span class="text-[11px] font-mono-data text-outline font-bold">24 Subnets</span>
+                </div>
+            </div>
+
+            <!-- KPI: Compromised Hosts -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-error"></div>
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-error uppercase font-bold">COMPROMISED HOSTS</span>
+                    <span class="material-symbols-outlined text-error text-[20px]">coronavirus</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <span id="kpi-compromised-count" class="text-[28px] font-bold text-error mono-number">3 Isolated</span>
+                    <span class="text-[11px] font-mono-data text-error bg-error-container/30 px-2 py-0.5 rounded-full font-bold">Quarantined</span>
+                </div>
+            </div>
+
+            <!-- KPI: Suspicious Hosts -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-tertiary-fixed-dim"></div>
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-tertiary-fixed-dim uppercase font-bold">SUSPICIOUS HOSTS</span>
+                    <span class="material-symbols-outlined text-tertiary-fixed-dim text-[20px]">warning</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <span class="text-[28px] font-bold text-tertiary-fixed-dim mono-number">4 Review</span>
+                    <span class="text-[11px] font-mono-data text-tertiary-fixed-dim bg-tertiary-fixed-dim/10 px-2 py-0.5 rounded-full font-bold">Monitored</span>
+                </div>
+            </div>
+
+            <!-- KPI: Healthy Clients -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-xs flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-secondary"></div>
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-super-heading text-secondary uppercase font-bold">HEALTHY CLIENTS</span>
+                    <span class="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
+                </div>
+                <div class="flex items-baseline justify-between mt-auto">
+                    <span id="kpi-healthy-count" class="text-[28px] font-bold text-secondary mono-number">41 Normal</span>
+                    <span class="text-[11px] font-mono-data text-secondary bg-secondary-container/20 px-2 py-0.5 rounded-full font-bold">Clean</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Device Fleet Table -->
+        <div class="bg-white border border-outline-variant rounded-xl shadow-xs overflow-hidden flex flex-col">
+            <!-- Table Toolbar -->
+            <div class="p-5 border-b border-outline-variant bg-surface-bright flex flex-wrap justify-between items-center gap-4">
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterDevices('ALL')" id="dev-filter-all" class="px-3 py-1 rounded-full text-xs font-bold bg-primary text-white shadow-xs">ALL (48)</button>
+                    <button onclick="filterDevices('COMPROMISED')" id="dev-filter-comp" class="px-3 py-1 rounded-full text-xs font-bold bg-surface-container text-on-surface hover:text-error hover:bg-error-container/20">Compromised (3)</button>
+                    <button onclick="filterDevices('SUSPICIOUS')" id="dev-filter-susp" class="px-3 py-1 rounded-full text-xs font-bold bg-surface-container text-on-surface hover:text-tertiary-fixed-dim hover:bg-tertiary-fixed-dim/10">Suspicious (4)</button>
+                    <button onclick="filterDevices('CLEAN')" id="dev-filter-clean" class="px-3 py-1 rounded-full text-xs font-bold bg-surface-container text-on-surface hover:text-secondary hover:bg-secondary-container/20">Clean (41)</button>
+                </div>
+                <!-- Search input -->
+                <div class="relative w-full md:w-80">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+                    <input id="dev-search" oninput="searchDevicesLive()" class="w-full pl-9 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-xs font-mono-data font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Search host asset, IP, or threat..." type="text"/>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-outline-variant bg-surface-container-low text-[10px] font-super-heading text-outline uppercase font-bold">
+                            <th class="px-5 py-3">Host Asset Name</th>
+                            <th class="px-5 py-3">Client IP Address</th>
+                            <th class="px-5 py-3">Device Type</th>
+                            <th class="px-5 py-3 text-right">24h Query Vol</th>
+                            <th class="px-5 py-3">Threat Attribution</th>
+                            <th class="px-5 py-3">Status</th>
+                            <th class="px-5 py-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="device-table-body" class="text-[13px] font-mono-data divide-y divide-outline-variant/30">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Interactive Device Fleet Controller Script -->
+<script>
+let currentDevFilter = 'ALL';
+let devices = [
+    { id: 1, host: 'WS-ENG-042', ip: '10.0.4.122', type: 'Workstation (Windows 11)', vol: '1,240 Q', threat: 'Cobalt Strike C2 Beacon', status: 'COMPROMISED', quarantined: true },
+    { id: 2, host: 'FIN-LAP-018', ip: '10.0.4.88', type: 'Laptop (macOS Sequoia)', vol: '3,890 Q', threat: 'Banking Trojan DGA', status: 'COMPROMISED', quarantined: true },
+    { id: 3, host: 'DEV-SRV-009', ip: '10.0.2.14', type: 'Linux Server (Ubuntu 24.04)', vol: '8,410 Q', threat: 'DNS Data Exfiltration Tunnel', status: 'COMPROMISED', quarantined: true },
+    { id: 4, host: 'SRV-DB-PROD-01', ip: '192.168.1.15', type: 'Database Server', vol: '14,200 Q', threat: 'DGA Frequency Anomaly', status: 'SUSPICIOUS', quarantined: false },
+    { id: 5, host: 'HR-PC-103', ip: '10.0.6.55', type: 'Workstation (Windows 11)', vol: '890 Q', threat: 'Homoglyph Phish Lookup', status: 'SUSPICIOUS', quarantined: false },
+    { id: 6, host: 'IOT-SEC-CAM-12', ip: '10.0.12.88', type: 'IoT Security Camera', vol: '420 Q', threat: 'N/A (Clean)', status: 'CLEAN', quarantined: false },
+    { id: 7, host: 'CORP-VPN-GW', ip: '10.0.1.1', type: 'Network Gateway', vol: '48,920 Q', threat: 'N/A (Clean)', status: 'CLEAN', quarantined: false },
+    { id: 8, host: 'EXEC-MBP-01', ip: '10.0.8.22', type: 'Laptop (macOS)', vol: '2,140 Q', threat: 'N/A (Clean)', status: 'CLEAN', quarantined: false }
+];
+
+function renderDevicesTable() {
+    const q = document.getElementById('dev-search').value.toLowerCase().trim();
+    const filtered = devices.filter(d => {
+        const matchFilter = (currentDevFilter === 'ALL' || d.status === currentDevFilter);
+        const matchSearch = (!q || d.host.toLowerCase().includes(q) || d.ip.includes(q) || d.threat.toLowerCase().includes(q));
+        return matchFilter && matchSearch;
+    });
+
+    const tbody = document.getElementById('device-table-body');
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-outline">No endpoints match filter criteria.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(d => {
+        let statusBadge = '';
+        let actionBtn = '';
+
+        if (d.status === 'COMPROMISED') {
+            if (d.quarantined) {
+                statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-error-container/40 text-error border border-error/30 flex items-center gap-1 w-max"><span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> QUARANTINED</span>';
+                actionBtn = `<button onclick="toggleQuarantine(${d.id})" class="bg-secondary-container text-on-secondary-container border border-secondary/30 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-secondary-container/80 transition-colors">RELEASE HOST</button>`;
+            } else {
+                statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-error-container/20 text-error border border-error/20 flex items-center gap-1 w-max">INFECTED (ACTIVE)</span>';
+                actionBtn = `<button onclick="toggleQuarantine(${d.id})" class="bg-error text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-error/90 transition-colors">QUARANTINE</button>`;
+            }
+        } else if (d.status === 'SUSPICIOUS') {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim border border-tertiary-fixed-dim/30">SUSPICIOUS</span>';
+            actionBtn = `<button onclick="toggleQuarantine(${d.id})" class="border border-tertiary-fixed-dim text-tertiary-fixed-dim px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-tertiary-fixed-dim/10 transition-colors">ISOLATE</button>`;
+        } else {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container/20 text-secondary border border-secondary/20">HEALTHY</span>';
+            actionBtn = '<a href="index.html" class="text-primary hover:underline text-xs font-bold">View Traffic</a>';
+        }
+
+        return `
+        <tr class="hover:bg-surface-container/30 transition-colors">
+            <td class="px-5 py-4 font-bold text-on-surface font-sans">${d.host}</td>
+            <td class="px-5 py-4 text-outline font-bold">${d.ip}</td>
+            <td class="px-5 py-4 text-outline text-xs">${d.type}</td>
+            <td class="px-5 py-4 text-right font-bold text-on-surface">${d.vol}</td>
+            <td class="px-5 py-4 text-xs font-semibold ${d.status === 'COMPROMISED' ? 'text-error font-bold' : 'text-outline'}">${d.threat}</td>
+            <td class="px-5 py-4">${statusBadge}</td>
+            <td class="px-5 py-4 text-right">${actionBtn}</td>
+        </tr>`;
+    }).join('');
+}
+
+function filterDevices(f) {
+    currentDevFilter = f;
+    const filterBtns = {
+        'ALL': 'dev-filter-all',
+        'COMPROMISED': 'dev-filter-comp',
+        'SUSPICIOUS': 'dev-filter-susp',
+        'CLEAN': 'dev-filter-clean'
+    };
+    for (let k in filterBtns) {
+        const el = document.getElementById(filterBtns[k]);
+        if (k === f) {
+            el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-primary text-white shadow-xs';
+        } else {
+            el.className = 'px-3 py-1 rounded-full text-xs font-bold bg-surface-container text-on-surface hover:text-primary';
+        }
+    }
+    renderDevicesTable();
+}
+
+function searchDevicesLive() {
+    renderDevicesTable();
+}
+
+function toggleQuarantine(id) {
+    const dev = devices.find(d => d.id === id);
+    if (!dev) return;
+    dev.quarantined = !dev.quarantined;
+    if (dev.status !== 'COMPROMISED') {
+        dev.status = dev.quarantined ? 'COMPROMISED' : 'SUSPICIOUS';
+    }
+    const qCount = devices.filter(d => d.quarantined).length;
+    document.getElementById('kpi-compromised-count').textContent = qCount + ' Isolated';
+    renderDevicesTable();
+}
+
+// Initial Render
+renderDevicesTable();
+</script>
+</body>
+</html>
