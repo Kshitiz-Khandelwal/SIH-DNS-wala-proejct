@@ -11,6 +11,14 @@ import random
 import urllib.request
 import urllib.error
 
+# Ensure UTF-8 output encoding across Windows terminals
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 # ANSI Color formatting
 class C:
     RESET = '\033[0m'
@@ -27,10 +35,10 @@ class C:
     BG_YELLOW = '\033[43m'
 
 TARGET_ENDPOINTS = [
-    "https://sih-dns-wala-proejct-uhas.vercel.app/api/v1/query",
     "http://localhost:3000/api/v1/query",
     "http://localhost:8080/v1/query",
     "http://localhost:8000/v1/query",
+    "https://sih-dns-wala-proejct-uhas.vercel.app/api/v1/query",
 ]
 
 
