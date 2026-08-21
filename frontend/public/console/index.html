@@ -228,48 +228,62 @@ tailwind.config = {
         </div>
     </div>
 
-    <!-- Verification Engine / Attack Simulator -->
-    <div class="bg-white rounded technical-border technical-shadow p-5 flex flex-col gap-4">
-        <div class="flex items-center gap-2 border-b border-outline-variant/50 pb-3">
-            <span class="material-symbols-outlined text-primary text-[20px]">bolt</span>
-            <h3 class="text-[16px] font-bold text-on-surface">Verification Engine &amp; Attack Simulator</h3>
+        <!-- Verification Engine / Attack Simulator -->
+    <div class="bg-white rounded-xl technical-border technical-shadow p-5 flex flex-col gap-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-outline-variant/60 pb-3">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[22px]">bolt</span>
+                <div>
+                    <h3 class="text-[15px] font-bold text-on-surface">Verification Engine &amp; Attack Simulator</h3>
+                    <p class="text-[11px] text-outline">Simulate real-world cyber attack traffic through the 7-stage ML pipeline</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 items-center">
+                <button id="btn-sim-benign" onclick="runSim('benign')" class="sim-btn bg-surface-container border border-outline-variant px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-on-surface hover:border-secondary hover:bg-secondary-container/10 transition-all flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-secondary"></span> Benign Lookup
+                </button>
+                <button id="btn-sim-dga" onclick="runSim('dga')" class="sim-btn bg-surface-container border border-outline-variant px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-on-surface hover:border-error hover:bg-error/10 transition-all flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-error"></span> DGA Generation
+                </button>
+                <button id="btn-sim-typosquatting" onclick="runSim('typosquatting')" class="sim-btn bg-surface-container border border-outline-variant px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-on-surface hover:border-tertiary-fixed-dim hover:bg-tertiary-fixed-dim/10 transition-all flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> Typosquatting
+                </button>
+                <button id="btn-sim-tunneling" onclick="runSim('tunneling')" class="sim-btn bg-surface-container border border-outline-variant px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-on-surface hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span> DNS Tunnelling
+                </button>
+                <button id="btn-sim-c2" onclick="runSim('c2')" class="sim-btn bg-surface-container border border-outline-variant px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-on-surface hover:border-error hover:bg-error/10 transition-all flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-error"></span> C2 Beaconing
+                </button>
+            </div>
         </div>
-        <div class="flex flex-wrap gap-3 items-center">
-            <button onclick="runSim('benign')" class="sim-btn bg-surface-container-low border border-outline-variant px-4 py-2 rounded text-[13px] font-mono-data text-on-surface hover:border-primary hover:bg-primary-container/10 transition-colors flex items-center gap-2 font-medium">
-                <span class="w-2 h-2 rounded-full bg-secondary"></span> Benign Lookup
-            </button>
-            <button onclick="runSim('dga')" class="sim-btn bg-surface-container-low border border-outline-variant px-4 py-2 rounded text-[13px] font-mono-data text-on-surface hover:border-primary hover:bg-primary-container/10 transition-colors flex items-center gap-2 font-medium">
-                <span class="w-2 h-2 rounded-full bg-error"></span> DGA Generation
-            </button>
-            <button onclick="runSim('typosquatting')" class="sim-btn bg-surface-container-low border border-outline-variant px-4 py-2 rounded text-[13px] font-mono-data text-on-surface hover:border-primary hover:bg-primary-container/10 transition-colors flex items-center gap-2 font-medium">
-                <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> Typosquatting
-            </button>
-            <button onclick="runSim('tunneling')" class="sim-btn bg-surface-container-low border border-outline-variant px-4 py-2 rounded text-[13px] font-mono-data text-on-surface hover:border-primary hover:bg-primary-container/10 transition-colors flex items-center gap-2 font-medium">
-                <span class="w-2 h-2 rounded-full bg-purple-500"></span> DNS Tunnelling
-            </button>
-            <button onclick="runSim('c2')" class="sim-btn bg-surface-container-low border border-outline-variant px-4 py-2 rounded text-[13px] font-mono-data text-on-surface hover:border-primary hover:bg-primary-container/10 transition-colors flex items-center gap-2 font-medium">
-                <span class="w-2 h-2 rounded-full bg-error"></span> C2 Beaconing
-            </button>
-                        <div id="sim-result-box" class="ml-auto bg-primary-container/10 border border-primary/20 rounded-xl px-4 py-2 flex items-center gap-4 transition-all">
-                <div class="flex flex-col">
-                    <span class="text-[10px] font-super-heading text-primary/70 uppercase font-bold">Tested Domain</span>
-                    <span id="sim-domain" class="text-[13px] font-mono-data font-bold text-primary">xq9m2kz7v4naplq.top</span>
+
+        <!-- Live Kill-Chain Telemetry Result Banner -->
+        <div id="sim-result-box" class="bg-surface-container/60 border border-outline-variant rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all">
+            <div class="flex flex-col gap-1 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="sim-vector-badge" class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-error-container/30 text-error border border-error/20">MALWARE DGA</span>
+                    <span id="sim-actor-badge" class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">Actor: FIN7 / Wizard Spider</span>
+                    <span id="sim-mitre-badge" class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">MITRE: T1568.002</span>
                 </div>
-                <div class="h-6 w-px bg-primary/20"></div>
-                <div class="flex flex-col">
-                    <span class="text-[10px] font-super-heading text-primary/70 uppercase font-bold">Score</span>
-                    <span id="sim-score" class="text-[14px] font-mono-data font-bold text-primary">95/100</span>
+                <div class="flex items-center gap-3 mt-1 flex-wrap">
+                    <span class="text-xs font-sans text-outline font-bold">Tested Domain:</span>
+                    <span id="sim-domain" class="text-sm font-mono font-bold text-primary break-all">xq9m2kz7v4naplq.top</span>
+                    <span class="text-slate-300">|</span>
+                    <span id="sim-metrics" class="text-xs font-mono text-slate-600">Shannon Entropy: 4.82 bits · Consonants: 6 run · Digits: 20%</span>
                 </div>
-                <div class="h-6 w-px bg-primary/20"></div>
-                <div class="flex flex-col">
-                    <span class="text-[10px] font-super-heading text-error/70 uppercase font-bold">Verdict</span>
-                    <span id="sim-verdict" class="text-[14px] font-mono-data font-bold text-error flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">block</span> BLOCK
+            </div>
+            
+            <div class="flex items-center gap-4 shrink-0 flex-wrap sm:flex-nowrap">
+                <div class="flex flex-col text-right">
+                    <span class="text-[10px] font-super-heading text-outline uppercase font-bold">ML Verdict</span>
+                    <span id="sim-verdict" class="text-sm font-mono font-bold text-error flex items-center justify-end gap-1">
+                        <span class="material-symbols-outlined text-[15px]">block</span> BLOCK (95/100)
                     </span>
                 </div>
-                <div class="h-6 w-px bg-primary/20"></div>
-                <a id="sim-inspect-btn" href="xai.html?domain=xq9m2kz7v4naplq.top" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-1 shadow-xs shrink-0">
-                    <span class="material-symbols-outlined text-[16px]">psychology</span> Inspect Dossier
+                <div class="h-8 w-px bg-outline-variant hidden sm:block"></div>
+                <a id="sim-inspect-btn" href="xai.html?domain=xq9m2kz7v4naplq.top" class="bg-primary text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shadow-xs shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">psychology</span> Deep-Dive XAI Dossier
                 </a>
             </div>
         </div>
@@ -487,21 +501,77 @@ function renderTable() {
     }).join('');
 }
 
+const SIM_CATALOG = {
+    benign: {
+        domain: 'docs.cloudflare.com',
+        vector: 'BENIGN LOOKUP',
+        actor: 'Enterprise Cloud Authority',
+        mitre: 'N/A (Clean)',
+        metrics: 'Shannon Entropy: 2.85 bits · Vowel Ratio: 38% · Prior: Tranco Top 100',
+        score: 0,
+        verdict: 'ALLOW',
+        client_ip: '192.168.1.42'
+    },
+    dga: {
+        domain: 'xq9m2kz7v4naplq.top',
+        vector: 'MALWARE DGA',
+        actor: 'FIN7 / Wizard Spider',
+        mitre: 'T1568.002',
+        metrics: 'Shannon Entropy: 4.82 bits · Consonant Run: 6 · Digits: 20%',
+        score: 95,
+        verdict: 'BLOCK',
+        client_ip: '172.28.0.101'
+    },
+    typosquatting: {
+        domain: 'rnicrosoft.com',
+        vector: 'HOMOGLYPH TYPOSQUATTING',
+        actor: 'APT29 / Nobelium',
+        mitre: 'T1566.002',
+        metrics: 'Homoglyph: rn->m · Levenshtein Dist=1 to microsoft · PhishKit',
+        score: 82,
+        verdict: 'FLAG',
+        client_ip: '192.168.1.142'
+    },
+    tunneling: {
+        domain: 'YWJjZDEyMzQ1Ng==.attacker-c2.net',
+        vector: 'DNS TUNNELLING EXFIL',
+        actor: 'Lazarus (Bluenoroff)',
+        mitre: 'T1071.004',
+        metrics: 'Base64 Subdomain Payload · Length: 24 chars · Burst: 15 QPS',
+        score: 94,
+        verdict: 'BLOCK',
+        client_ip: '172.28.0.201'
+    },
+    c2: {
+        domain: 'c2-beacon.dark-infra.cc',
+        vector: 'C2 BEACONING',
+        actor: 'Cobalt Strike / APT29',
+        mitre: 'T1071.001',
+        metrics: 'URLhaus Threat Intel IOC Match · Malleable C2 Callback Profile',
+        score: 98,
+        verdict: 'BLOCK',
+        client_ip: '172.28.0.250'
+    }
+};
+
 async function runSim(type) {
+    // Reset button states
+    ['benign', 'dga', 'typosquatting', 'tunneling', 'c2'].forEach(k => {
+        const b = document.getElementById('btn-sim-' + k);
+        if (b) {
+            if (k === type) {
+                b.className = 'sim-btn bg-primary/10 border-2 border-primary px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-primary transition-all flex items-center gap-1.5 shadow-xs';
+            } else {
+                b.className = 'sim-btn bg-surface-container border border-outline-variant px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold text-on-surface hover:border-outline transition-all flex items-center gap-1.5';
+            }
+        }
+    });
+
     const box = document.getElementById('sim-result-box');
-    box.classList.add('opacity-50');
-    
-    // Default fallback domains for each attack vector
-    const simCatalog = {
-        benign: { domain: 'docs.cloudflare.com', risk_score: 1, verdict: 'ALLOW' },
-        dga: { domain: 'xq9m2kz7v4naplq.top', risk_score: 95, verdict: 'BLOCK' },
-        typosquatting: { domain: 'rnicrosoft-login.com', risk_score: 82, verdict: 'FLAG' },
-        tunneling: { domain: 'YWJjZDEyMzQ1Ng==.attacker-c2.net', risk_score: 94, verdict: 'BLOCK' },
-        c2: { domain: 'c2-beacon.dark-infra.cc', risk_score: 98, verdict: 'BLOCK' }
-    };
-    
-    let result = simCatalog[type] || { domain: 'test-scan.org', risk_score: 50, verdict: 'FLAG' };
-    
+    if (box) box.classList.add('opacity-50');
+
+    let result = SIM_CATALOG[type] || SIM_CATALOG.dga;
+
     try {
         const res = await fetch('/api/v1/simulate', {
             method: 'POST',
@@ -509,40 +579,74 @@ async function runSim(type) {
             body: JSON.stringify({ type })
         });
         if (res.ok) {
-            result = await res.json();
+            const apiRes = await res.json();
+            result = Object.assign({}, result, apiRes);
         }
     } catch(e) {
-        // Fallback gracefully to offline simulation catalog
+        // Fallback gracefully to offline catalog
     }
+
+    // Update UI elements
+    const domEl = document.getElementById('sim-domain');
+    if (domEl) domEl.textContent = result.domain;
     
-    document.getElementById('sim-domain').textContent = result.domain || 'tested.domain';
-    const inspBtn = document.getElementById('sim-inspect-btn'); if (inspBtn) inspBtn.href = `xai.html?domain=${encodeURIComponent(result.domain)}`;
-    document.getElementById('sim-score').textContent = (result.risk_score || 93) + '/100';
+    const vecBadge = document.getElementById('sim-vector-badge');
+    if (vecBadge) vecBadge.textContent = result.vector || type.toUpperCase();
+    
+    const actBadge = document.getElementById('sim-actor-badge');
+    if (actBadge) actBadge.textContent = `Actor: ${result.threat_actor || result.actor || 'Unknown'}`;
+    
+    const mitreBadge = document.getElementById('sim-mitre-badge');
+    if (mitreBadge) mitreBadge.textContent = `MITRE: ${result.mitre_technique || result.mitre || 'N/A'}`;
+    
+    const metricsEl = document.getElementById('sim-metrics');
+    if (metricsEl) metricsEl.textContent = result.metrics || `Shannon Entropy: ${result.entropy || 4.2} bits`;
+    
+    const inspBtn = document.getElementById('sim-inspect-btn');
+    if (inspBtn) inspBtn.href = `xai.html?domain=${encodeURIComponent(result.domain)}`;
+    
     const vEl = document.getElementById('sim-verdict');
-    vEl.textContent = result.verdict || 'BLOCK';
-    if (result.verdict === 'ALLOW') {
-        vEl.className = 'text-[14px] font-mono-data font-bold text-secondary flex items-center gap-1';
-        vEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">check_circle</span> ALLOW';
-    } else if (result.verdict === 'FLAG') {
-        vEl.className = 'text-[14px] font-mono-data font-bold text-tertiary-fixed-dim flex items-center gap-1';
-        vEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">warning</span> FLAG';
-    } else {
-        vEl.className = 'text-[14px] font-mono-data font-bold text-error flex items-center gap-1';
-        vEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">block</span> BLOCK';
+    if (vEl) {
+        const score = result.risk_score !== undefined ? result.risk_score : (result.score || 95);
+        const verdict = (result.verdict || 'BLOCK').toUpperCase();
+        if (verdict === 'ALLOW') {
+            vEl.className = 'text-sm font-mono font-bold text-secondary flex items-center justify-end gap-1';
+            vEl.innerHTML = `<span class="material-symbols-outlined text-[15px]">check_circle</span> ALLOW (${score}/100)`;
+        } else if (verdict === 'FLAG') {
+            vEl.className = 'text-sm font-mono font-bold text-tertiary-fixed-dim flex items-center justify-end gap-1';
+            vEl.innerHTML = `<span class="material-symbols-outlined text-[15px]">warning</span> FLAG (${score}/100)`;
+        } else {
+            vEl.className = 'text-sm font-mono font-bold text-error flex items-center justify-end gap-1';
+            vEl.innerHTML = `<span class="material-symbols-outlined text-[15px]">block</span> BLOCK (${score}/100)`;
+        }
     }
-    
-    // Add to top of local events
+
+    // Prepend to live event stream table
     allEvents.unshift({
         id: 'ev-sim-' + Date.now(),
         timestamp: new Date().toISOString(),
         domain: result.domain,
-        client_ip: '192.168.1.100',
-        risk_score: result.risk_score,
+        client_ip: result.client_ip || '192.168.1.100',
+        risk_score: result.risk_score !== undefined ? result.risk_score : result.score,
         verdict: result.verdict
     });
     renderTable();
-    
-    box.classList.remove('opacity-50');
+
+    // Increment KPIs
+    if (result.verdict === 'BLOCK') {
+        const el = document.getElementById('kpi-blocked');
+        if (el) el.textContent = (parseInt(el.textContent.replace(/,/g, '')) + 1).toLocaleString();
+    } else if (result.verdict === 'FLAG') {
+        const el = document.getElementById('kpi-flagged');
+        if (el) el.textContent = (parseInt(el.textContent.replace(/,/g, '')) + 1).toLocaleString();
+    } else {
+        const el = document.getElementById('kpi-clean');
+        if (el) el.textContent = (parseInt(el.textContent.replace(/,/g, '')) + 1).toLocaleString();
+    }
+    const totalEl = document.getElementById('kpi-total');
+    if (totalEl) totalEl.textContent = (parseInt(totalEl.textContent.replace(/,/g, '')) + 1).toLocaleString();
+
+    if (box) box.classList.remove('opacity-50');
 }
 
 // Live QPS ticker
