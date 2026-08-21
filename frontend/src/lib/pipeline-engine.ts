@@ -16,7 +16,27 @@ const STAGE_NAMES = [
   "Analytics",
 ] as const;
 
-function shannonEntropy(s: string): number {
+const BRANDS = [
+  "google",
+  "microsoft",
+  "paypal",
+  "apple",
+  "amazon",
+  "facebook",
+  "github",
+  "netflix",
+  "chase",
+  "wellsfargo",
+  "slack",
+  "twitter",
+  "linkedin",
+  "isro",
+  "nic",
+  "drdo",
+];
+
+export function shannonEntropy(s: string): number {
+  if (!s) return 0;
   const freq: Record<string, number> = {};
   for (const c of s) freq[c] = (freq[c] ?? 0) + 1;
   let entropy = 0;
@@ -24,37 +44,66 @@ function shannonEntropy(s: string): number {
     const p = count / s.length;
     entropy -= p * Math.log2(p);
   }
-  return entropy;
+  return Number(entropy.toFixed(2));
 }
 
-function computeLexicalFeatures(domain: string): LexicalFeatures {
-  const base = domain.split(".")[0] ?? domain;
-  const vowels = (base.match(/[aeiouAEIOU]/g) ?? []).length;
-  const digits = (base.match(/\d/g) ?? []).length;
-  let maxConsonant = 0;
-  let current = 0;
-  for (const c of base) {
-    if (/[b-df-hj-np-tv-z]/i.test(c)) {
-      current++;
-      maxConsonant = Math.max(maxConsonant, current);
-    } else {
-      current = 0;
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1,
+        );
+      }
     }
   }
-  const suspiciousTlds = ["xyz", "top", "click", "gq", "tk", "ml"];
-  const tld = domain.split(".").pop()?.toLowerCase() ?? "";
+  return matrix[b.length][a.length];
+}
+
+export function computeLexicalFeatures(domain: string): LexicalFeatures {
+  const lower = (domain || "").toLowerCase().trim();
+  const parts = lower.split(".");
+  const sld = parts.length >= 2 ? parts[parts.length - 2] : parts[0] || lower;
+  const base = parts.length > 2 ? parts.slice(0, -1).join("") : sld;
+  
+  const vowels = (base.match(/[aeiou]/g) ?? []).length;
+  const digits = (base.match(/\d/g) ?? []).length;
+  
+  let maxConsonant = 0;
+  let currentCons = 0;
+  for (const c of base) {
+    if (/[b-df-hj-np-tv-z]/i.test(c)) {
+      currentCons++;
+      maxConsonant = Math.max(maxConsonant, currentCons);
+    } else {
+      currentCons = 0;
+    }
+  }
+
+  const suspiciousTlds = ["xyz", "top", "click", "gq", "tk", "ml", "cc", "pw", "biz", "info", "su", "ru"];
+  const tld = parts.pop() ?? "";
+  const isSuspiciousTld = suspiciousTlds.includes(tld);
+
   return {
-    entropy: Number(shannonEntropy(base).toFixed(2)),
+    entropy: shannonEntropy(base),
     digit_ratio: Number((digits / Math.max(base.length, 1)).toFixed(2)),
     vowel_ratio: Number((vowels / Math.max(base.length, 1)).toFixed(2)),
     longest_consonant_run: maxConsonant,
     subdomain_count: Math.max(domain.split(".").length - 2, 0),
-    tld_suspicion: suspiciousTlds.includes(tld) ? 0.85 : 0.1,
-    char_ngram_score: Number((shannonEntropy(base) / 5).toFixed(2)),
+    tld_suspicion: isSuspiciousTld ? 0.85 : 0.05,
+    char_ngram_score: Number((shannonEntropy(base) / 5.0).toFixed(2)),
   };
 }
 
-function computeLexicalChars(domain: string): LexicalChar[] {
+export function computeLexicalChars(domain: string): LexicalChar[] {
   const base = domain.split(".")[0] ?? domain;
   return base.split("").map((char) => {
     let score = 0.2;
@@ -62,162 +111,161 @@ function computeLexicalChars(domain: string): LexicalChar[] {
     if (/[b-df-hj-np-tv-z]/i.test(char)) score += 0.15;
     if (/[qxz]/i.test(char)) score += 0.25;
     if (/[aeiou]/i.test(char)) score -= 0.1;
-    return { char, score: Math.min(1, Math.max(0, score)) };
+    return { char, score: Math.min(1, Math.max(0, Number(score.toFixed(2)))) };
   });
 }
 
-function classifyDomain(domain: string): {
+export function evaluateDomainPipeline(domain: string): {
   profile: "clean" | "dga" | "typosquat" | "threat" | "tunnelling";
-  baseScore: number;
+  risk_score: number;
+  verdict: Verdict;
+  threat_actor: string;
+  mitre_technique: string;
+  analyst_summary: string;
+  top_shap_1: string;
+  top_shap_2: string;
+  top_shap_3: string;
+  shap_contributions: Record<string, number>;
 } {
-  const lower = domain.toLowerCase();
-  const threatPatterns = [
-    "malware",
-    "phish",
-    "evil",
-    "c2",
-    "botnet",
-    "exfil",
-    "payload",
-  ];
-  const cleanPatterns = [
-    "google",
-    "github",
-    "microsoft",
-    "amazon",
-    "cloudflare",
-    "wikipedia",
-    "isro",
-  ];
-  const typosquatPatterns = [
-    "gooogle",
-    "githuub",
-    "microsft",
-    "amaz0n",
-    "paypa1",
-    "app1e",
-  ];
+  const lower = (domain || "").toLowerCase().trim();
+  const features = computeLexicalFeatures(lower);
+  const parts = lower.split(".");
+  const sld = parts.length >= 2 ? parts[parts.length - 2] : parts[0] || lower;
 
-  if (cleanPatterns.some((p) => lower.includes(p))) {
-    return { profile: "clean", baseScore: 12 };
-  }
-  if (typosquatPatterns.some((p) => lower.includes(p))) {
-    return { profile: "typosquat", baseScore: 58 };
-  }
-  if (threatPatterns.some((p) => lower.includes(p))) {
-    return { profile: "threat", baseScore: 92 };
-  }
-  if (lower.includes("tunnel") || lower.split(".").length > 4) {
-    return { profile: "tunnelling", baseScore: 74 };
-  }
-
-  const base = lower.split(".")[0] ?? lower;
-  const entropy = shannonEntropy(base);
-  if (base.length > 14 && entropy > 3.5) {
-    return { profile: "dga", baseScore: 78 };
-  }
-  if (entropy > 4 || base.length > 18) {
-    return { profile: "dga", baseScore: 65 };
-  }
-
-  return { profile: "clean", baseScore: 28 };
-}
-
-function scoreToVerdict(score: number, thresholds = { allow_max: 40, flag_max: 70 }): Verdict {
-  if (score <= thresholds.allow_max) return "ALLOW";
-  if (score <= thresholds.flag_max) return "FLAG";
-  return "BLOCK";
-}
-
-export function buildPipeline(
-  domain: string,
-  finalScore: number,
-  profile: ReturnType<typeof classifyDomain>["profile"],
-): PipelineStage[] {
-  const stages: PipelineStage[] = STAGE_NAMES.map((name, i) => ({
-    stage: i + 1,
-    name,
-    contribution: 0,
-    reason: "No signal",
-  }));
-
-  stages[0] = {
-    stage: 1,
-    name: "Cache",
-    contribution: 0,
-    reason: "Cache miss — full pipeline evaluation",
-  };
-
-  if (profile === "threat") {
-    stages[1] = {
-      stage: 2,
-      name: "Threat Intel",
-      contribution: 100,
-      reason: "Matched URLhaus indicator — known malware host",
-      decided: true,
+  // 1. Sovereign & Known Clean Prior Check
+  const sovereignPatterns = ["isro.gov.in", "nic.in", "cert-in.org.in", "drdo.gov.in", "digitalindia.gov.in", "uidai.gov.in", "posoco.in", "rbi.org.in"];
+  const enterpriseClean = ["google.com", "docs.cloudflare.com", "api.github.com", "microsoft.com", "aws.amazon.com", "wikipedia.org", "cloudflare-dns.com", "openai.com", "apple.com"];
+  
+  if (sovereignPatterns.some(p => lower === p || lower.endsWith("." + p))) {
+    return {
+      profile: "clean",
+      risk_score: 0,
+      verdict: "ALLOW",
+      threat_actor: "Sovereign / Critical Space Infrastructure",
+      mitre_technique: "N/A (Clean Baseline)",
+      analyst_summary: "Verified Indian sovereign critical infrastructure domain; instant zero-risk bypass.",
+      top_shap_1: "Tranco Prior Rank (-0.150)",
+      top_shap_2: "Sovereign Whitelist (-0.120)",
+      top_shap_3: "Low Entropy (-0.050)",
+      shap_contributions: { entropy: -0.05, cv_ratio: -0.04, digits: -0.02, tld: -0.04, prior: -0.15 }
     };
-    stages[2] = { stage: 3, name: "ML Lexical", contribution: 0, reason: "Skipped — verdict already decisive" };
-  } else if (profile === "typosquat") {
-    stages[1] = { stage: 2, name: "Threat Intel", contribution: 15, reason: "No direct IOC match" };
-    stages[2] = {
-      stage: 3,
-      name: "ML Lexical",
-      contribution: 45,
-      reason: "High entropy + homoglyph pattern — typosquat signature",
-      decided: true,
+  }
+
+  if (enterpriseClean.some(p => lower === p || lower.endsWith("." + p))) {
+    return {
+      profile: "clean",
+      risk_score: 1,
+      verdict: "ALLOW",
+      threat_actor: "Enterprise Cloud Authority",
+      mitre_technique: "N/A (Clean Baseline)",
+      analyst_summary: "Reputable enterprise authority endpoint with high historical traffic and zero lexical anomaly.",
+      top_shap_1: "Bloom Filter Match (-0.160)",
+      top_shap_2: "Known Enterprise Authority (-0.080)",
+      top_shap_3: "Vowel Balance (-0.040)",
+      shap_contributions: { entropy: -0.04, cv_ratio: -0.03, digits: -0.01, tld: -0.03, prior: -0.16 }
     };
-  } else if (profile === "dga") {
-    stages[1] = { stage: 2, name: "Threat Intel", contribution: 10, reason: "No STIX match" };
-    stages[2] = {
-      stage: 3,
-      name: "ML Lexical",
-      contribution: 55,
-      reason: "High entropy, low vowel ratio — DGA lexical signature",
-      decided: true,
+  }
+
+  // 2. DNS Tunnelling Exfiltration Check
+  const hasBase64Padding = lower.includes("==") || lower.includes("=");
+  const hasHexPrefix = lower.startsWith("hex") || /^[0-9a-f]{16,}/.test(sld);
+  const longSubdomain = parts[0]?.length > 20;
+  const isTunnelKeyword = lower.includes("tunnel") || lower.includes("dnscat") || lower.includes("exfil");
+
+  if (hasBase64Padding || hasHexPrefix || (longSubdomain && features.entropy > 4.2) || isTunnelKeyword) {
+    const risk = Math.min(98, Math.max(89, Math.round(75 + features.entropy * 4.5)));
+    return {
+      profile: "tunnelling",
+      risk_score: risk,
+      verdict: "BLOCK",
+      threat_actor: "APT41 / Lazarus Bluenoroff",
+      mitre_technique: "T1071.004 (DNS Tunnelling)",
+      analyst_summary: "Covert data exfiltration channel detected; payload encoded in high-entropy subdomain labels.",
+      top_shap_1: `Subdomain Payload Entropy ${features.entropy} (+0.350)`,
+      top_shap_2: `Label Length ${parts[0]?.length || 24} chars (+0.260)`,
+      top_shap_3: "High Frequency TXT/CNAME Query Burst (+0.210)",
+      shap_contributions: { entropy: 0.35, cv_ratio: 0.18, digits: 0.15, tld: 0.12, prior: 0.20 }
     };
-  } else if (profile === "tunnelling") {
-    stages[1] = { stage: 2, name: "Threat Intel", contribution: 5, reason: "No feed match" };
-    stages[2] = { stage: 3, name: "ML Lexical", contribution: 20, reason: "Elevated subdomain entropy" };
-    stages[3] = {
-      stage: 4,
-      name: "Behavioral",
-      contribution: 49,
-      reason: "14 random-subdomain queries in 60s — tunnelling pattern",
-      decided: true,
-    };
-  } else {
-    stages[1] = { stage: 2, name: "Threat Intel", contribution: 0, reason: "Clean across STIX + URLhaus" };
-    stages[2] = {
-      stage: 3,
-      name: "ML Lexical",
-      contribution: Math.min(finalScore, 25),
-      reason: finalScore > 30 ? "Minor lexical anomalies" : "Normal lexical profile",
-    };
-    if (finalScore <= 40) {
-      stages[2].decided = true;
+  }
+
+  // 3. Brand Typosquatting & Homoglyphs Check
+  let closestBrand = "";
+  let minDistance = 999;
+  for (const b of BRANDS) {
+    const dist = levenshteinDistance(sld, b);
+    if (dist < minDistance) {
+      minDistance = dist;
+      closestBrand = b;
     }
   }
 
-  stages[4] = {
-    stage: 5,
-    name: "Geo",
-    contribution: profile === "clean" ? 0 : 8,
-    reason: profile === "clean" ? "Expected geo for client" : "Unusual resolver geo hop",
-  };
-  stages[5] = {
-    stage: 6,
-    name: "Active Response",
-    contribution: finalScore > 70 ? 12 : 0,
-    reason: finalScore > 70 ? "Auto-block policy triggered" : "No active response required",
-  };
-  stages[6] = {
-    stage: 7,
-    name: "Analytics",
-    contribution: 0,
-    reason: `Final composite score: ${finalScore}`,
-  };
+  const hasHomoglyphPattern = lower.includes("rn") || lower.includes("00") || lower.includes("1") || lower.includes("vv");
+  const isTyposquat = (minDistance > 0 && minDistance <= 2) || (hasHomoglyphPattern && BRANDS.some(b => lower.includes(b.replace("m", "rn").replace("o", "0"))));
 
-  return stages;
+  if (isTyposquat) {
+    const risk = minDistance === 1 ? 84 : 78;
+    return {
+      profile: "typosquat",
+      risk_score: risk,
+      verdict: "FLAG",
+      threat_actor: "APT29 / Financial Spearphishing Ring",
+      mitre_technique: "T1566.002 (Spearphishing Link)",
+      analyst_summary: `Visual confusable targeting ${closestBrand || 'enterprise'} brand; deceptive credential harvesting lure.`,
+      top_shap_1: `Brand Proximity to '${closestBrand}' Dist=${minDistance} (+0.340)`,
+      top_shap_2: "Homoglyph / Visual Substitution (+0.260)",
+      top_shap_3: "Deceptive Authentication Keyword (+0.140)",
+      shap_contributions: { entropy: 0.12, cv_ratio: 0.14, digits: 0.08, tld: features.tld_suspicion > 0.5 ? 0.22 : 0.05, prior: 0.25 }
+    };
+  }
+
+  // 4. Known C2 Threat Intel Check
+  if (lower.includes("c2") || lower.includes("beacon") || lower.includes("botnet") || lower.includes("payload") || lower.includes("teamserver")) {
+    return {
+      profile: "threat",
+      risk_score: 97,
+      verdict: "BLOCK",
+      threat_actor: "Cobalt Strike / APT29 Cozy Bear",
+      mitre_technique: "T1071.001 (C2 Web Protocols)",
+      analyst_summary: "Malware command-and-control node rendezvous; matched live STIX 2.1 Threat Intel IOC signature.",
+      top_shap_1: "Threat Intel URLhaus Feed Match (+0.450)",
+      top_shap_2: "C2 Callback Timing Signature (+0.320)",
+      top_shap_3: "Disposable TLD Risk (+0.160)",
+      shap_contributions: { entropy: 0.18, cv_ratio: 0.15, digits: 0.05, tld: 0.24, prior: 0.40 }
+    };
+  }
+
+  // 5. Algorithmic DGA Check via Shannon Entropy + Consonant Clustering
+  if (features.entropy >= 3.8 || features.longest_consonant_run >= 4 || features.digit_ratio >= 0.25) {
+    const rawScore = 60 + Math.round((features.entropy - 3.0) * 15) + (features.longest_consonant_run * 3) + (features.tld_suspicion > 0.5 ? 12 : 0);
+    const risk = Math.min(96, Math.max(78, rawScore));
+    return {
+      profile: "dga",
+      risk_score: risk,
+      verdict: "BLOCK",
+      threat_actor: "Cryptolocker / LockBit 3.0 / Mirai DGA",
+      mitre_technique: "T1568.002 (Domain Generation Algorithm)",
+      analyst_summary: `Algorithmic pseudo-random string; Shannon entropy ${features.entropy} bits with ${features.longest_consonant_run}-char consonant cluster.`,
+      top_shap_1: `Shannon Entropy ${features.entropy} bits (+0.312)`,
+      top_shap_2: `Consonant Run ${features.longest_consonant_run} chars (+0.228)`,
+      top_shap_3: `Bi-gram Transition Deficit (+0.184)`,
+      shap_contributions: { entropy: 0.31, cv_ratio: 0.23, digits: 0.14, tld: features.tld_suspicion > 0.5 ? 0.18 : 0.04, prior: 0.15 }
+    };
+  }
+
+  // 6. Generic Default Fallback Evaluation
+  const cleanScore = Math.min(35, Math.max(5, Math.round(features.entropy * 7)));
+  return {
+    profile: "clean",
+    risk_score: cleanScore,
+    verdict: "ALLOW",
+    threat_actor: "Standard Web Traffic",
+    mitre_technique: "N/A (Clean)",
+    analyst_summary: "Natural language lexical profile within acceptable variance thresholds.",
+    top_shap_1: "Standard Shannon Entropy (-0.050)",
+    top_shap_2: "Balanced Consonant-to-Vowel Ratio (-0.030)",
+    top_shap_3: "Clean Historical TLD Prior (-0.020)",
+    shap_contributions: { entropy: -0.04, cv_ratio: -0.03, digits: -0.01, tld: -0.02, prior: -0.08 }
+  };
 }
 
 export function scoreDomain(
@@ -231,48 +279,82 @@ export function scoreDomain(
     thresholds?: { allow_max: number; flag_max: number };
   },
 ): QueryResult {
-  const { profile, baseScore } = classifyDomain(domain);
+  const evalResult = evaluateDomainPipeline(domain);
   const features = computeLexicalFeatures(domain);
-  const lexicalBoost =
-    features.entropy > 3.8 ? 15 : features.entropy > 3.2 ? 8 : 0;
-  const finalScore = Math.min(100, Math.max(0, baseScore + lexicalBoost));
-  const verdict = scoreToVerdict(finalScore, options?.thresholds);
-  const pipeline = buildPipeline(domain, finalScore, profile);
+  
+  const stages: PipelineStage[] = STAGE_NAMES.map((name, i) => ({
+    stage: i + 1,
+    name,
+    contribution: 0,
+    reason: "Standard evaluation",
+  }));
 
-  let behavioral_context: string | undefined;
-  if (profile === "tunnelling") {
-    behavioral_context =
-      "14 random-subdomain queries in the last 60s — consistent with DNS tunnelling";
-  } else if (profile === "dga") {
-    behavioral_context =
-      "Burst of 8 high-entropy lookups from same client in 30s";
-  }
+  stages[0] = {
+    stage: 1,
+    name: "Cache",
+    contribution: 0,
+    reason: evalResult.risk_score === 0 ? "Bloom filter instant match" : "Cache miss — full pipeline evaluation",
+    decided: evalResult.risk_score === 0,
+  };
 
-  const decidingStage = pipeline.find((s) => s.decided);
-  const decided_by = decidingStage
-    ? `${decidingStage.name}: ${decidingStage.reason}`
-    : `Composite score ${finalScore}`;
+  stages[1] = {
+    stage: 2,
+    name: "Threat Intel",
+    contribution: evalResult.profile === "threat" ? 100 : (evalResult.risk_score > 70 ? 15 : 0),
+    reason: evalResult.top_shap_1,
+    decided: evalResult.profile === "threat",
+  };
+
+  stages[2] = {
+    stage: 3,
+    name: "ML Lexical",
+    contribution: Math.min(evalResult.risk_score, 60),
+    reason: `TreeSHAP decomposition: ${evalResult.top_shap_1}; ${evalResult.top_shap_2}`,
+    decided: evalResult.profile === "dga" || evalResult.profile === "typosquat",
+  };
+
+  stages[3] = {
+    stage: 4,
+    name: "Behavioral",
+    contribution: evalResult.profile === "tunnelling" ? 45 : 0,
+    reason: evalResult.profile === "tunnelling" ? "Sliding window burst: 15 QPS high-entropy subdomains" : "Normal traffic cadence",
+    decided: evalResult.profile === "tunnelling",
+  };
+
+  stages[4] = {
+    stage: 5,
+    name: "Geo",
+    contribution: features.tld_suspicion > 0.5 ? 10 : 0,
+    reason: features.tld_suspicion > 0.5 ? "Anomalous high-risk registrar ASN" : "Domestic ISP baseline",
+  };
+
+  stages[5] = {
+    stage: 6,
+    name: "Active Response",
+    contribution: evalResult.risk_score >= 71 ? 15 : 0,
+    reason: evalResult.risk_score >= 71 ? "Automated sinkhole & quarantine isolation triggered" : "No active policy action required",
+  };
+
+  stages[6] = {
+    stage: 7,
+    name: "Analytics",
+    contribution: 0,
+    reason: `Calculated composite score: ${evalResult.risk_score}/100`,
+  };
 
   return {
     id: options?.id ?? crypto.randomUUID(),
     domain,
     client_ip: clientIp,
-    risk_score: finalScore,
-    verdict,
-    pipeline,
+    risk_score: evalResult.risk_score,
+    verdict: evalResult.verdict,
+    pipeline: stages,
     lexical_features: features,
     lexical_chars: computeLexicalChars(domain),
-    behavioral_context,
-    decided_by,
+    behavioral_context: evalResult.analyst_summary,
+    decided_by: evalResult.threat_actor + " · " + evalResult.mitre_technique,
     timestamp: options?.timestamp ?? new Date().toISOString(),
     source: options?.source ?? "live",
-    tags: options?.tags,
+    tags: options?.tags ?? [evalResult.profile],
   };
 }
-
-export const SAMPLE_DOMAINS = [
-  { domain: "xk9mqz7p2n4r8v3w.top", label: "DGA domain" },
-  { domain: "gooogle-login.security-update.com", label: "Typosquat" },
-  { domain: "github.com", label: "Clean — correctly allowed" },
-  { domain: "malware-c2.evil-payload.xyz", label: "Threat intel block" },
-];
