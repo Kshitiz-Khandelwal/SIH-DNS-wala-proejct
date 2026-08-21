@@ -36,6 +36,17 @@ class Observation(BaseModel):
     nxdomain: bool = False
 
 
+TRUSTED_PAAS_DOMAINS: set[str] = {
+    "vercel.app", "vercel.com", "netlify.app", "herokuapp.com", "github.io",
+    "pages.dev", "ngrok-free.app", "ngrok.io", "azurewebsites.net", "render.com",
+    "fly.dev", "railway.app", "glitch.me", "web.app", "firebaseapp.com", "amplifyapp.com"
+}
+
+def is_trusted_paas(domain: str) -> bool:
+    d = domain.lower().rstrip(".")
+    return any(d == p or d.endswith("." + p) for p in TRUSTED_PAAS_DOMAINS)
+
+
 def parent_domain(domain: str) -> str:
     labels = domain.rstrip(".").lower().split(".")
     return ".".join(labels[-2:]) if len(labels) >= 2 else domain
@@ -140,15 +151,24 @@ def observe(observation: Observation):
     signals: list[str] = []
     contribution = 0
 
+    is_paas = is_trusted_paas(domain)
+    
+    if is_paas:
+        contribution -= 30
+        signals.append(f"verified trusted PaaS hosting platform ({parent_domain(domain)}); risk discounted")
+
     if len(window) >= VOLUME_THRESHOLD:
         contribution += 25
         signals.append(f"request-volume anomaly: {len(window)} queries in {WINDOW_SECONDS}s")
-    if len(leftmost) >= 45:
-        contribution += 30
-        signals.append(f"long leftmost label ({len(leftmost)} characters), possible DNS tunnelling")
-    if shannon_entropy(leftmost) > 4.1:
-        contribution += 10
-        signals.append(f"high subdomain entropy ({shannon_entropy(leftmost):.2f}), possible encoded payload")
+        
+    # Standalone entropy & label length gated for trusted PaaS or requiring multi-query evidence
+    if not is_paas:
+        if len(leftmost) >= 45 and (len(window) > 5 or re.search(r'[A-Za-z0-9+/=]{30,}', leftmost)):
+            contribution += 30
+            signals.append(f"long leftmost label ({len(leftmost)} characters), possible DNS tunnelling")
+        if shannon_entropy(leftmost) > 4.25 and (len(window) > 5 or re.search(r'[A-Za-z0-9+/=]{30,}', leftmost)):
+            contribution += 10
+            signals.append(f"high subdomain entropy ({shannon_entropy(leftmost):.2f}) with volume/payload evidence")
     
     # New heuristics
     if re.search(r'[A-Za-z0-9+/=]{30,}', leftmost):

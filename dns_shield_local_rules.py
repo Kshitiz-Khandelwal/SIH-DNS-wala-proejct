@@ -37,6 +37,19 @@ TYPOSQUAT_TARGETS: list[str] = [
     "telegram", "bankofamerica", "chase", "wellsfargo", "citibank",
 ]
 
+TRUSTED_PAAS_DOMAINS: frozenset[str] = frozenset({
+    "vercel.app", "vercel.com", "netlify.app", "herokuapp.com", "github.io",
+    "pages.dev", "ngrok-free.app", "ngrok.io", "azurewebsites.net", "render.com",
+    "fly.dev", "railway.app", "glitch.me", "web.app", "firebaseapp.com", "amplifyapp.com"
+})
+
+def clean_hostname(domain: str) -> str:
+    if not domain: return ""
+    d = domain.strip()
+    d = re.sub(r'^[a-zA-Z]+://', '', d)
+    d = re.sub(r'^[^@]+@', '', d)
+    return d.split('/')[0].split('?')[0].split('#')[0].split(':')[0].lower().rstrip('.')
+
 VOWELS: frozenset[str] = frozenset("aeiou")
 DIGITS: frozenset[str] = frozenset(string.digits)
 
