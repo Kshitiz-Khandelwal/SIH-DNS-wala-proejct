@@ -454,6 +454,47 @@ def release(ip: str):
     return data
 
 
+
+class SimulationRequest(BaseModel):
+    type: str = Field(default="dga", examples=["benign", "dga", "typosquatting", "tunneling", "c2"])
+
+
+def get_simulation_domain(attack_type: str) -> tuple[str, str, str, str]:
+    """Return (domain, vector, mitre_technique, description) from corpus or fallback."""
+    corpus_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "attack_simulation_corpus.csv")
+    try:
+        import csv
+        with open(corpus_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            matching = [row for row in reader if row["attack_vector"].lower() == attack_type.lower()]
+            if matching:
+                row = matching[0]
+                return row["domain"], row["attack_vector"], row["mitre_technique"], row["analyst_summary"]
+    except Exception:
+        pass
+
+    fallback_map = {
+        "benign": ("docs.cloudflare.com", "benign", "N/A", "Verified enterprise documentation host"),
+        "dga": ("xq9m2kz7v4naplq.top", "dga", "T1568.002", "Cryptolocker family high-entropy algorithmic string"),
+        "typosquatting": ("rnicrosoft.com", "typosquatting", "T1566.002", "Homoglyph brand lookalike spoofing Microsoft"),
+        "tunneling": ("YWJjZDEyMzQ1Ng==.attacker-c2.net", "tunneling", "T1071.004", "Iodine DNS tunnelling exfiltration payload"),
+        "c2": ("c2-beacon.dark-infra.cc", "c2", "T1071.001", "Cobalt Strike C2 beacon listener"),
+    }
+    return fallback_map.get(attack_type.lower(), ("xq9m2kz7v4naplq.top", "dga", "T1568.002", "Malware DGA test domain"))
+
+
+@app.post("/v1/simulate", tags=["simulation"])
+@app.post("/api/v1/simulate", tags=["simulation"])
+def simulate_attack(body: SimulationRequest):
+    domain, attack_vector, mitre_technique, description = get_simulation_domain(body.type)
+    query_obj = Query(domain=domain, client_ip="172.28.0.101", source="simulator")
+    evaluated = query(query_obj)
+    evaluated["attack_vector"] = attack_vector
+    evaluated["mitre_technique"] = mitre_technique
+    evaluated["analyst_summary"] = description
+    return evaluated
+
+
 @app.get("/health", tags=["operations"])
 def health():
     return {"status": "ok", "detection_plane": "local deterministic", "llm_required": False, "cache_ttl_seconds": CACHE_TTL_SECONDS}
@@ -474,3 +515,4 @@ def metrics():
             index = min(len(ordered) - 1, round((percentile / 100) * (len(ordered) - 1)))
             lines.append(f'dns_shield_gateway_response_latency_ms{{quantile="{percentile}"}} {ordered[index]:.3f}')
     return "\n".join(lines) + "\n"
+

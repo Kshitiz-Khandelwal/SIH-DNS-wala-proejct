@@ -250,15 +250,15 @@ tailwind.config = {
             <button onclick="runSim('c2')" class="sim-btn bg-surface-container-low border border-outline-variant px-4 py-2 rounded text-[13px] font-mono-data text-on-surface hover:border-primary hover:bg-primary-container/10 transition-colors flex items-center gap-2 font-medium">
                 <span class="w-2 h-2 rounded-full bg-error"></span> C2 Beaconing
             </button>
-            <div id="sim-result-box" class="ml-auto bg-primary-container/10 border border-primary/20 rounded px-4 py-2 flex items-center gap-4 transition-all">
+                        <div id="sim-result-box" class="ml-auto bg-primary-container/10 border border-primary/20 rounded-xl px-4 py-2 flex items-center gap-4 transition-all">
                 <div class="flex flex-col">
                     <span class="text-[10px] font-super-heading text-primary/70 uppercase font-bold">Tested Domain</span>
-                    <span id="sim-domain" class="text-[13px] font-mono-data font-bold text-primary">xk9mqz7p2n.top</span>
+                    <span id="sim-domain" class="text-[13px] font-mono-data font-bold text-primary">xq9m2kz7v4naplq.top</span>
                 </div>
                 <div class="h-6 w-px bg-primary/20"></div>
                 <div class="flex flex-col">
                     <span class="text-[10px] font-super-heading text-primary/70 uppercase font-bold">Score</span>
-                    <span id="sim-score" class="text-[14px] font-mono-data font-bold text-primary">93/100</span>
+                    <span id="sim-score" class="text-[14px] font-mono-data font-bold text-primary">95/100</span>
                 </div>
                 <div class="h-6 w-px bg-primary/20"></div>
                 <div class="flex flex-col">
@@ -267,6 +267,10 @@ tailwind.config = {
                         <span class="material-symbols-outlined text-[14px]">block</span> BLOCK
                     </span>
                 </div>
+                <div class="h-6 w-px bg-primary/20"></div>
+                <a id="sim-inspect-btn" href="xai.html?domain=xq9m2kz7v4naplq.top" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-1 shadow-xs shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">psychology</span> Inspect Dossier
+                </a>
             </div>
         </div>
     </div>
@@ -512,6 +516,7 @@ async function runSim(type) {
     }
     
     document.getElementById('sim-domain').textContent = result.domain || 'tested.domain';
+    const inspBtn = document.getElementById('sim-inspect-btn'); if (inspBtn) inspBtn.href = `xai.html?domain=${encodeURIComponent(result.domain)}`;
     document.getElementById('sim-score').textContent = (result.risk_score || 93) + '/100';
     const vEl = document.getElementById('sim-verdict');
     vEl.textContent = result.verdict || 'BLOCK';

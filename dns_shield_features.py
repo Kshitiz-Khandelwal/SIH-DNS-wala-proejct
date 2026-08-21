@@ -172,3 +172,13 @@ def domain_features(domains) -> np.ndarray:
             tld_risk
         ])
     return np.asarray(rows, dtype=float)
+
+
+def extract_features(domain: str) -> dict[str, float]:
+    """Compute engineered lexical features for a single domain string and return as a dict."""
+    arr = domain_features([domain])
+    if len(arr) == 0:
+        return {}
+    row = arr[0]
+    return {name: float(val) for name, val in zip(ENGINEERED_FEATURE_NAMES, row)}
+

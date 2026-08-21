@@ -1,0 +1,25 @@
+domain,attack_vector,expected_verdict,risk_score,entropy,consonant_ratio,digit_ratio,subdomain_depth,tld_reputation,mitre_technique,top_shap_1,top_shap_2,analyst_summary
+isro.gov.in,benign,ALLOW,0,2.62,1.67,0.00,2,0.00,N/A,Tranco Prior Rank (-0.120),Standard Entropy (-0.050),Verified sovereign mission control domain; high Tranco reputation; zero anomalies.
+docs.cloudflare.com,benign,ALLOW,0,2.85,1.80,0.00,2,0.00,N/A,Bloom Cache Match (-0.150),Known Authority (-0.060),Official enterprise documentation infrastructure; instant Bloom filter bypass.
+api.github.com,benign,ALLOW,0,2.71,1.75,0.00,2,0.00,N/A,Verified API Host (-0.110),Low Entropy (-0.040),Developer ecosystem API endpoint; zero lexical or behavioral risk.
+microsoft.com,benign,ALLOW,0,2.81,2.00,0.00,1,0.00,N/A,Tranco Top 10 (-0.140),Low Entropy (-0.050),Major enterprise OS vendor; whitelist verified.
+google.com,benign,ALLOW,0,2.25,1.50,0.00,1,0.00,N/A,Tranco Top 1 (-0.150),Vowel Balance (-0.040),Global search and cloud infrastructure; baseline clean pass.
+nic.in,benign,ALLOW,0,2.00,2.00,0.00,1,0.00,N/A,Gov Informatics (-0.130),Low Length (-0.030),National Informatics Centre India; emergency bypass enabled.
+aws.amazon.com,benign,ALLOW,2,2.75,1.60,0.00,2,0.00,N/A,Cloud Infrastructure (-0.100),Clean TLD (-0.020),Cloud computing gateway; verified benign.
+wikipedia.org,benign,ALLOW,0,2.94,1.25,0.00,1,0.00,N/A,Tranco Top 100 (-0.120),Natural Language (-0.050),Knowledge repository; clean lexical metrics.
+xq9m2kz7v4naplq.top,dga,BLOCK,95,4.82,5.33,0.20,1,0.85,T1568.002,Shannon Entropy 4.82 (+0.312),Bi-gram Perplexity Rarity (+0.228),Cryptolocker family algorithmic string; abnormal consonant clustering on high-risk TLD.
+zk981va2m0q.biz,dga,BLOCK,92,4.65,4.00,0.36,1,0.70,T1568.002,Digit Ingestion Ratio 36% (+0.210),Shannon Entropy 4.65 (+0.285),Conficker pseudo-random generation; excessive numeric substitution.
+oqfobwz.net,dga,BLOCK,88,4.12,3.50,0.00,1,0.20,T1568.002,High Bi-gram Rarity (+0.245),Shannon Entropy 4.12 (+0.190),Mirai botnet C2 rendezvous domain; low English unigram probability.
+fromhisthe.net,dga,BLOCK,86,3.85,1.75,0.00,1,0.20,T1568.002,Word-based DGA Pattern (+0.220),Unregistered C2 (+0.180),Suppobox dictionary-concatenation DGA; caught via n-gram sequence anomaly.
+vpe3e43.info,dga,BLOCK,91,4.40,3.00,0.29,1,0.60,T1568.002,Consonant Run Length (+0.195),Shannon Entropy 4.40 (+0.240),Ransomware staging infrastructure; algorithmic name pattern.
+zvaac5c.ru,dga,BLOCK,94,4.52,4.00,0.14,1,0.80,T1568.002,Shannon Entropy 4.52 (+0.260),TLD Risk Russian Fed (+0.180),C2 domain rendezvous with geographic anomaly score.
+rnicrosoft.com,typosquatting,FLAG,82,3.10,2.33,0.00,1,0.10,T1566.002,Homoglyph Substitution 'rn'->'m' (+0.340),Brand Levenshtein Dist=1 (+0.290),Visual confusable targeting Microsoft brand; deceptive credential harvesting.
+g00gle-security.com,typosquatting,FLAG,78,3.45,1.80,0.13,1,0.20,T1566.002,Brand Impersonation 'google' (+0.310),Numeral Leetspeak '00' (+0.220),Phishing portal mimicking Google Security; hyphenated brand packaging.
+paypa1-update.com,typosquatting,FLAG,84,3.22,2.00,0.08,1,0.40,T1566.002,Brand Target 'paypal' (+0.360),Character Replacement '1'->'l' (+0.250),Financial credential theft lure; lookalike character evasion.
+app1e-support-id.top,typosquatting,BLOCK,89,3.78,2.60,0.06,1,0.85,T1566.002,Brand Target 'apple' (+0.320),Suspicious TLD '.top' (+0.280),High-confidence phishing campaign targeting Apple ID on disposable TLD.
+arnazon-orders.net,typosquatting,FLAG,76,3.15,2.00,0.00,1,0.30,T1566.002,Homoglyph 'rn'->'m' (+0.330),Brand Target 'amazon' (+0.270),E-commerce order spoofing lure.
+YWJjZDEyMzQ1Ng==.attacker-c2.net,tunneling,BLOCK,94,4.91,3.80,0.18,3,0.60,T1071.004,Base64 Subdomain Payload (+0.350),Subdomain Length 24 chars (+0.260),Iodine DNS tunnelling exfiltration; base64 payload carried in TXT/CNAME sub-labels.
+dGVzdHBheWxvYWQ1.c2.bad-demo.example,tunneling,BLOCK,91,4.72,3.40,0.12,3,0.50,T1071.004,Sliding Window Burst 15 QPS (+0.290),Subdomain Entropy 4.72 (+0.270),dnscat2 encoded covert channel; repetitive high-entropy bursts.
+hex666f6f626172.tunnel.darknet.cc,tunneling,BLOCK,96,4.88,4.50,0.42,3,0.80,T1071.004,Hexadecimal Encoded Byte Stream (+0.330),High NXDOMAIN Frequency (+0.280),Covert data exfiltration channel using raw hex byte sequences.
+c2-beacon.dark-infra.cc,c2,BLOCK,98,4.20,2.80,0.05,2,0.90,T1071.001,URLhaus Threat Feed Match (+0.450),C2 Callback Signature (+0.320),Active Cobalt Strike C2 listener; flagged in live Threat Intel database.
+update.c2-pool.ru,c2,BLOCK,96,3.90,2.60,0.00,2,0.85,T1071.001,Known Botnet Controller (+0.420),Geo Anomaly Score (+0.220),Malware command-and-control node; automatic active response trigger.

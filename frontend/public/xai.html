@@ -165,6 +165,42 @@ tailwind.config = {
 
     <!-- Main Content Canvas -->
     <main class="flex-1 p-8 space-y-6">
+        
+        <!-- Quick Domain Selection Bar -->
+        <div class="bg-white border border-outline-variant rounded-xl p-4 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[20px]">dataset</span>
+                <span class="text-xs font-bold text-on-surface font-sans">Attack Corpus Inspector:</span>
+                <select id="domain-corpus-select" onchange="onSelectCorpusDomain(this.value)" class="bg-surface-container border border-outline-variant rounded-lg px-3 py-1.5 text-xs font-mono font-bold text-primary focus:border-primary outline-none">
+                    <optgroup label="Malware DGA (Cryptolocker / Mirai / Conficker)">
+                        <option value="xq9m2kz7v4naplq.top">xq9m2kz7v4naplq.top (Cryptolocker DGA - Score: 95)</option>
+                        <option value="zk981va2m0q.biz">zk981va2m0q.biz (Conficker DGA - Score: 92)</option>
+                    </optgroup>
+                    <optgroup label="Homoglyph & Brand Typosquatting">
+                        <option value="rnicrosoft.com">rnicrosoft.com (Lookalike Spoof - Score: 82)</option>
+                        <option value="g00gle-security.com">g00gle-security.com (Google Phish - Score: 78)</option>
+                        <option value="paypa1-update.com">paypa1-update.com (PayPal Lure - Score: 84)</option>
+                    </optgroup>
+                    <optgroup label="DNS Tunnelling & Exfiltration">
+                        <option value="YWJjZDEyMzQ1Ng==.attacker-c2.net">YWJjZDEyMzQ1Ng==.attacker-c2.net (Iodine Base64 - Score: 94)</option>
+                        <option value="dGVzdHBheWxvYWQ1.c2.bad-demo.example">dGVzdHBheWxvYWQ1.c2.bad-demo.example (dnscat2 Tunnel - Score: 91)</option>
+                    </optgroup>
+                    <optgroup label="C2 Threat Intel Matches">
+                        <option value="c2-beacon.dark-infra.cc">c2-beacon.dark-infra.cc (Cobalt Strike C2 - Score: 98)</option>
+                    </optgroup>
+                    <optgroup label="Benign Enterprise Baseline">
+                        <option value="isro.gov.in">isro.gov.in (Sovereign Mission Control - Score: 0)</option>
+                        <option value="docs.cloudflare.com">docs.cloudflare.com (Cloudflare Documentation - Score: 0)</option>
+                        <option value="google.com">google.com (Google Search - Score: 0)</option>
+                        <option value="microsoft.com">microsoft.com (Microsoft Updates - Score: 0)</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div id="corpus-mitre-tag" class="text-[11px] font-mono font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                MITRE ATT&CK: T1568.002
+            </div>
+        </div>
+
         <!-- Subtitle and Interactive Tab Switcher -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-outline-variant pb-4">
             <div>
@@ -389,6 +425,82 @@ tailwind.config = {
 
 <!-- Dynamic Live Domain Inspector Script -->
 <script>
+
+const DOMAIN_CATALOG = {
+    "isro.gov.in": {
+        domain: "isro.gov.in", verdict: "ALLOW", risk_score: 0, decided_by: "Stage 1: Redis Bloom & Sovereign Allowlist",
+        mitre_technique: "N/A (Benign)",
+        analyst_summary: "Verified sovereign mission control domain; high Tranco reputation; zero anomalies.",
+        lexical_features: { entropy: 2.62, digit_ratio: 0.0, vowel_ratio: 0.60, longest_consonant_run: 2, subdomain_count: 2, tld_suspicion: 0.0 }
+    },
+    "docs.cloudflare.com": {
+        domain: "docs.cloudflare.com", verdict: "ALLOW", risk_score: 0, decided_by: "Stage 1: Redis Murmur3 Bloom Cache",
+        mitre_technique: "N/A (Benign)",
+        analyst_summary: "Official enterprise documentation infrastructure; instant Bloom filter bypass.",
+        lexical_features: { entropy: 2.85, digit_ratio: 0.0, vowel_ratio: 0.55, longest_consonant_run: 2, subdomain_count: 2, tld_suspicion: 0.0 }
+    },
+    "google.com": {
+        domain: "google.com", verdict: "ALLOW", risk_score: 0, decided_by: "Stage 1: Redis Bloom Cache",
+        mitre_technique: "N/A (Benign)",
+        analyst_summary: "Global search and cloud infrastructure; baseline clean pass.",
+        lexical_features: { entropy: 2.25, digit_ratio: 0.0, vowel_ratio: 0.67, longest_consonant_run: 2, subdomain_count: 1, tld_suspicion: 0.0 }
+    },
+    "microsoft.com": {
+        domain: "microsoft.com", verdict: "ALLOW", risk_score: 0, decided_by: "Stage 1: Verified Allowlist",
+        mitre_technique: "N/A (Benign)",
+        analyst_summary: "Major enterprise OS vendor; whitelist verified.",
+        lexical_features: { entropy: 2.81, digit_ratio: 0.0, vowel_ratio: 0.50, longest_consonant_run: 2, subdomain_count: 1, tld_suspicion: 0.0 }
+    },
+    "xq9m2kz7v4naplq.top": {
+        domain: "xq9m2kz7v4naplq.top", verdict: "BLOCK", risk_score: 95, decided_by: "Stage 3: 150-Tree Random Forest ML Classifier",
+        mitre_technique: "MITRE ATT&CK T1568.002 (Domain Generation Algorithms)",
+        analyst_summary: "Cryptolocker family algorithmic string; abnormal consonant clustering on high-risk TLD.",
+        lexical_features: { entropy: 4.82, digit_ratio: 0.20, vowel_ratio: 0.19, longest_consonant_run: 6, subdomain_count: 1, tld_suspicion: 0.85 }
+    },
+    "zk981va2m0q.biz": {
+        domain: "zk981va2m0q.biz", verdict: "BLOCK", risk_score: 92, decided_by: "Stage 3: DGA Classifier + Local Rules",
+        mitre_technique: "MITRE ATT&CK T1568.002 (DGA Conficker)",
+        analyst_summary: "Conficker pseudo-random generation; excessive numeric substitution.",
+        lexical_features: { entropy: 4.65, digit_ratio: 0.36, vowel_ratio: 0.25, longest_consonant_run: 4, subdomain_count: 1, tld_suspicion: 0.70 }
+    },
+    "rnicrosoft.com": {
+        domain: "rnicrosoft.com", verdict: "FLAG", risk_score: 82, decided_by: "Stage 3: Typosquatting & Unicode TR39 Engine",
+        mitre_technique: "MITRE ATT&CK T1566.002 (Spearphishing Link / Lookalike)",
+        analyst_summary: "Homoglyph brand lookalike spoofing Microsoft (rn -> m confusable).",
+        lexical_features: { entropy: 3.10, digit_ratio: 0.0, vowel_ratio: 0.43, longest_consonant_run: 3, subdomain_count: 1, tld_suspicion: 0.10 }
+    },
+    "g00gle-security.com": {
+        domain: "g00gle-security.com", verdict: "FLAG", risk_score: 78, decided_by: "Stage 3: Brand Distance & Lexical Classifier",
+        mitre_technique: "MITRE ATT&CK T1566.002 (Brand Impersonation)",
+        analyst_summary: "Phishing portal mimicking Google Security with numeral substitution.",
+        lexical_features: { entropy: 3.45, digit_ratio: 0.13, vowel_ratio: 0.55, longest_consonant_run: 3, subdomain_count: 1, tld_suspicion: 0.20 }
+    },
+    "paypa1-update.com": {
+        domain: "paypa1-update.com", verdict: "FLAG", risk_score: 84, decided_by: "Stage 3: Brand Distance + Levenshtein Engine",
+        mitre_technique: "MITRE ATT&CK T1566.002 (Credential Harvesting)",
+        analyst_summary: "Financial credential theft lure with lookalike character substitution.",
+        lexical_features: { entropy: 3.22, digit_ratio: 0.08, vowel_ratio: 0.50, longest_consonant_run: 2, subdomain_count: 1, tld_suspicion: 0.40 }
+    },
+    "YWJjZDEyMzQ1Ng==.attacker-c2.net": {
+        domain: "YWJjZDEyMzQ1Ng==.attacker-c2.net", verdict: "BLOCK", risk_score: 94, decided_by: "Stage 4: Behavioral Sliding Window Engine",
+        mitre_technique: "MITRE ATT&CK T1071.004 (DNS Tunnelling / Exfiltration)",
+        analyst_summary: "Iodine DNS tunnelling exfiltration; base64 payload carried in sub-labels.",
+        lexical_features: { entropy: 4.91, digit_ratio: 0.18, vowel_ratio: 0.26, longest_consonant_run: 5, subdomain_count: 3, tld_suspicion: 0.60 }
+    },
+    "dGVzdHBheWxvYWQ1.c2.bad-demo.example": {
+        domain: "dGVzdHBheWxvYWQ1.c2.bad-demo.example", verdict: "BLOCK", risk_score: 91, decided_by: "Stage 4: Tunnelling Anomaly Arbiter",
+        mitre_technique: "MITRE ATT&CK T1071.004 (Covert DNS Channel)",
+        analyst_summary: "dnscat2 encoded covert channel; repetitive high-entropy bursts.",
+        lexical_features: { entropy: 4.72, digit_ratio: 0.12, vowel_ratio: 0.29, longest_consonant_run: 4, subdomain_count: 3, tld_suspicion: 0.50 }
+    },
+    "c2-beacon.dark-infra.cc": {
+        domain: "c2-beacon.dark-infra.cc", verdict: "BLOCK", risk_score: 98, decided_by: "Stage 2: Threat Intel (STIX 2.1 IOC Match)",
+        mitre_technique: "MITRE ATT&CK T1071.001 (Web Protocols / C2 Beaconing)",
+        analyst_summary: "Active Cobalt Strike C2 listener; flagged in live Threat Intel database.",
+        lexical_features: { entropy: 4.20, digit_ratio: 0.05, vowel_ratio: 0.36, longest_consonant_run: 3, subdomain_count: 2, tld_suspicion: 0.90 }
+    }
+};
+
 let currentDomainResult = null;
 
 async function loadInspectedDomain() {
