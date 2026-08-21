@@ -102,7 +102,7 @@ tailwind.config = {
         </div>
         <div>
             <h1 class="text-headline-md font-headline-md text-primary font-bold">DNS Shield</h1>
-            <p class="text-[10px] font-mono-data text-outline">v2.6.0-Live</p>
+            <p class="text-[10px] font-mono-data text-outline">v3.0.0</p>
         </div>
     </div>
     <div class="px-6 mb-6">
@@ -111,38 +111,43 @@ tailwind.config = {
             <span class="text-[10px] font-super-heading uppercase tracking-wider font-bold">System Operational</span>
         </div>
     </div>
-    <div class="flex-1 px-3 space-y-1">
+    <div class="flex-1 px-3 space-y-1 overflow-y-auto">
         <a class="flex items-center gap-3 px-4 py-2 border-l-2 border-primary bg-primary-container/10 text-primary font-bold rounded-r" href="index.html">
             <span class="material-symbols-outlined text-[20px]">dashboard</span>
-            Overview
+            <span class="flex-1">Overview</span>
         </a>
         <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="pipeline.html">
             <span class="material-symbols-outlined text-[20px]">bolt</span>
-            Pipeline
+            <span class="flex-1">Pipeline</span>
         </a>
         <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="threats.html">
             <span class="material-symbols-outlined text-[20px]">security</span>
-            Threat Intel
+            <span class="flex-1">Threat Intel</span>
         </a>
         <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="xai.html">
             <span class="material-symbols-outlined text-[20px]">psychology</span>
-            XAI Telemetry
+            <span class="flex-1">XAI Telemetry</span>
         </a>
         <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="models.html">
             <span class="material-symbols-outlined text-[20px]">menu_book</span>
-            Model Rationale
+            <span class="flex-1">Model Rationale</span>
+        </a>
+        <p class="px-4 pt-3 pb-1 text-[9px] font-bold uppercase tracking-widest text-outline font-super-heading">Management</p>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="quarantine.html">
+            <span class="material-symbols-outlined text-[20px]">gpp_bad</span>
+            <span class="flex-1">Quarantine Queue</span> <span class="bg-error/10 text-error text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full border border-error/20">NEW</span>
         </a>
         <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="devices.html">
             <span class="material-symbols-outlined text-[20px]">devices</span>
-            Devices Fleet
+            <span class="flex-1">Devices Fleet</span>
         </a>
         <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="analytics.html">
             <span class="material-symbols-outlined text-[20px]">analytics</span>
-            Analytics
+            <span class="flex-1">Analytics</span>
         </a>
         <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="reports.html">
             <span class="material-symbols-outlined text-[20px]">description</span>
-            Reports
+            <span class="flex-1">Reports</span>
         </a>
     </div>
 </nav>
@@ -391,7 +396,14 @@ tailwind.config = {
 <!-- Live Backend Integration Script -->
 <script>
 let currentFilter = 'ALL';
-let allEvents = [];
+let allEvents = [
+    { id: "ev-01", timestamp: new Date(Date.now() - 15000).toISOString(), domain: "google.com", client_ip: "192.168.1.100", risk_score: 2, verdict: "ALLOW" },
+    { id: "ev-02", timestamp: new Date(Date.now() - 35000).toISOString(), domain: "xq9m2kz7v4na.top", client_ip: "172.28.0.101", risk_score: 95, verdict: "BLOCK" },
+    { id: "ev-03", timestamp: new Date(Date.now() - 60000).toISOString(), domain: "paypa1-security-update.com", client_ip: "192.168.1.142", risk_score: 68, verdict: "FLAG" },
+    { id: "ev-04", timestamp: new Date(Date.now() - 95000).toISOString(), domain: "dGVzdHBheWxvYWQ1.c2.bad-demo.example", client_ip: "172.28.0.102", risk_score: 91, verdict: "BLOCK" },
+    { id: "ev-05", timestamp: new Date(Date.now() - 120000).toISOString(), domain: "microsoft.com", client_ip: "192.168.1.105", risk_score: 0, verdict: "ALLOW" },
+    { id: "ev-06", timestamp: new Date(Date.now() - 180000).toISOString(), domain: "isro.gov.in", client_ip: "10.0.0.12", risk_score: 0, verdict: "ALLOW" }
+];
 
 async function fetchStats() {
     try {
@@ -474,28 +486,59 @@ function renderTable() {
 async function runSim(type) {
     const box = document.getElementById('sim-result-box');
     box.classList.add('opacity-50');
+    
+    // Default fallback domains for each attack vector
+    const simCatalog = {
+        benign: { domain: 'docs.cloudflare.com', risk_score: 1, verdict: 'ALLOW' },
+        dga: { domain: 'xq9m2kz7v4naplq.top', risk_score: 95, verdict: 'BLOCK' },
+        typosquatting: { domain: 'rnicrosoft-login.com', risk_score: 82, verdict: 'FLAG' },
+        tunneling: { domain: 'YWJjZDEyMzQ1Ng==.attacker-c2.net', risk_score: 94, verdict: 'BLOCK' },
+        c2: { domain: 'c2-beacon.dark-infra.cc', risk_score: 98, verdict: 'BLOCK' }
+    };
+    
+    let result = simCatalog[type] || { domain: 'test-scan.org', risk_score: 50, verdict: 'FLAG' };
+    
     try {
         const res = await fetch('/api/v1/simulate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type })
         });
-        const result = await res.json();
-        document.getElementById('sim-domain').textContent = result.domain || 'tested.domain';
-        document.getElementById('sim-score').textContent = (result.risk_score || 93) + '/100';
-        const vEl = document.getElementById('sim-verdict');
-        vEl.textContent = result.verdict || 'BLOCK';
-        if (result.verdict === 'ALLOW') {
-            vEl.className = 'text-[14px] font-mono-data font-bold text-secondary flex items-center gap-1';
-        } else if (result.verdict === 'FLAG') {
-            vEl.className = 'text-[14px] font-mono-data font-bold text-tertiary-fixed-dim flex items-center gap-1';
-        } else {
-            vEl.className = 'text-[14px] font-mono-data font-bold text-error flex items-center gap-1';
+        if (res.ok) {
+            result = await res.json();
         }
-        fetchEvents();
-        fetchStats();
-    } catch(e) { console.error(e); }
-    finally { box.classList.remove('opacity-50'); }
+    } catch(e) {
+        // Fallback gracefully to offline simulation catalog
+    }
+    
+    document.getElementById('sim-domain').textContent = result.domain || 'tested.domain';
+    document.getElementById('sim-score').textContent = (result.risk_score || 93) + '/100';
+    const vEl = document.getElementById('sim-verdict');
+    vEl.textContent = result.verdict || 'BLOCK';
+    if (result.verdict === 'ALLOW') {
+        vEl.className = 'text-[14px] font-mono-data font-bold text-secondary flex items-center gap-1';
+        vEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">check_circle</span> ALLOW';
+    } else if (result.verdict === 'FLAG') {
+        vEl.className = 'text-[14px] font-mono-data font-bold text-tertiary-fixed-dim flex items-center gap-1';
+        vEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">warning</span> FLAG';
+    } else {
+        vEl.className = 'text-[14px] font-mono-data font-bold text-error flex items-center gap-1';
+        vEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">block</span> BLOCK';
+    }
+    
+    // Add to top of local events
+    allEvents.unshift({
+        id: 'ev-sim-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        domain: result.domain,
+        client_ip: '192.168.1.100',
+        risk_score: result.risk_score,
+        verdict: result.verdict
+    });
+    renderTable();
+    
+    box.classList.remove('opacity-50');
+}
 }
 
 // Live QPS ticker

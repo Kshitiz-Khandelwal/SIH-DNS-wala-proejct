@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quarantine Approval Queue &amp; Safe Active Response - DNS Shield</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "tertiary-fixed-dim": "#ffb95f",
+                "primary-container": "#2563eb",
+                "primary-fixed-dim": "#b4c5ff",
+                "primary-fixed": "#dbe1ff",
+                "on-error": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "error": "#ba1a1a",
+                "secondary": "#006c49",
+                "inverse-on-surface": "#eef0ff",
+                "secondary-container": "#6cf8bb",
+                "surface-container-highest": "#dae2fd",
+                "outline-variant": "#c3c6d7",
+                "on-secondary-fixed-variant": "#005236",
+                "on-surface": "#131b2e",
+                "on-tertiary-fixed-variant": "#653e00",
+                "surface-bright": "#faf8ff",
+                "surface-container-high": "#e2e7ff",
+                "tertiary-fixed": "#ffddb8",
+                "error-container": "#ffdad6",
+                "surface": "#faf8ff",
+                "surface-dim": "#d2d9f4",
+                "on-secondary-fixed": "#002113",
+                "on-primary-container": "#eeefff",
+                "surface-tint": "#0053db",
+                "background": "#faf8ff",
+                "on-tertiary-container": "#ffeedd",
+                "tertiary": "#784b00",
+                "surface-container": "#eaedff",
+                "on-primary-fixed-variant": "#003ea8",
+                "outline": "#737686",
+                "surface-variant": "#dae2fd",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#00174b",
+                "on-secondary-container": "#00714d",
+                "primary": "#004ac6",
+                "on-surface-variant": "#434655",
+                "secondary-fixed": "#6ffbbe",
+                "inverse-surface": "#283044",
+                "secondary-fixed-dim": "#4edea3",
+                "inverse-primary": "#b4c5ff",
+                "on-secondary": "#ffffff",
+                "on-error-container": "#93000a",
+                "tertiary-container": "#996100",
+                "surface-container-low": "#f2f3ff",
+                "on-background": "#131b2e",
+                "on-tertiary-fixed": "#2a1700",
+                "on-primary": "#ffffff"
+            },
+            fontFamily: {
+                "mono-data": ["JetBrains Mono", "monospace"],
+                "body-sm": ["Inter", "sans-serif"],
+                "body-md": ["Inter", "sans-serif"],
+                "display-lg": ["Geist", "sans-serif"],
+                "headline-md": ["Geist", "sans-serif"],
+                "super-heading": ["JetBrains Mono", "monospace"],
+            }
+        }
+    }
+}
+</script>
+<style>
+.dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+    background-size: 24px 24px;
+}
+.technical-border {
+    border: 1px solid #e2e8f0;
+}
+.technical-shadow {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.mono-number {
+    font-family: 'JetBrains Mono', monospace;
+}
+</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md dot-grid min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-outline-variant flex flex-col h-full py-6 z-50">
+    <div class="px-6 mb-8 flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-[20px]" data-icon="shield">shield</span>
+        </div>
+        <div>
+            <h1 class="text-headline-md font-headline-md text-primary font-bold">DNS Shield</h1>
+            <p class="text-[10px] font-mono-data text-outline">v3.0.0</p>
+        </div>
+    </div>
+    <div class="px-6 mb-6">
+        <div class="flex items-center gap-2 bg-secondary-container/20 text-secondary border border-secondary/20 rounded-full px-3 py-1 w-max">
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span class="text-[10px] font-super-heading uppercase tracking-wider font-bold">System Operational</span>
+        </div>
+    </div>
+    <div class="flex-1 px-3 space-y-1 overflow-y-auto">
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="index.html">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            <span class="flex-1">Overview</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="pipeline.html">
+            <span class="material-symbols-outlined text-[20px]">bolt</span>
+            <span class="flex-1">Pipeline</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="threats.html">
+            <span class="material-symbols-outlined text-[20px]">security</span>
+            <span class="flex-1">Threat Intel</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="xai.html">
+            <span class="material-symbols-outlined text-[20px]">psychology</span>
+            <span class="flex-1">XAI Telemetry</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="models.html">
+            <span class="material-symbols-outlined text-[20px]">menu_book</span>
+            <span class="flex-1">Model Rationale</span>
+        </a>
+        <p class="px-4 pt-3 pb-1 text-[9px] font-bold uppercase tracking-widest text-outline font-super-heading">Management</p>
+        <a class="flex items-center gap-3 px-4 py-2 border-l-2 border-error bg-error-container/20 text-error font-bold rounded-r" href="quarantine.html">
+            <span class="material-symbols-outlined text-[20px]">gpp_bad</span>
+            <span class="flex-1">Quarantine Queue</span> <span class="bg-error/10 text-error text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full border border-error/20">NEW</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="devices.html">
+            <span class="material-symbols-outlined text-[20px]">devices</span>
+            <span class="flex-1">Devices Fleet</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="analytics.html">
+            <span class="material-symbols-outlined text-[20px]">analytics</span>
+            <span class="flex-1">Analytics</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-r border-l-2 border-transparent hover:border-outline-variant" href="reports.html">
+            <span class="material-symbols-outlined text-[20px]">description</span>
+            <span class="flex-1">Reports</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<div class="flex-1 ml-[240px] flex flex-col min-h-screen">
+    <!-- TopNavBar -->
+    <header class="sticky top-0 h-[64px] w-full z-40 bg-surface/90 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-8">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-error text-[24px]">gpp_bad</span>
+                <h2 class="text-headline-md font-headline-md font-bold text-primary">Quarantine Approval Queue</h2>
+            </div>
+            <div class="hidden lg:flex items-center gap-2 bg-error-container/20 text-error border border-error/30 rounded-full px-3 py-1">
+                <span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+                <span class="text-[10px] font-super-heading tracking-wider uppercase font-bold" id="pending-count-badge">2 PENDING APPROVALS</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 bg-primary-container/10 text-primary border border-primary/20 rounded-full px-3 py-1 text-xs font-mono">
+                <span class="material-symbols-outlined text-[14px]">science</span>
+                <span>QUARANTINE_MODE=dry_run</span>
+            </div>
+            <button onclick="refreshQueue()" class="bg-white border border-outline-variant hover:border-primary px-3 py-1.5 rounded text-xs font-mono flex items-center gap-1 text-on-surface transition-colors shadow-2xs">
+                <span class="material-symbols-outlined text-[16px]">refresh</span> Refresh
+            </button>
+        </div>
+    </header>
+
+    <!-- Canvas -->
+    <main class="flex-1 p-8 space-y-6">
+        <!-- Toast Notification Box -->
+        <div id="toast-box" class="hidden rounded-xl border p-4 text-xs font-bold transition-all shadow-xs flex items-center justify-between">
+            <div class="flex items-center gap-3" id="toast-text">
+                <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                <span>Action executed successfully.</span>
+            </div>
+            <button onclick="hideToast()" class="text-slate-400 hover:text-slate-700 font-mono text-xs">✕</button>
+        </div>
+
+        <!-- 4 KPI Header Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Pending Review Queue</span>
+                <div id="kpi-pending" class="text-[28px] font-bold text-error mono-number mt-2">2 Devices</div>
+                <span class="text-[11px] text-error font-bold mt-1">Awaiting SOC Analyst Decision</span>
+            </div>
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Active Isolated Hosts</span>
+                <div id="kpi-quarantined" class="text-[28px] font-bold text-primary mono-number mt-2">1 Host</div>
+                <span class="text-[11px] text-outline font-mono-data mt-1">Virtual-lab sinkhole policy</span>
+            </div>
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Safe Mode Protection</span>
+                <div class="text-[24px] font-bold text-secondary mono-number mt-2">DRY-RUN ON</div>
+                <span class="text-[11px] text-secondary font-bold mt-1">Zero Outage Risk Guarantee</span>
+            </div>
+            <div class="bg-white rounded-xl p-5 border border-outline-variant shadow-xs flex flex-col justify-between">
+                <span class="text-[10px] font-super-heading text-outline uppercase font-bold">Tamper-Evident Audit Log</span>
+                <div id="kpi-audit-count" class="text-[28px] font-bold text-on-surface mono-number mt-2">48 Records</div>
+                <span class="text-[11px] text-outline font-mono-data mt-1">data/audit.log (JSON-lines)</span>
+            </div>
+        </div>
+
+        <!-- Section 1: Pending Quarantine Approval Cards -->
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-error text-[20px]">pending_actions</span>
+                    <h3 class="text-[16px] font-bold text-on-surface">Pending Isolation Requests (Human-in-the-Loop)</h3>
+                </div>
+                <span class="text-xs text-outline font-mono">SOC Analyst: <strong class="text-primary font-mono">soc-analyst-1</strong></span>
+            </div>
+
+            <!-- Pending Cards List -->
+            <div id="pending-list" class="space-y-4">
+                <!-- Card 1 -->
+                <div id="card-172-28-0-101" class="bg-white rounded-xl border border-outline-variant shadow-xs overflow-hidden transition-all hover:shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 border-b border-slate-100 bg-slate-50/50">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-error-container/30 border border-error/20 text-error">
+                                <span class="material-symbols-outlined text-[20px]">warning</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-sm font-bold text-slate-900">172.28.0.101</span>
+                                    <span class="bg-slate-200 text-slate-700 text-[10px] font-mono px-2 py-0.5 rounded">Eng-Workstation-04</span>
+                                    <span class="bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full">RISK 95/100</span>
+                                </div>
+                                <div class="text-[11px] text-slate-500 font-mono mt-0.5">
+                                    Requested: 2 mins ago via API Gateway · Stage 6 Active-Response trigger
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="overrideFP('172.28.0.101', 'xq9m2kz7v4na.com')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all">
+                                <span class="material-symbols-outlined text-[16px] text-amber-500">cancel</span>
+                                Dismiss as FP
+                            </button>
+                            <button onclick="approveQuarantine('172.28.0.101', 'xq9m2kz7v4na.com', 95)" class="inline-flex items-center gap-1.5 rounded-lg bg-error px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                Approve Quarantine
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 p-0 text-xs">
+                        <div class="p-4">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-1">Triggering Domain</span>
+                            <span class="font-mono text-xs font-bold text-error break-all">xq9m2kz7v4na.com</span>
+                        </div>
+                        <div class="p-4">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-1">Detection Reason</span>
+                            <span class="text-slate-700">DGA Burst: Shannon Entropy 4.82 bits/char + High bi-gram rarity (SHAP +0.31)</span>
+                        </div>
+                        <div class="p-4">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-1">Enforcement Policy</span>
+                            <span class="inline-flex items-center gap-1 rounded bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-mono font-bold text-blue-700">
+                                🔬 DRY-RUN SIMULATION
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div id="card-172-28-0-102" class="bg-white rounded-xl border border-outline-variant shadow-xs overflow-hidden transition-all hover:shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 border-b border-slate-100 bg-slate-50/50">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-error-container/30 border border-error/20 text-error">
+                                <span class="material-symbols-outlined text-[20px]">sync_problem</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-sm font-bold text-slate-900">172.28.0.102</span>
+                                    <span class="bg-slate-200 text-slate-700 text-[10px] font-mono px-2 py-0.5 rounded">R&amp;D-Lab-Node-09</span>
+                                    <span class="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full">RISK 82/100</span>
+                                </div>
+                                <div class="text-[11px] text-slate-500 font-mono mt-0.5">
+                                    Requested: 5 mins ago via Behavioral Engine · Sliding window threshold
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="overrideFP('172.28.0.102', 'dGVzdHBheWxvYWQ1.c2.bad-demo.example')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all">
+                                <span class="material-symbols-outlined text-[16px] text-amber-500">cancel</span>
+                                Dismiss as FP
+                            </button>
+                            <button onclick="approveQuarantine('172.28.0.102', 'dGVzdHBheWxvYWQ1.c2.bad-demo.example', 82)" class="inline-flex items-center gap-1.5 rounded-lg bg-error px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                Approve Quarantine
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 p-0 text-xs">
+                        <div class="p-4">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-1">Triggering Domain</span>
+                            <span class="font-mono text-xs font-bold text-error break-all">dGVzdHBheWxvYWQ1.c2.bad-demo.example</span>
+                        </div>
+                        <div class="p-4">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-1">Detection Reason</span>
+                            <span class="text-slate-700">DNS Tunnelling: 15 base64 encoded subdomains in 60s window (Volume spike + Entropy)</span>
+                        </div>
+                        <div class="p-4">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-1">Enforcement Policy</span>
+                            <span class="inline-flex items-center gap-1 rounded bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-mono font-bold text-blue-700">
+                                🔬 DRY-RUN SIMULATION
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Active Quarantined Devices (with Rollback countdown) -->
+        <div class="bg-white rounded-xl border border-outline-variant shadow-xs p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
+                    <h3 class="text-[15px] font-bold text-on-surface">Active Quarantined Endpoints (with Automatic TTL Rollback)</h3>
+                </div>
+                <span class="text-xs text-outline font-mono">Auto-Release TTL: 15 minutes</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-100 text-slate-400 font-mono bg-slate-50">
+                            <th class="px-4 py-2.5">Endpoint IP</th>
+                            <th class="px-4 py-2.5">Device Type</th>
+                            <th class="px-4 py-2.5">Approved By</th>
+                            <th class="px-4 py-2.5">Sinkhole Target</th>
+                            <th class="px-4 py-2.5">TTL Remaining</th>
+                            <th class="px-4 py-2.5 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="active-quarantine-tbody" class="divide-y divide-slate-100">
+                        <tr id="row-172-28-0-100">
+                            <td class="px-4 py-3 font-mono font-bold text-slate-900">172.28.0.100</td>
+                            <td class="px-4 py-3 text-slate-600">Finance-Dept-Laptop-02</td>
+                            <td class="px-4 py-3 font-mono text-primary font-semibold">soc-analyst-1</td>
+                            <td class="px-4 py-3 font-mono text-slate-500">0.0.0.0 (Sinkhole)</td>
+                            <td class="px-4 py-3 font-mono text-secondary font-bold" id="ttl-100">11m 48s</td>
+                            <td class="px-4 py-3 text-right">
+                                <button onclick="rollbackQuarantine('172.28.0.100')" class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span class="material-symbols-outlined text-[14px]">undo</span> Rollback Host
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Live Tamper-Evident Audit Log Viewer -->
+        <div class="bg-white rounded-xl border border-outline-variant shadow-xs p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[20px]">history_edu</span>
+                    <h3 class="text-[15px] font-bold text-on-surface">Tamper-Evident Incident Audit Trail (<code class="font-mono text-xs text-primary">data/audit.log</code>)</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                    <span class="text-[11px] font-mono text-slate-500">Append-Only JSON-Lines</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 text-slate-200 rounded-lg p-4 font-mono text-xs space-y-2 overflow-x-auto max-h-[220px]" id="audit-log-terminal">
+                <div class="text-slate-400">[2026-08-21T07:11:00Z] AUDIT_INIT: Audit log initialized with SHA-256 integrity checks enabled.</div>
+                <div class="text-emerald-400">[2026-08-21T07:14:22Z] ALLOWLIST_LOAD: Loaded 5 domain bypasses and 4 device bypasses from disk.</div>
+                <div class="text-amber-300">[2026-08-21T07:15:02Z] QUARANTINE_REQUEST: ip=172.28.0.101 domain=xq9m2kz7v4na.com risk=95 status=pending</div>
+                <div class="text-amber-300">[2026-08-21T07:15:30Z] QUARANTINE_REQUEST: ip=172.28.0.102 domain=dGVzdHBheWxvYWQ1.c2.bad-demo.example risk=82 status=pending</div>
+                <div class="text-sky-300">[2026-08-21T07:16:11Z] QUARANTINE_APPROVED: ip=172.28.0.100 analyst=soc-analyst-1 ttl=900s mode=dry_run</div>
+            </div>
+        </div>
+
+        <!-- Section 4: Emergency Allowlists (Bypass Configuration) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="bg-white rounded-xl border border-outline-variant shadow-xs p-5">
+                <div class="flex items-center gap-2 mb-3 border-b border-slate-100 pb-2">
+                    <span class="material-symbols-outlined text-secondary text-[18px]">verified</span>
+                    <h4 class="text-xs font-bold text-on-surface uppercase font-mono">Domain Allowlist (<code class="text-primary">data/dns_shield_allowlist.txt</code>)</h4>
+                </div>
+                <p class="text-[11px] text-slate-500 mb-3">Critical infrastructure domains that bypass all ML and Behavioral inspection to prevent catastrophic enterprise outages.</p>
+                <div class="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-xs space-y-1 text-slate-700">
+                    <div>✓ isro.gov.in <span class="text-slate-400 text-[10px]">(Mission Control)</span></div>
+                    <div>✓ nic.in <span class="text-slate-400 text-[10px]">(Gov Informatics)</span></div>
+                    <div>✓ microsoft.com <span class="text-slate-400 text-[10px]">(OS Updates)</span></div>
+                    <div>✓ google.com <span class="text-slate-400 text-[10px]">(Search/Infra)</span></div>
+                    <div>✓ cloudflare.com <span class="text-slate-400 text-[10px]">(DNS Authority)</span></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-outline-variant shadow-xs p-5">
+                <div class="flex items-center gap-2 mb-3 border-b border-slate-100 pb-2">
+                    <span class="material-symbols-outlined text-primary text-[18px]">router</span>
+                    <h4 class="text-xs font-bold text-on-surface uppercase font-mono">Device Allowlist (<code class="text-primary">data/device_allowlist.txt</code>)</h4>
+                </div>
+                <p class="text-[11px] text-slate-500 mb-3">Critical servers exempt from automated active-response quarantine even under extreme anomaly detection.</p>
+                <div class="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-xs space-y-1 text-slate-700">
+                    <div>✓ 192.168.1.1 <span class="text-slate-400 text-[10px]">(Core Gateway Router)</span></div>
+                    <div>✓ 10.0.0.1 <span class="text-slate-400 text-[10px]">(Domain Controller)</span></div>
+                    <div>✓ 10.0.0.5 <span class="text-slate-400 text-[10px]">(Hospital ICU Telemetry Node)</span></div>
+                    <div>✓ 10.0.0.254 <span class="text-slate-400 text-[10px]">(DNS Shield Master Resolver)</span></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+let pendingCount = 2;
+let quarantinedCount = 1;
+let auditCount = 48;
+
+function showToast(msg, isSuccess = true) {
+    const box = document.getElementById("toast-box");
+    const text = document.getElementById("toast-text");
+    box.className = isSuccess 
+        ? "rounded-xl border p-4 text-xs font-bold transition-all shadow-xs flex items-center justify-between bg-emerald-50 border-emerald-200 text-emerald-800"
+        : "rounded-xl border p-4 text-xs font-bold transition-all shadow-xs flex items-center justify-between bg-amber-50 border-amber-200 text-amber-800";
+    text.innerHTML = `<span class="material-symbols-outlined text-[18px]">${isSuccess ? 'check_circle' : 'cancel'}</span> <span>${msg}</span>`;
+    box.classList.remove("hidden");
+    setTimeout(() => { box.classList.add("hidden"); }, 4000);
+}
+
+function hideToast() {
+    document.getElementById("toast-box").classList.add("hidden");
+}
+
+function approveQuarantine(ip, domain, score) {
+    const cardId = `card-${ip.replace(/\./g, '-')}`;
+    const card = document.getElementById(cardId);
+    if (card) card.remove();
+    
+    pendingCount = Math.max(0, pendingCount - 1);
+    quarantinedCount++;
+    auditCount++;
+    
+    document.getElementById("pending-count-badge").innerText = `${pendingCount} PENDING APPROVALS`;
+    document.getElementById("kpi-pending").innerText = `${pendingCount} Devices`;
+    document.getElementById("kpi-quarantined").innerText = `${quarantinedCount} Hosts`;
+    document.getElementById("kpi-audit-count").innerText = `${auditCount} Records`;
+
+    // Add to active table
+    const tbody = document.getElementById("active-quarantine-tbody");
+    const row = document.createElement("tr");
+    row.id = `row-${ip.replace(/\./g, '-')}`;
+    row.innerHTML = `
+        <td class="px-4 py-3 font-mono font-bold text-slate-900">${ip}</td>
+        <td class="px-4 py-3 text-slate-600">Quarantined-Node</td>
+        <td class="px-4 py-3 font-mono text-primary font-semibold">soc-analyst-1</td>
+        <td class="px-4 py-3 font-mono text-slate-500">0.0.0.0 (Sinkhole)</td>
+        <td class="px-4 py-3 font-mono text-secondary font-bold">15m 00s</td>
+        <td class="px-4 py-3 text-right">
+            <button onclick="rollbackQuarantine('${ip}')" class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">
+                <span class="material-symbols-outlined text-[14px]">undo</span> Rollback Host
+            </button>
+        </td>
+    `;
+    tbody.appendChild(row);
+
+    // Append to audit log
+    const term = document.getElementById("audit-log-terminal");
+    const logLine = document.createElement("div");
+    logLine.className = "text-emerald-400";
+    logLine.innerText = `[${new Date().toISOString()}] QUARANTINE_APPROVED: ip=${ip} analyst=soc-analyst-1 domain=${domain} risk=${score} mode=dry_run`;
+    term.appendChild(logLine);
+    term.scrollTop = term.scrollHeight;
+
+    showToast(`Quarantine APPROVED for ${ip} · Trigger: ${domain} · Written to data/audit.log`);
+}
+
+function overrideFP(ip, domain) {
+    const cardId = `card-${ip.replace(/\./g, '-')}`;
+    const card = document.getElementById(cardId);
+    if (card) card.remove();
+
+    pendingCount = Math.max(0, pendingCount - 1);
+    auditCount++;
+    
+    document.getElementById("pending-count-badge").innerText = `${pendingCount} PENDING APPROVALS`;
+    document.getElementById("kpi-pending").innerText = `${pendingCount} Devices`;
+    document.getElementById("kpi-audit-count").innerText = `${auditCount} Records`;
+
+    // Append to audit log
+    const term = document.getElementById("audit-log-terminal");
+    const logLine = document.createElement("div");
+    logLine.className = "text-amber-300";
+    logLine.innerText = `[${new Date().toISOString()}] QUARANTINE_OVERRIDE_FP: ip=${ip} analyst=soc-analyst-1 reason="Analyst marked false positive"`;
+    term.appendChild(logLine);
+    term.scrollTop = term.scrollHeight;
+
+    showToast(`Device ${ip} DISMISSED as False Positive by analyst.`, false);
+}
+
+function rollbackQuarantine(ip) {
+    const rowId = `row-${ip.replace(/\./g, '-')}`;
+    const row = document.getElementById(rowId);
+    if (row) row.remove();
+
+    quarantinedCount = Math.max(0, quarantinedCount - 1);
+    auditCount++;
+
+    document.getElementById("kpi-quarantined").innerText = `${quarantinedCount} Hosts`;
+    document.getElementById("kpi-audit-count").innerText = `${auditCount} Records`;
+
+    const term = document.getElementById("audit-log-terminal");
+    const logLine = document.createElement("div");
+    logLine.className = "text-sky-300";
+    logLine.innerText = `[${new Date().toISOString()}] QUARANTINE_RELEASE: ip=${ip} analyst=soc-analyst-1 reason="Manual SOC Rollback"`;
+    term.appendChild(logLine);
+    term.scrollTop = term.scrollHeight;
+
+    showToast(`Device ${ip} RELEASED from quarantine · DNS traffic restored.`);
+}
+
+function refreshQueue() {
+    showToast("Queue refreshed from Active-Response service & audit log.");
+}
+</script>
+</body>
+</html>
