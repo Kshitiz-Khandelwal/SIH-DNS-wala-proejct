@@ -7,7 +7,8 @@
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=flat&logo=scikit-learn&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**Live Demo**: [https://sih-dns-wala-proejct-mchj-opnxlvdsq.vercel.app/console/index.html](https://sih-dns-wala-proejct-mchj-opnxlvdsq.vercel.app/console/index.html)
+**Live Demo**: [https://sih-dns-wala-proejct-uhas.vercel.app/console/index.html](https://sih-dns-wala-proejct-uhas.vercel.app/console/index.html)
+
 
 DNS Shield is a microservice-based DNS security platform built for the **Smart India Hackathon (SIH) 2026**. 
 

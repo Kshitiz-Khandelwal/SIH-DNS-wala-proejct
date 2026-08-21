@@ -27,11 +27,12 @@ class C:
     BG_YELLOW = '\033[43m'
 
 TARGET_ENDPOINTS = [
-    "https://sih-dns-wala-proejct-mchj-opnxlvdsq.vercel.app/api/v1/query",
+    "https://sih-dns-wala-proejct-uhas.vercel.app/api/v1/query",
     "http://localhost:3000/api/v1/query",
     "http://localhost:8080/v1/query",
     "http://localhost:8000/v1/query",
 ]
+
 
 
 DOMAINS_BY_VECTOR = {
