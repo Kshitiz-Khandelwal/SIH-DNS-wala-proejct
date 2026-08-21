@@ -5,12 +5,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/stitch/index.html',
+        destination: '/console/index.html',
         permanent: false,
       },
       {
         source: '/app',
-        destination: '/stitch/index.html',
+        destination: '/console/index.html',
         permanent: false,
       },
     ];

@@ -164,6 +164,17 @@ def persist_event(event: dict[str, Any]) -> str | None:
         return f"analytics-store unavailable: {type(exc).__name__}"
 
 
+def load_allowlist(filename: str) -> set[str]:
+    path = os.path.join(os.path.dirname(__file__), "..", "..", "data", filename)
+    try:
+        with open(path) as f:
+            return {line.strip().lower() for line in f if line.strip() and not line.startswith("#")}
+    except FileNotFoundError:
+        return set()
+
+DOMAIN_ALLOWLIST = load_allowlist("dns_shield_allowlist.txt")
+DEVICE_ALLOWLIST = load_allowlist("device_allowlist.txt")
+
 def decide_verdict(risk: int, threat_hit: bool, uncertainty_band: str | None) -> str:
     if threat_hit:
         return "BLOCK"
@@ -180,6 +191,19 @@ def query(request: Query) -> dict[str, Any]:
     """Run the cheap-to-expensive seven-stage filtering pipeline with XAI evidence."""
     started = time.perf_counter()
     domain = normalize_domain(request.domain)
+
+    if domain in DOMAIN_ALLOWLIST:
+        verdict = "ALLOW"
+        event = {
+            "event_id": str(uuid.uuid4()), "domain": domain, "client_ip": request.client_ip,
+            "verdict": verdict, "domain_risk": 0, "device_risk": 0,
+            "confidence": "HIGH", "reasons": ["Emergency domain allowlist bypass"], "target_ip": request.target_ip or "", "source": request.source,
+            "geo_json": "{}"
+        }
+        persist_event(event)
+        PIPELINE_VERDICTS[verdict] += 1
+        event["latency_ms"] = round((time.perf_counter() - started) * 1000, 3)
+        return event
 
     try:
         cached = redis_client.hgetall(f"verdict:{domain}")
@@ -287,9 +311,17 @@ def query(request: Query) -> dict[str, Any]:
         pass
 
     if event["device_risk"] >= 80:
-        action, error = service_json("active-response", "POST", "/quarantine", payload={"device_ip": request.client_ip, "reason": "automated virtual-lab threshold reached"})
-        if error: degraded.append(error)
-        else: event["quarantine_action"] = action
+        if request.client_ip in DEVICE_ALLOWLIST:
+            event["quarantine_action"] = {"status": "bypassed", "reason": "Device is in emergency allowlist"}
+        else:
+            action, error = service_json("active-response", "POST", "/quarantine/request", payload={
+                "device_ip": request.client_ip,
+                "reason": "automated virtual-lab threshold reached",
+                "domain": domain,
+                "risk_score": event["device_risk"]
+            })
+            if error: degraded.append(error)
+            else: event["quarantine_action"] = action
     if verdict == "BLOCK":
         action, error = service_json("active-response", "POST", f"/sinkhole?domain={domain}", payload={})
         if error: degraded.append(error)

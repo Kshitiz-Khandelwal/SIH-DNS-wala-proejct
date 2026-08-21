@@ -23,10 +23,15 @@ LAB_NETWORK_PREFIXES = tuple(filter(None, os.getenv("LAB_NETWORK_PREFIXES", "172
 ACTION_TTL_SECONDS = int(os.getenv("RESPONSE_ACTION_TTL_SECONDS", str(30 * 24 * 3600)))
 
 
+QUARANTINE_MODE = os.getenv("QUARANTINE_MODE", "enforce")
+AUDIT_LOG_PATH = os.getenv("AUDIT_LOG_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "data", "audit.log"))
+
 class QuarantineRequest(BaseModel):
     device_ip: str = Field(min_length=3, max_length=64)
     reason: str = Field(min_length=3, max_length=1000)
     requested_by: str = Field(default="detection-pipeline", max_length=128)
+    domain: str = Field(default="", max_length=253)
+    risk_score: int = Field(default=0)
 
 
 class SinkholeObservation(BaseModel):
@@ -44,9 +49,18 @@ def in_lab(device_ip: str) -> bool:
     return device_ip == "unknown" or device_ip.startswith(LAB_NETWORK_PREFIXES)
 
 
-def audit(action: str, subject: str, details: dict) -> dict:
-    record = {"id": str(uuid.uuid4()), "at": time.time(), "action": action, "subject": subject, "scope": "dns-shield-lab-only", "details": details}
+def audit(action: str, subject: str, details: dict, analyst: str = "system") -> dict:
+    record = {"id": str(uuid.uuid4()), "at": time.time(), "action": action, "subject": subject, "scope": "dns-shield-lab-only", "analyst": analyst, "details": details}
     store.lpush("response:audit", json.dumps(record)); store.ltrim("response:audit", 0, 999); store.expire("response:audit", ACTION_TTL_SECONDS)
+    
+    # Tamper-evident append-only file audit log
+    try:
+        os.makedirs(os.path.dirname(AUDIT_LOG_PATH), exist_ok=True)
+        with open(AUDIT_LOG_PATH, "a") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception as e:
+        print(f"Failed to write to audit log: {e}")
+        
     return record
 
 
@@ -88,10 +102,78 @@ def signatures(domain: str):
     return {"domain": domain, "observations": len(rows), "suggested_signatures": candidates, "warning": "Suggestions are not automatically promoted to blocking indicators."}
 
 
+@app.post("/quarantine/request", tags=["quarantine"])
+def request_quarantine(request: QuarantineRequest):
+    if not in_lab(request.device_ip):
+        raise HTTPException(status_code=403, detail="automatic quarantine is restricted to configured virtual-lab prefixes")
+        
+    record = {
+        "reason": request.reason,
+        "requested_by": request.requested_by,
+        "domain": request.domain,
+        "risk_score": request.risk_score,
+        "requested_at": str(time.time()),
+        "status": "pending"
+    }
+    store.hset(f"lab:pending_quarantine:{request.device_ip}", mapping=record)
+    store.expire(f"lab:pending_quarantine:{request.device_ip}", ACTION_TTL_SECONDS)
+    store.hset("lab:pending_quarantine", request.device_ip, json.dumps(record))
+    
+    audit("quarantine-requested", request.device_ip, {"reason": request.reason, "domain": request.domain, "risk_score": request.risk_score})
+    return {"device_ip": request.device_ip, "status": "pending_approval", "scope": "virtual-lab-only"}
+
+
+@app.get("/quarantine/requests", tags=["quarantine"])
+def list_pending_quarantines():
+    rules = {ip: json.loads(raw) for ip, raw in store.hgetall("lab:pending_quarantine").items()}
+    return {"pending_requests": rules}
+
+
+@app.post("/quarantine/{ip}/approve", tags=["quarantine"])
+def approve_quarantine(ip: str, ttl_seconds: int = ACTION_TTL_SECONDS, analyst: str = "dashboard"):
+    pending = store.hgetall(f"lab:pending_quarantine:{ip}")
+    if not pending:
+        raise HTTPException(status_code=404, detail="No pending quarantine request found for this IP")
+        
+    if QUARANTINE_MODE == "dry_run":
+        action = audit("quarantine-dry-run", ip, {"reason": pending.get("reason"), "analyst_approved": True}, analyst=analyst)
+        store.delete(f"lab:pending_quarantine:{ip}"); store.hdel("lab:pending_quarantine", ip)
+        return {"device_ip": ip, "status": "dry_run_logged", "action_id": action["id"]}
+
+    existing = store.hgetall(f"lab:quarantine:{ip}")
+    if existing:
+        store.delete(f"lab:pending_quarantine:{ip}"); store.hdel("lab:pending_quarantine", ip)
+        return {"device_ip": ip, "status": "already_quarantined", "scope": "virtual-lab-only"}
+        
+    action = audit("quarantine-applied", ip, {"reason": pending.get("reason"), "domain": pending.get("domain")}, analyst=analyst)
+    record = {"reason": pending.get("reason"), "approved_by": analyst, "quarantined_at": str(action["at"]), "action_id": action["id"], "enforcement": "virtual-network-policy-state-only"}
+    store.hset(f"lab:quarantine:{ip}", mapping=record); store.expire(f"lab:quarantine:{ip}", ttl_seconds); store.hset("lab:quarantine", ip, json.dumps(record))
+    
+    # Clean up pending
+    store.delete(f"lab:pending_quarantine:{ip}"); store.hdel("lab:pending_quarantine", ip)
+    return {"device_ip": ip, "status": "quarantined", "scope": "virtual-lab-only", **record}
+
+
+@app.post("/quarantine/{ip}/reject", tags=["quarantine"])
+def reject_quarantine(ip: str, analyst: str = "dashboard"):
+    pending = store.hgetall(f"lab:pending_quarantine:{ip}")
+    if not pending:
+        raise HTTPException(status_code=404, detail="No pending quarantine request found for this IP")
+        
+    action = audit("quarantine-rejected", ip, {"reason": "Analyst marked as false positive"}, analyst=analyst)
+    store.delete(f"lab:pending_quarantine:{ip}"); store.hdel("lab:pending_quarantine", ip)
+    return {"device_ip": ip, "status": "rejected", "action_id": action["id"]}
+
+
 @app.post("/quarantine", tags=["quarantine"])
 def quarantine(request: QuarantineRequest):
     if not in_lab(request.device_ip):
         raise HTTPException(status_code=403, detail="automatic quarantine is restricted to configured virtual-lab prefixes")
+        
+    if QUARANTINE_MODE == "dry_run":
+        action = audit("quarantine-dry-run", request.device_ip, {"reason": request.reason, "requested_by": request.requested_by})
+        return {"device_ip": request.device_ip, "status": "dry_run_logged", "action_id": action["id"]}
+
     existing = store.hgetall(f"lab:quarantine:{request.device_ip}")
     if existing:
         return {"device_ip": request.device_ip, "status": "already_quarantined", "scope": "virtual-lab-only", "action_id": existing.get("action_id"), "reason": existing.get("reason")}
@@ -106,7 +188,7 @@ def release(ip: str, requested_by: str = "dashboard"):
     record = store.hgetall(f"lab:quarantine:{ip}")
     if not record:
         return {"device_ip": ip, "status": "not_quarantined", "scope": "virtual-lab-only"}
-    action = audit("quarantine-released", ip, {"requested_by": requested_by, "original_action_id": record.get("action_id")})
+    action = audit("quarantine-released", ip, {"requested_by": requested_by, "original_action_id": record.get("action_id")}, analyst=requested_by)
     store.delete(f"lab:quarantine:{ip}"); store.hdel("lab:quarantine", ip)
     return {"device_ip": ip, "status": "released", "scope": "virtual-lab-only", "release_action_id": action["id"]}
 

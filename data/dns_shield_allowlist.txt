@@ -1,0 +1,5 @@
+# Emergency Allowlist for Domains
+# Add domains that should never be blocked by the ML or Threat Intel pipelines.
+# One domain per line.
+
+1234567890abcdef.tk

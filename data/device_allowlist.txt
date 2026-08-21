@@ -1,0 +1,5 @@
+# Emergency Allowlist for Devices
+# Add client IPs that should never be subjected to automated quarantine (e.g. DNS servers, scanners, or critical infrastructure).
+# One IP per line.
+
+172.28.0.53

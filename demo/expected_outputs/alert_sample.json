@@ -1,0 +1,30 @@
+{
+  "event_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "domain": "1234567890abcdef.tk",
+  "client_ip": "172.28.0.104",
+  "verdict": "BLOCK",
+  "domain_risk": 95,
+  "device_risk": 20,
+  "confidence": "HIGH",
+  "reasons": [
+    "dga=0.98 typo=0.01 band=high_confidence_malicious"
+  ],
+  "target_ip": "",
+  "source": "demo-script",
+  "geo_json": "{}",
+  "latency_ms": 12.34,
+  "pipeline": [
+    {
+      "stage": "redis-cache",
+      "status": "miss",
+      "contribution": 0,
+      "reason": "no unexpired verdict"
+    },
+    {
+      "stage": "ml-lexical",
+      "status": "high_confidence_malicious",
+      "contribution": 95,
+      "reason": "dga=0.98 typo=0.01 band=high_confidence_malicious"
+    }
+  ]
+}

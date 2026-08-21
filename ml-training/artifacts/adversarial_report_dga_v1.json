@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-08-20T11:55:09.405444+00:00",
+  "baseline_model": "artifacts\\dga-v1.joblib",
+  "dataset": "data\\dga_dataset.csv",
+  "threshold": 0.5,
+  "malicious_evaluated": 2000,
+  "baseline_performance": {
+    "tp": 

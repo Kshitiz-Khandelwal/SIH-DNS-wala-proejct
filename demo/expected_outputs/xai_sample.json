@@ -1,0 +1,22 @@
+{
+  "model_version": "v1.2",
+  "base_value": 0.150,
+  "final_probability": 0.985,
+  "top_contributors": [
+    {
+      "feature": "entropy",
+      "value": 0.450,
+      "description": "High domain entropy (randomness) typical of DGA"
+    },
+    {
+      "feature": "vowel_ratio",
+      "value": 0.220,
+      "description": "Unusually low ratio of vowels"
+    },
+    {
+      "feature": "length",
+      "value": 0.165,
+      "description": "Domain length is highly anomalous"
+    }
+  ]
+}

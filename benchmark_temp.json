@@ -1,0 +1,237 @@
+[
+  [
+    "RF-50",
+    {
+      "artifact": "dga-v50",
+      "metadata": {
+        "artifact_schema_version": "dns-shield-model-v2",
+        "name": "dga",
+        "version": "50",
+        "created_at": "2026-08-20T12:08:31.330947+00:00",
+        "dataset_source": "simulated",
+        "dataset_sha256": "b7a80c174b37969b77ebcd203c6444ed8f00a577ce18a6ad90000a761f098a56",
+        "dataset_rows": 10000,
+        "train_rows": 8000,
+        "holdout_rows": 2000,
+        "split_strategy": "stratified-random-random_state_42",
+        "algorithm": "rf",
+        "feature_schema": "char-tfidf-2-4grams+engineered-lexical-v2",
+        "engineered_feature_names": [
+          "length",
+          "entropy",
+          "digit_ratio",
+          "vowel_ratio",
+          "consonant_ratio",
+          "unique_char_ratio",
+          "hyphen_ratio",
+          "longest_consonant_run",
+          "longest_digit_run",
+          "label_count",
+          "has_digit",
+          "punycode",
+          "risky_tld",
+          "alexa_rank_simulated",
+          "nrd_age_simulated"
+        ],
+        "hyperparameter_tuning": {
+          "enabled": false,
+          "cv_folds": null,
+          "best_params": null,
+          "best_cv_f1_weighted": null
+        },
+        "runtime_compatibility": "services/ml-inference local_model_probability uses predict_proba([domain]); verified by standalone subprocess reload at export time",
+        "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH"
+      },
+      "weighted_f1": 0.9699729756781102,
+      "time_seconds": 5.45
+    }
+  ],
+  [
+    "RF-150",
+    {
+      "artifact": "dga-v150",
+      "metadata": {
+        "artifact_schema_version": "dns-shield-model-v2",
+        "name": "dga",
+        "version": "150",
+        "created_at": "2026-08-20T12:08:36.933262+00:00",
+        "dataset_source": "simulated",
+        "dataset_sha256": "b7a80c174b37969b77ebcd203c6444ed8f00a577ce18a6ad90000a761f098a56",
+        "dataset_rows": 10000,
+        "train_rows": 8000,
+        "holdout_rows": 2000,
+        "split_strategy": "stratified-random-random_state_42",
+        "algorithm": "rf",
+        "feature_schema": "char-tfidf-2-4grams+engineered-lexical-v2",
+        "engineered_feature_names": [
+          "length",
+          "entropy",
+          "digit_ratio",
+          "vowel_ratio",
+          "consonant_ratio",
+          "unique_char_ratio",
+          "hyphen_ratio",
+          "longest_consonant_run",
+          "longest_digit_run",
+          "label_count",
+          "has_digit",
+          "punycode",
+          "risky_tld",
+          "alexa_rank_simulated",
+          "nrd_age_simulated"
+        ],
+        "hyperparameter_tuning": {
+          "enabled": false,
+          "cv_folds": null,
+          "best_params": null,
+          "best_cv_f1_weighted": null
+        },
+        "runtime_compatibility": "services/ml-inference local_model_probability uses predict_proba([domain]); verified by standalone subprocess reload at export time",
+        "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH"
+      },
+      "weighted_f1": 0.9964999571244748,
+      "time_seconds": 5.6
+    }
+  ],
+  [
+    "XGBoost",
+    {
+      "artifact": "dga-vxgb",
+      "metadata": {
+        "artifact_schema_version": "dns-shield-model-v2",
+        "name": "dga",
+        "version": "xgb",
+        "created_at": "2026-08-20T12:08:45.822060+00:00",
+        "dataset_source": "simulated",
+        "dataset_sha256": "b7a80c174b37969b77ebcd203c6444ed8f00a577ce18a6ad90000a761f098a56",
+        "dataset_rows": 10000,
+        "train_rows": 8000,
+        "holdout_rows": 2000,
+        "split_strategy": "stratified-random-random_state_42",
+        "algorithm": "xgboost",
+        "feature_schema": "char-tfidf-2-4grams+engineered-lexical-v2",
+        "engineered_feature_names": [
+          "length",
+          "entropy",
+          "digit_ratio",
+          "vowel_ratio",
+          "consonant_ratio",
+          "unique_char_ratio",
+          "hyphen_ratio",
+          "longest_consonant_run",
+          "longest_digit_run",
+          "label_count",
+          "has_digit",
+          "punycode",
+          "risky_tld",
+          "alexa_rank_simulated",
+          "nrd_age_simulated"
+        ],
+        "hyperparameter_tuning": {
+          "enabled": false,
+          "cv_folds": null,
+          "best_params": null,
+          "best_cv_f1_weighted": null
+        },
+        "runtime_compatibility": "services/ml-inference local_model_probability uses predict_proba([domain]); verified by standalone subprocess reload at export time",
+        "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH"
+      },
+      "weighted_f1": 0.9189749373376825,
+      "time_seconds": 8.86
+    }
+  ],
+  [
+    "LightGBM",
+    {
+      "artifact": "dga-vlgbm",
+      "metadata": {
+        "artifact_schema_version": "dns-shield-model-v2",
+        "name": "dga",
+        "version": "lgbm",
+        "created_at": "2026-08-20T12:08:52.114943+00:00",
+        "dataset_source": "simulated",
+        "dataset_sha256": "b7a80c174b37969b77ebcd203c6444ed8f00a577ce18a6ad90000a761f098a56",
+        "dataset_rows": 10000,
+        "train_rows": 8000,
+        "holdout_rows": 2000,
+        "split_strategy": "stratified-random-random_state_42",
+        "algorithm": "lgbm",
+        "feature_schema": "char-tfidf-2-4grams+engineered-lexical-v2",
+        "engineered_feature_names": [
+          "length",
+          "entropy",
+          "digit_ratio",
+          "vowel_ratio",
+          "consonant_ratio",
+          "unique_char_ratio",
+          "hyphen_ratio",
+          "longest_consonant_run",
+          "longest_digit_run",
+          "label_count",
+          "has_digit",
+          "punycode",
+          "risky_tld",
+          "alexa_rank_simulated",
+          "nrd_age_simulated"
+        ],
+        "hyperparameter_tuning": {
+          "enabled": false,
+          "cv_folds": null,
+          "best_params": null,
+          "best_cv_f1_weighted": null
+        },
+        "runtime_compatibility": "services/ml-inference local_model_probability uses predict_proba([domain]); verified by standalone subprocess reload at export time",
+        "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH"
+      },
+      "weighted_f1": 0.9634513080050898,
+      "time_seconds": 6.18
+    }
+  ],
+  [
+    "Cross-Family",
+    {
+      "artifact": "dga-vxfam",
+      "metadata": {
+        "artifact_schema_version": "dns-shield-model-v2",
+        "name": "dga",
+        "version": "xfam",
+        "created_at": "2026-08-20T12:08:56.975586+00:00",
+        "dataset_source": "simulated",
+        "dataset_sha256": "b7a80c174b37969b77ebcd203c6444ed8f00a577ce18a6ad90000a761f098a56",
+        "dataset_rows": 10000,
+        "train_rows": 7516,
+        "holdout_rows": 3447,
+        "split_strategy": "cross-family-holdout:conficker,matsnu,generic",
+        "algorithm": "rf",
+        "feature_schema": "char-tfidf-2-4grams+engineered-lexical-v2",
+        "engineered_feature_names": [
+          "length",
+          "entropy",
+          "digit_ratio",
+          "vowel_ratio",
+          "consonant_ratio",
+          "unique_char_ratio",
+          "hyphen_ratio",
+          "longest_consonant_run",
+          "longest_digit_run",
+          "label_count",
+          "has_digit",
+          "punycode",
+          "risky_tld",
+          "alexa_rank_simulated",
+          "nrd_age_simulated"
+        ],
+        "hyperparameter_tuning": {
+          "enabled": false,
+          "cv_folds": null,
+          "best_params": null,
+          "best_cv_f1_weighted": null
+        },
+        "runtime_compatibility": "services/ml-inference local_model_probability uses predict_proba([domain]); verified by standalone subprocess reload at export time",
+        "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH"
+      },
+      "weighted_f1": 0.9705610684314385,
+      "time_seconds": 4.47
+    }
+  ]
+]

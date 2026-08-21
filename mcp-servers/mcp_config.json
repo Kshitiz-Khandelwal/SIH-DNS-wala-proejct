@@ -1,27 +1,27 @@
 {
   "mcpServers": {
     "dns-shield-domain-inspector": {
-      "command": "python",
+      "command": "C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/.venv/Scripts/python.exe",
       "args": ["C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/mcp-servers/mcp_domain_inspector.py"],
       "description": "Inspect any domain via 7-stage ML pipeline with TreeSHAP attribution"
     },
     "dns-shield-threat-intel": {
-      "command": "python",
+      "command": "C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/.venv/Scripts/python.exe",
       "args": ["C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/mcp-servers/mcp_threat_intel.py"],
       "description": "IoC lookup, RPZ feed health, sync, and DGA family profiles"
     },
     "dns-shield-soc-analytics": {
-      "command": "python",
+      "command": "C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/.venv/Scripts/python.exe",
       "args": ["C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/mcp-servers/mcp_soc_analytics.py"],
       "description": "Live dashboard stats, event stream, threat ratio, and shift report generation"
     },
     "dns-shield-device-fleet": {
-      "command": "python",
+      "command": "C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/.venv/Scripts/python.exe",
       "args": ["C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/mcp-servers/mcp_device_fleet.py"],
       "description": "Corporate host management, DNS quarantine, and fleet risk assessment"
     },
     "dns-shield-attack-simulator": {
-      "command": "python",
+      "command": "C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/.venv/Scripts/python.exe",
       "args": ["C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/mcp-servers/mcp_attack_simulator.py"],
       "description": "MITRE ATT&CK attack simulation and red team exercise orchestration"
     }

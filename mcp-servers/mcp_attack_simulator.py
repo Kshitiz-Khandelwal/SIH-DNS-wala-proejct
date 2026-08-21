@@ -93,7 +93,7 @@ def run_attack_simulation(attack_type: str) -> dict:
         "simulation_result": result,
         "attack_profile": profile,
         "live_event_injected": True,
-        "check_dashboard": f"http://localhost:3000/stitch/index.html",
+        "check_dashboard": f"http://localhost:3000/console/index.html",
     }
 
 

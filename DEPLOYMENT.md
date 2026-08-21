@@ -43,7 +43,7 @@ docker-compose -f infra/docker-compose.yml up -d --build
 ### Deployed Service Map:
 | Service | Port | Description |
 |---|---|---|
-| **SOC Dashboard & Stitch UI** | `:3000` | Next.js 16 Web Application |
+| **SOC Dashboard & Web Console** | `:3000` | Next.js 16 Web Application |
 | **API Gateway Orchestrator** | `:8080` | Synchronous 7-stage Pipeline Gateway |
 | **Redis Murmur3 Bloom Cache** | `:6379` | In-memory Cache & Bloom Filter |
 | **ML Lexical Classifier** | `:8000` | Random Forest Feature Extractor |
@@ -75,7 +75,7 @@ docker-compose -f infra/docker-compose.yml up -d --build
 ## 🔍 Verification & Health Checks
 
 Once deployed, verify that the health and live telemetry endpoints return `200 OK`:
-- **Dashboard**: `https://<your-domain>/stitch/index.html`
+- **Dashboard**: `https://<your-domain>/console/index.html`
 - **Stats API**: `https://<your-domain>/api/v1/stats`
 - **Query Evaluation API**: `https://<your-domain>/api/v1/query?domain=api.github.com`
 - **Feed Health API**: `https://<your-domain>/api/v1/feed-health`

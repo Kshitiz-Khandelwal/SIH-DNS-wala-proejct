@@ -40,9 +40,7 @@ export function LiveQueryTable({
   onSearchChange,
 }: LiveQueryTableProps) {
   return (
-    /* Stitch: bg-white rounded technical-border technical-shadow flex flex-col overflow-hidden */
     <div className="bg-white rounded-lg technical-border technical-shadow flex flex-col overflow-hidden">
-      {/* Stitch: p-4 border-b flex justify-between items-center bg-surface-bright */}
       <div className="p-4 border-b border-slate-200/70 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-50/40">
         <h3 className="text-[14px] font-semibold text-slate-900 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -60,7 +58,7 @@ export function LiveQueryTable({
               className="h-7 w-[180px] rounded-full border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-100 transition"
             />
           </div>
-          {/* Stitch: filter pills */}
+          {/* Filter pills */}
           <div className="flex gap-1.5">
             {FILTER_PILLS.map((tab) => (
               <button
@@ -79,7 +77,7 @@ export function LiveQueryTable({
         </div>
       </div>
 
-      {/* Table — Stitch: overflow-x-auto, divide-y divide-outline-variant/30 */}
+      {/* Table: overflow-x-auto, divide-y */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -101,7 +99,6 @@ export function LiveQueryTable({
             ) : (
               events.map((ev) => {
                 const clamped = Math.min(100, Math.max(0, ev.risk_score));
-                /* Stitch: risk bar color */
                 const barColor =
                   clamped <= 35 ? "bg-emerald-500" : clamped <= 70 ? "bg-amber-500" : "bg-rose-500";
                 const scoreText =
@@ -109,7 +106,6 @@ export function LiveQueryTable({
                 const pillCls = VERDICT_PILL[ev.verdict] ?? "";
 
                 return (
-                  /* Stitch: hover:bg-surface-container/30 transition-colors */
                   <tr key={ev.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-4 py-2.5 mono-number text-xs text-slate-400 whitespace-nowrap">
                       {formatTime(ev.timestamp)}
@@ -122,7 +118,7 @@ export function LiveQueryTable({
                     </td>
                     <td className="px-4 py-2.5 mono-number text-xs text-slate-500">{ev.client_ip}</td>
                     <td className="px-4 py-2.5">
-                      {/* Stitch: risk score inline bar */}
+                      {/* Risk score inline bar */}
                       <div className="flex items-center gap-2">
                         <span className={cn("w-6 text-right mono-number text-xs font-bold", scoreText)}>
                           {clamped}
@@ -133,7 +129,7 @@ export function LiveQueryTable({
                       </div>
                     </td>
                     <td className="px-4 py-2.5">
-                      {/* Stitch: verdict pill */}
+                      {/* Verdict pill */}
                       <span className={cn("px-2 py-0.5 rounded-full super-heading", pillCls)}>
                         {ev.verdict}
                       </span>

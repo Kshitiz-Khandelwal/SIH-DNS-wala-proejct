@@ -104,14 +104,19 @@ graph TD
 | Behavioral Sliding Window (Volume, Tunnelling) | `[IMPLEMENTED ✅]` |
 | Geo/ASN Enrichment (GeoLite2) | `[IMPLEMENTED ✅]` |
 | Active Response: Sinkholing | `[LAB SIMULATED 🔬]` |
-| Active Response: Host Quarantine | `[LAB SIMULATED 🔬]` |
+| Active Response: Host Quarantine w/ Analyst Approval Workflow | `[IMPLEMENTED ✅]` — `/quarantine/request` → pending queue → approve/reject with audit log |
+| Emergency Allowlist Bypass (Domain & Device) | `[IMPLEMENTED ✅]` — `data/dns_shield_allowlist.txt` and `data/device_allowlist.txt` |
+| Quarantine Dry-Run Mode | `[IMPLEMENTED ✅]` — `QUARANTINE_MODE=dry_run` flag |
+| SOC Dashboard: Quarantine Approval Panel | `[IMPLEMENTED ✅]` — `/app/quarantine` page with approve/reject/audit trail |
 | CERT-In STIX 2.1 Format-Compatible Ingestion | `[LAB SIMULATED 🔬]` — No public CERT-In TAXII endpoint exists; DNS Shield accepts STIX 2.1 bundles in CERT-In advisory format |
 | DNS-over-TLS (Port 853) | `[LAB SIMULATED 🔬]` — TLS termination implemented; requires CA cert in production |
 | DNS-over-HTTPS (Port 443, RFC 8484) | `[LAB SIMULATED 🔬]` — HTTPS resolver endpoint implemented; requires enterprise HTTPS enforcement |
 | DNS-over-QUIC (RFC 9250) | `[PLANNED 🗺️]` |
 | Cross-Family / Adversarial Benchmark Report | `[PLANNED 🗺️]` — in [`BENCHMARK_RESULTS.md`](./BENCHMARK_RESULTS.md) |
 | Model Lifecycle / Drift Monitoring | `[PLANNED 🗺️]` |
-| Analyst Approval Workflow for Quarantine | `[PLANNED 🗺️]` |
+| CI/CD: GitHub Actions (8-job pipeline + secret scan) | `[IMPLEMENTED ✅]` |
+| Unit Tests (pytest — local rules, features, decisions) | `[IMPLEMENTED ✅]` |
+| Prometheus Monitoring Config | `[IMPLEMENTED ✅]` |
 
 ---
 
@@ -219,11 +224,35 @@ SIH-DNS-wala-project/
 │   ├── ml-inference/        # Port 8000 — ML Lexical scoring
 │   ├── behavioral-engine/   # Port 8001 — Device risk & incidents
 │   ├── geo-intel/           # Port 8002 — Offline GeoLite2 enrichment
-│   ├── active-response/     # Port 8004 — Virtual-lab sinkhole/quarantine
+│   ├── active-response/     # Port 8004 — Analyst-approved sinkhole/quarantine
 │   └── analytics-store/     # Port 8005 — Event persistence
 ├── ml-training/             # Adversarial evaluation and model training scripts
-├── frontend/                # Next.js 16 SOC Dashboard
-├── infra/                   # Simulation scripts and Docker Compose
+├── frontend/                # Next.js 16 SOC Dashboard (Tailwind + shadcn/ui)
+│   └── src/app/app/
+│       ├── dashboard/       # Overview + Attack Simulator
+│       ├── queue/           # Live Traffic Intercept Stream
+│       ├── xai/             # XAI Anomaly Explainability Panel
+│       ├── quarantine/      # ⭐ NEW: Analyst Approval Queue (Phase 12)
+│       ├── threats/         # Threat Model Cards
+│       ├── devices/         # Device Risk Manager
+│       └── reports/         # Forensic Export & Policies
+├── demo/                    # ⭐ NEW: 6-Phase Offline Attack Demo Scripts (Phase 10)
+│   ├── 01_benign_traffic.py
+│   ├── 02_dga_burst.py
+│   ├── 03_dns_tunnel.py
+│   ├── 04_typosquat.py
+│   ├── 05_xai_inspect.py
+│   ├── 06_quarantine_demo.py
+│   └── domain_lists/        # Test domain datasets
+├── tests/                   # ⭐ NEW: pytest Unit Tests (Phase 11)
+│   ├── test_core.py         # Local rules, feature extraction, decision logic
+│   ├── test_demo_utils.py   # Demo script validation
+│   └── test_safety_controls.py  # Allowlist & audit log tests
+├── infra/                   # Simulation scripts, Docker Compose, Prometheus config
+│   └── prometheus.yml       # ⭐ NEW: Prometheus scrape config for all services
+├── data/                    # Runtime data: allowlists, audit.log
+│   ├── dns_shield_allowlist.txt  # Emergency domain bypass list
+│   └── device_allowlist.txt     # Critical infrastructure device bypass list
 ├── docs/                    # Extensive project documentation & architecture guides
 └── dns_shield_local_rules.py # Core resilience fallback logic
 ```

@@ -1,8 +1,8 @@
-name: DNS Shield CI
+name: DNS Shield CI — Complete Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, "feat/**", "fix/**"]
   pull_request:
     branches: [main, master]
 
@@ -10,27 +10,47 @@ permissions:
   contents: read
 
 jobs:
-  compose-configuration:
-    name: Validate Compose topology
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Create non-secret CI environment
-        run: cp .env.example .env
-      - name: Validate Docker Compose syntax and interpolation
-        run: docker compose -f infra/docker-compose.yml config --quiet
-
+  # ── 1. Python syntax validation ──────────────────────────────────────────────
   python-syntax:
-    name: Validate Python syntax
+    name: Python syntax check (3.11)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - name: Compile every Python service and helper
+          python-version: "3.11"
+      - name: Compile all Python service files
         run: python -m compileall -q services infra ml-training
 
+  # ── 2. Python unit tests ──────────────────────────────────────────────────────
+  python-unit-tests:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install pytest scikit-learn numpy pandas joblib
+      - name: Run unit tests
+        run: pytest tests/ -v --tb=short
+
+  # ── 3. Python linting ─────────────────────────────────────────────────────────
+  python-lint:
+    name: Python linting (flake8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install flake8
+        run: pip install flake8
+      - name: Lint services and training scripts
+        run: flake8 services/ ml-training/ dns_shield_local_rules.py dns_shield_features.py --max-line-length=120 --ignore=E501,W503
+
+  # ── 4. Go resolver build ──────────────────────────────────────────────────────
   resolver-build:
     name: Build Go resolver
     runs-on: ubuntu-latest
@@ -41,35 +61,64 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22.x'
+          go-version: "1.22.x"
       - name: Download dependencies and compile
         run: |
           go mod download
           go build -v ./...
 
+  # ── 5. Next.js dashboard build ────────────────────────────────────────────────
   dashboard-build:
-    name: Build SOC dashboard
+    name: Build Next.js SOC dashboard
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: dashboard
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - name: Install dashboard dependencies and build
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install and build
         run: |
-          npm install --ignore-scripts
+          npm ci
           npm run build
 
-  container-builds:
-    name: Build service images
-    needs: [compose-configuration, python-syntax, resolver-build, dashboard-build]
+  # ── 6. Docker Compose validation ─────────────────────────────────────────────
+  compose-configuration:
+    name: Validate Docker Compose topology
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Create non-secret CI environment
         run: cp .env.example .env
-      - name: Build default service images without starting containers
+      - name: Validate Docker Compose syntax
+        run: docker compose -f infra/docker-compose.yml config --quiet
+
+  # ── 7. Full container image build (gated) ────────────────────────────────────
+  container-builds:
+    name: Build all service images
+    needs: [compose-configuration, python-syntax, python-unit-tests, resolver-build, dashboard-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create non-secret CI environment
+        run: cp .env.example .env
+      - name: Build all images
         run: docker compose -f infra/docker-compose.yml build
+
+  # ── 8. Security secret scan (gitleaks) ───────────────────────────────────────
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true

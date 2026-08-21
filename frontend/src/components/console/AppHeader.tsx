@@ -33,12 +33,11 @@ export function AppHeader() {
     (pathname.startsWith("/app/domain") ? "Domain Inspector" : "DNS Shield");
 
   return (
-    /* Stitch: sticky top-0 z-40, h-[64px], bg-surface/80, backdrop-blur-md, border-b */
     <header className="sticky top-0 h-16 w-full z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 flex justify-between items-center px-8 shadow-2xs">
       {/* Left: Title + operational badge */}
       <div className="flex items-center gap-5">
         <h2 className="text-[18px] font-bold text-blue-700 tracking-tight leading-none">{pageTitle}</h2>
-        {/* Stitch: resolver operational pill */}
+        {/* Resolver operational pill */}
         <div className="hidden lg:flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span className="super-heading text-emerald-700 tracking-wider">RESOLVER OPERATIONAL</span>
@@ -47,7 +46,7 @@ export function AppHeader() {
 
       {/* Right: QPS counter + notification + user */}
       <div className="flex items-center gap-5">
-        {/* Stitch: QPS box with sparkline */}
+        {/* QPS box with sparkline */}
         <div className="hidden md:flex items-center gap-3 bg-slate-50 border border-slate-200 rounded px-4 py-1.5 technical-shadow">
           <span className="super-heading text-slate-400">LIVE QPS</span>
           <span className="mono-number text-[13px] font-bold text-slate-900">

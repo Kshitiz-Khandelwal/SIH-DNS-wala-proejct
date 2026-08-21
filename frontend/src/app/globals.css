@@ -206,18 +206,18 @@ body {
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* ────────── Stitch design helpers ────────── */
-/* Radial dot grid background (Stitch: dot-grid) */
+/* ────────── Custom Console Design Helpers ────────── */
+/* Radial dot grid background */
 .dot-grid {
   background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
   background-size: 24px 24px;
 }
 
-/* Technical card border + shadow (from Stitch) */
+/* Technical card border + shadow */
 .technical-border { border: 1px solid #e2e8f0; }
 .technical-shadow { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
 
-/* Stitch sidebar active link treatment */
+/* Sidebar active link treatment */
 .nav-link-active {
   border-left: 2px solid #2563eb;
   background: rgba(37, 99, 235, 0.06);
@@ -234,13 +234,13 @@ body {
   border-left-color: #e2e8f0;
 }
 
-/* Stitch mono-number (telemetry values) */
+/* Mono-number (telemetry values) */
 .mono-number {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-feature-settings: "tnum";
 }
 
-/* Stitch super-heading label style */
+/* Super-heading label style */
 .super-heading {
   font-size: 10px;
   font-weight: 700;
@@ -259,7 +259,7 @@ body {
   animation: stripe-enter 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* Stitch verdict pill */
+/* Verdict pill */
 .verdict-block {
   background: rgba(186, 26, 26, 0.12);
   color: #ba1a1a;

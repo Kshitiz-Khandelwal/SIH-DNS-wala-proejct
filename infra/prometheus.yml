@@ -1,0 +1,56 @@
+# DNS Shield — Prometheus Monitoring Configuration (Phase 11)
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers: []
+
+scrape_configs:
+  # API Gateway — main orchestration service, primary SLO target
+  - job_name: "dns-shield-api-gateway"
+    static_configs:
+      - targets: ["api-gateway:8080"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # ML Inference — track model latency and uncertainty band distribution
+  - job_name: "dns-shield-ml-inference"
+    static_configs:
+      - targets: ["ml-inference:8000"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # Threat Intel — monitor feed health and IOC cache hit rate
+  - job_name: "dns-shield-threat-intel"
+    static_configs:
+      - targets: ["threat-intel:8003"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # Behavioral Engine — track sliding window thresholds and incident rate
+  - job_name: "dns-shield-behavioral"
+    static_configs:
+      - targets: ["behavioral-engine:8001"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # Active Response — track quarantine approvals, dry-run mode, audit log writes
+  - job_name: "dns-shield-active-response"
+    static_configs:
+      - targets: ["active-response:8004"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # Analytics Store — track event persistence latency
+  - job_name: "dns-shield-analytics"
+    static_configs:
+      - targets: ["analytics-store:8005"]
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # Redis — memory usage, cache hit rate, eviction counters
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis-exporter:9121"]

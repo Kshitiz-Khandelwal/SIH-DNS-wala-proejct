@@ -12,6 +12,7 @@ import {
   Radio,
   Settings,
   Shield,
+  ShieldAlert,
   Zap,
   BookOpen,
 } from "lucide-react";
@@ -25,6 +26,7 @@ interface NavGroup {
     href: string;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
+    badge?: string;
   }[];
 }
 
@@ -49,12 +51,14 @@ const navGroups: NavGroup[] = [
   {
     label: "MANAGEMENT",
     items: [
+      { href: "/app/quarantine", label: "Quarantine Queue", icon: ShieldAlert, badge: "NEW" },
       { href: "/app/devices", label: "Devices", icon: Monitor },
       { href: "/app/reports", label: "Reports & Policies", icon: FileText },
       { href: "/app/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
+
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -93,8 +97,8 @@ export function AppSidebar() {
           {navGroups.map((group) => (
             <div key={group.label}>
               <h3 className="super-heading text-slate-400 px-4 mb-1.5">{group.label}</h3>
-              <div className="space-y-0.5">
-                {group.items.map(({ href, label, icon: Icon }) => {
+          <div className="space-y-0.5">
+                {group.items.map(({ href, label, icon: Icon, badge }) => {
                   const active =
                     pathname === href ||
                     (href !== "/app" && pathname.startsWith(href + "/"));
@@ -110,7 +114,12 @@ export function AppSidebar() {
                       )}
                     >
                       <Icon className={cn("h-4 w-4 shrink-0", active ? "text-blue-600" : "text-slate-400")} />
-                      <span>{label}</span>
+                      <span className="flex-1">{label}</span>
+                      {badge && (
+                        <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold text-rose-700 font-mono">
+                          {badge}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
