@@ -358,3 +358,11 @@ export function scoreDomain(
     tags: options?.tags ?? [evalResult.profile],
   };
 }
+
+export const SAMPLE_DOMAINS = [
+  { domain: "xk9mqz7p2n4r8v3w.top", label: "DGA domain" },
+  { domain: "gooogle-login.security-update.com", label: "Typosquat" },
+  { domain: "github.com", label: "Clean — correctly allowed" },
+  { domain: "malware-c2.evil-payload.xyz", label: "Threat intel block" },
+];
+
