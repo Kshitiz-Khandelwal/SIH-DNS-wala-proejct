@@ -1,0 +1,86 @@
+/* ==========================================================================
+   DNS SHIELD X-FORECAST — NON-DESTRUCTIVE MASTER THEME ENHANCEMENTS
+   Encodes Emil Kowalski Spring Physics, Impeccable Craft & Taste-Skill Polish
+   ========================================================================== */
+
+/* Cyber Defense Accent Enhancements */
+.technical-border {
+    border: 1px solid #e2e8f0;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.technical-border:hover {
+    border-color: #cbd5e1;
+}
+
+.technical-shadow {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* Emil Kowalski Spring Physics & Micro-Interactions */
+button, a.btn-interactive, .soc-btn {
+    transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease, box-shadow 150ms ease;
+}
+
+button:active, a.btn-interactive:active, .soc-btn:active {
+    transform: scale(0.965) !important;
+}
+
+/* Status Signal Indicator Glows */
+.radar-beacon {
+    animation: radar-pulse 2s infinite;
+}
+
+@keyframes radar-pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* Dark Mode Extensions for Defense SOC Mode */
+html.dark body {
+    background-color: #070a12 !important;
+    color: #f8fafc !important;
+}
+
+html.dark .bg-surface {
+    background-color: #0b0f19 !important;
+}
+
+html.dark .bg-white {
+    background-color: #0e1424 !important;
+    color: #f8fafc !important;
+}
+
+html.dark .technical-border {
+    border-color: #1e2b45 !important;
+}
+
+html.dark .technical-border:hover {
+    border-color: #2d3f66 !important;
+}
+
+html.dark .text-on-surface {
+    color: #f8fafc !important;
+}
+
+html.dark .text-on-surface-variant {
+    color: #94a3b8 !important;
+}
+
+html.dark .text-outline {
+    color: #64748b !important;
+}
+
+html.dark .dot-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0) !important;
+}
