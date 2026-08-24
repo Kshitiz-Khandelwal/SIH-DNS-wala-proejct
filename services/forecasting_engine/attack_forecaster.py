@@ -198,7 +198,7 @@ class AttackForecastingEngine:
                 scores["STAGE_4_C2_PERSISTENCE"] += 0.70
 
         # Lateral movement (internal subnet targeting)
-        internal_dsts = sum(1 for f in flows if f["dst_ip"].startswith("192.168.") or f["dst_ip"].startswith("10."))
+        internal_dsts = sum(1 for f in flows if f.get("dst_ip", "").startswith("192.168.") or f.get("dst_ip", "").startswith("10."))
         if internal_dsts > 3 and feats["unique_ports"] > 3:
             scores["STAGE_5_LATERAL_MOVEMENT"] += 0.80
 
