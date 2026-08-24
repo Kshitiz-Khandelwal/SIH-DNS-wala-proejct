@@ -21,17 +21,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-slate-500 font-medium bg-slate-50">
-        Loading console…
+      <div className="flex min-h-screen items-center justify-center text-xs font-mono text-slate-400 bg-[#070a12]">
+        <div className="flex items-center gap-3">
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+          <span>AUTHENTICATING SOVEREIGN NODE...</span>
+        </div>
       </div>
     );
   }
 
-  // Pipeline page manages its own full-height layout
   const isFlush = pathname === "/app/pipeline";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dot-grid">
+    <div className="flex h-screen overflow-hidden bg-[#070a12] dot-grid text-slate-100 font-sans">
       <AppSidebar />
       <div className="flex flex-1 flex-col h-screen overflow-hidden min-w-0">
         <AppHeader />

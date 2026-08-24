@@ -2,78 +2,72 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Bell, UserCircle } from "lucide-react";
+import { Bell, Search, Shield, Zap } from "lucide-react";
 
 export function AppHeader() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const [qps, setQps] = useState(13285);
+  const [qps, setQps] = useState(24100);
 
   useEffect(() => {
     setMounted(true);
     const tick = () => {
-      setQps((v) => v + Math.floor(Math.random() * 8 - 4));
+      setQps((v) => v + Math.floor(Math.random() * 12 - 6));
     };
     const id = setInterval(tick, 2000);
     return () => clearInterval(id);
   }, []);
 
   const pageTitle = {
-    "/app/dashboard": "Overview",
+    "/app/dashboard": "Sovereign Command Center Overview",
+    "/app/forecast": "AI Attack Forecasting & Hardware Sentinel",
     "/app/queue": "Live Query Stream",
-    "/app/analytics": "Analytics & Telemetry",
-    "/app/pipeline": "Pipeline Architecture",
-    "/app/threats": "Threat Intelligence",
-    "/app/xai": "XAI Analysis",
-    "/app/models": "Model Rationale",
-    "/app/devices": "Devices & Fleet",
-    "/app/reports": "Security Reports",
-    "/app/settings": "Settings",
-  }[pathname] ||
-    (pathname.startsWith("/app/domain") ? "Domain Inspector" : "DNS Shield");
+    "/app/analytics": "SOC Query Analytics & Telemetry",
+    "/app/pipeline": "7-Stage Policy Cascade Engine",
+    "/app/threats": "Threat Intelligence & Sovereign Feeds",
+    "/app/xai": "Explainable AI (XAI) Telemetry",
+    "/app/models": "Model Architecture & Academic Rationale",
+    "/app/quarantine": "Quarantine Queue & Active Response",
+    "/app/devices": "Device Fleet & Subnet IPAM Matrix",
+    "/app/reports": "Shift Reports & CERT-In Compliance",
+    "/app/settings": "Console Settings",
+  }[pathname] || "DNS Shield X-Forecast";
 
   return (
-    <header className="sticky top-0 h-16 w-full z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 flex justify-between items-center px-8 shadow-2xs">
-      {/* Left: Title + operational badge */}
-      <div className="flex items-center gap-5">
-        <h2 className="text-[18px] font-bold text-blue-700 tracking-tight leading-none">{pageTitle}</h2>
-        {/* Resolver operational pill */}
-        <div className="hidden lg:flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="super-heading text-emerald-700 tracking-wider">RESOLVER OPERATIONAL</span>
+    <header className="sticky top-0 h-16 w-full z-40 bg-[#0b0f19]/85 backdrop-blur-xl border-b border-slate-800/80 flex justify-between items-center px-8">
+      {/* Left: Title + status */}
+      <div className="flex items-center gap-4">
+        <div>
+          <h2 className="text-base font-bold text-slate-100 tracking-tight leading-none">{pageTitle}</h2>
+          <p className="text-[11px] text-slate-400 mt-1">Sub-millisecond cheap-to-expensive detection plane telemetry.</p>
         </div>
       </div>
 
-      {/* Right: QPS counter + notification + user */}
-      <div className="flex items-center gap-5">
-        {/* QPS box with sparkline */}
-        <div className="hidden md:flex items-center gap-3 bg-slate-50 border border-slate-200 rounded px-4 py-1.5 technical-shadow">
-          <span className="super-heading text-slate-400">LIVE QPS</span>
-          <span className="mono-number text-[13px] font-bold text-slate-900">
-            {mounted ? qps.toLocaleString() : "13,285"} Q/s
-          </span>
-          <svg className="w-12 h-4 text-blue-500 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 50 20">
-            <path d="M0 10 Q 5 5, 10 10 T 20 10 T 30 15 T 40 5 T 50 10" strokeLinecap="round" strokeWidth="1.5" />
-          </svg>
+      {/* Right: Raycast Search Bar + Live QPS Counter + SLA */}
+      <div className="flex items-center gap-4">
+        {/* Raycast Style Quick Command Search Bar */}
+        <div className="hidden lg:flex items-center gap-2 bg-[#0e1424] border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-400">
+          <Search className="h-3.5 w-3.5 text-slate-500" />
+          <span className="font-mono text-[11px]">Type <kbd className="bg-slate-800 text-slate-300 px-1 py-0.5 rounded text-[10px]">⌘K</kbd> to search telemetry...</span>
         </div>
 
-        {/* Icon actions */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="text-slate-400 hover:text-blue-600 transition-colors"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Account"
-            className="text-slate-400 hover:text-blue-600 transition-colors"
-          >
-            <UserCircle className="h-5 w-5" />
-          </button>
+        {/* QPS & SLA Badge */}
+        <div className="hidden md:flex items-center gap-3 bg-[#0e1424] border border-slate-800 rounded-lg px-3.5 py-1.5 text-xs font-mono">
+          <span className="text-[10px] uppercase font-bold text-slate-400">LIVE QPS</span>
+          <span className="font-bold text-blue-400">
+            {mounted ? qps.toLocaleString() : "24,100"} Q/s
+          </span>
+          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">1.42ms SLA</span>
         </div>
+
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all relative"
+        >
+          <Bell className="h-4 w-4" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+        </button>
       </div>
     </header>
   );

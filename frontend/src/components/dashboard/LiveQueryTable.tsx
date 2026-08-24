@@ -1,6 +1,9 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Globe, Search } from "lucide-react";
+import { motion } from "framer-motion";
+import { ChevronRight, Search } from "lucide-react";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { DomainCell } from "@/components/DomainCell";
 import { formatTime } from "@/lib/utils";
@@ -16,20 +19,7 @@ interface LiveQueryTableProps {
   onSearchChange: (q: string) => void;
 }
 
-const VERDICT_PILL: Record<string, string> = {
-  BLOCK: "verdict-block",
-  FLAG: "verdict-flag",
-  ALLOW: "verdict-allow",
-};
-
 const FILTER_PILLS = ["ALL", "BLOCK", "FLAG", "ALLOW"] as const;
-const FILTER_ACTIVE: Record<string, string> = {
-  ALL: "bg-slate-800 text-white border-slate-800",
-  BLOCK: "bg-rose-50 text-rose-700 border-rose-300",
-  FLAG: "bg-amber-50 text-amber-700 border-amber-300",
-  ALLOW: "bg-emerald-50 text-emerald-700 border-emerald-300",
-};
-const FILTER_IDLE = "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800";
 
 export function LiveQueryTable({
   events,
@@ -40,34 +30,37 @@ export function LiveQueryTable({
   onSearchChange,
 }: LiveQueryTableProps) {
   return (
-    <div className="bg-white rounded-lg technical-border technical-shadow flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-slate-200/70 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-50/40">
-        <h3 className="text-[14px] font-semibold text-slate-900 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Live Query Stream
+    <div className="bg-[#0e1424] rounded-xl border border-slate-800/80 shadow-xl flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-slate-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-[#111827]">
+        <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 radar-beacon" />
+          Real-Time Sovereign Query Stream
         </h3>
         <div className="flex flex-wrap gap-2 items-center">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search domain or IP…"
+              placeholder="Search FQDN or Client IP..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-7 w-[180px] rounded-full border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-100 transition"
+              className="h-8 w-[200px] rounded-lg border border-slate-800 bg-[#070a12] pl-8 pr-3 text-xs font-mono text-slate-100 placeholder-slate-500 focus:border-blue-500 focus:outline-none transition"
             />
           </div>
-          {/* Filter pills */}
-          <div className="flex gap-1.5">
+
+          {/* Filter pills (Linear style) */}
+          <div className="flex gap-1 bg-[#070a12] p-1 rounded-lg border border-slate-800 font-mono text-xs">
             {FILTER_PILLS.map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => onFilterChange(tab)}
                 className={cn(
-                  "px-3 py-1 rounded-full super-heading border transition-colors",
-                  filter === tab ? FILTER_ACTIVE[tab] : FILTER_IDLE,
+                  "px-3 py-1 rounded-md text-[10px] font-bold transition-all",
+                  filter === tab
+                    ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
+                    : "text-slate-400 hover:text-slate-200"
                 )}
               >
                 {tab}
@@ -77,90 +70,67 @@ export function LiveQueryTable({
         </div>
       </div>
 
-      {/* Table: overflow-x-auto, divide-y */}
+      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left font-mono text-xs">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {["Timestamp ↓", "Queried Domain", "Client IP", "Risk Score", "Verdict", ""].map((h) => (
-                <th key={h} className="px-4 py-2.5 super-heading text-slate-400 whitespace-nowrap">
-                  {h}
-                </th>
-              ))}
+            <tr className="bg-[#0b0f19] border-b border-slate-800 text-[10px] uppercase text-slate-400">
+              <th className="px-4 py-3">Timestamp ↓</th>
+              <th className="px-4 py-3">Queried Domain</th>
+              <th className="px-4 py-3">Client IP</th>
+              <th className="px-4 py-3">Risk Score</th>
+              <th className="px-4 py-3">Verdict</th>
+              <th className="px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-800/60">
             {events.length === 0 ? (
               <tr>
-                <td colSpan={6} className="h-32 text-center text-xs text-slate-400 mono-number">
-                  No queries matching the selected criteria.
+                <td colSpan={6} className="h-32 text-center text-xs text-slate-500 font-mono">
+                  No telemetry matching the selected filter criteria.
                 </td>
               </tr>
             ) : (
-              events.map((ev) => {
-                const clamped = Math.min(100, Math.max(0, ev.risk_score));
-                const barColor =
-                  clamped <= 35 ? "bg-emerald-500" : clamped <= 70 ? "bg-amber-500" : "bg-rose-500";
-                const scoreText =
-                  clamped <= 35 ? "text-emerald-700" : clamped <= 70 ? "text-amber-700" : "text-rose-600";
-                const pillCls = VERDICT_PILL[ev.verdict] ?? "";
-
-                return (
-                  <tr key={ev.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-2.5 mono-number text-xs text-slate-400 whitespace-nowrap">
-                      {formatTime(ev.timestamp)}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-3.5 w-3.5 text-slate-300 shrink-0" />
-                        <DomainCell domain={ev.domain} maxWidth={220} />
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 mono-number text-xs text-slate-500">{ev.client_ip}</td>
-                    <td className="px-4 py-2.5">
-                      {/* Risk score inline bar */}
-                      <div className="flex items-center gap-2">
-                        <span className={cn("w-6 text-right mono-number text-xs font-bold", scoreText)}>
-                          {clamped}
-                        </span>
-                        <div className="risk-bar-track">
-                          <div className={cn("risk-bar-fill", barColor)} style={{ width: `${clamped}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      {/* Verdict pill */}
-                      <span className={cn("px-2 py-0.5 rounded-full super-heading", pillCls)}>
-                        {ev.verdict}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <Link
-                        href={`/app/domain?d=${encodeURIComponent(ev.domain)}`}
-                        className="text-blue-600 hover:underline text-xs font-semibold flex items-center gap-1 justify-end"
-                      >
-                        Details <ChevronRight className="h-3 w-3" />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })
+              events.map((ev, idx) => (
+                <motion.tr
+                  key={ev.id || idx}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="hover:bg-slate-800/40 transition-colors"
+                >
+                  <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
+                    {formatTime(ev.timestamp)}
+                  </td>
+                  <td className="px-4 py-3 font-bold text-slate-100">
+                    <DomainCell domain={ev.domain} />
+                  </td>
+                  <td className="px-4 py-3 text-slate-300">
+                    {ev.client_ip}
+                  </td>
+                  <td className="px-4 py-3 font-bold">
+                    <span className={cn(
+                      ev.risk_score >= 70 ? "text-rose-400" : ev.risk_score >= 40 ? "text-amber-400" : "text-emerald-400"
+                    )}>
+                      {ev.risk_score}/100
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <VerdictBadge verdict={ev.verdict} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/app/domain?d=${encodeURIComponent(ev.domain)}`}
+                      className="inline-flex items-center gap-1 text-[11px] font-mono text-blue-400 hover:text-blue-300 underline"
+                    >
+                      Inspect <ChevronRight className="h-3 w-3" />
+                    </Link>
+                  </td>
+                </motion.tr>
+              ))
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/40 px-4 py-3 text-xs">
-        <span className="text-slate-500">
-          Showing <strong className="mono-number text-slate-800">{events.length}</strong> of {totalCount} queries
-        </span>
-        <Link
-          href="/app/queue"
-          className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-        >
-          Open Full Queue <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
       </div>
     </div>
   );
