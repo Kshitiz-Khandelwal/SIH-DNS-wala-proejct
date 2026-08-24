@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   Zap,
   BookOpen,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/lib/auth";
@@ -35,6 +36,7 @@ const navGroups: NavGroup[] = [
     label: "MONITORING",
     items: [
       { href: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/app/forecast", label: "Attack Forecasting", icon: TrendingUp, badge: "SIH 2026" },
       { href: "/app/queue", label: "Live Traffic", icon: Radio },
       { href: "/app/analytics", label: "Analytics", icon: Activity },
     ],
