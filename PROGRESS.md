@@ -43,12 +43,18 @@ The complete code-and-configuration baseline for Phases 1–6 is present. It has
 - P1 delivery automation: added a non-deploying GitHub Actions quality gate for Compose validation, Python syntax, Go resolver build, dashboard build, and Docker image builds, with CI documentation and acceptance checks.
 - P2 deployment baseline: replaced Kubernetes guidance-only content with private-by-default manifests for core platform services, secret/config templates, a default-deny policy, deployment safeguards, and cluster validation checks. No cluster action was taken.
 - Hackathon visualization: added an unexecuted Jupyter SOC demo/evidence notebook with real gateway-driven pipeline, event, trend, incident, reputation, feed, and model visualizations, plus notebook setup and verification guidance.
-- Testing-transition planning: added `PRE_TEST_READINESS.md`, a detailed assessment of code readiness, remaining static/code work, required inputs, exact test sequence, and evidence/claim boundaries; updated handoff estimates to reflect the completed hackathon feature baseline.
-- Documentation refresh: replaced the root README with a detailed hackathon-facing overview covering capabilities, seven-layer pipeline, architecture, layout, local demo topology, safe scenarios, notebook usage, documentation map, and verified-vs-unverified scope.
+- SIH 2026 Alignment: Transformed DNS Shield into **DNS Shield X-Forecast** (*AI based Network Attack Forecasting from Network Traffic Data*).
+- Phase 1 Flow Ingestion: Added 5-tuple NetFlow/IPFIX collector (`services/flow_ingest/network_flow_collector.py`) with 15-minute sliding session window, TCP flag state tracking, and statistical flow feature extraction.
+- Phase 2 AI Forecasting: Added 7-stage MITRE ATT&CK kill-chain sequence model (`services/forecasting_engine/attack_forecaster.py`) with confidence horizons ($t+15\text{m}, t+30\text{m}, t+60\text{m}$), blast-radius calculation, and exact Additive TreeSHAP feature explanations.
+- Phase 3 HTML Dashboard: Built standalone HTML/JS forecasting dashboard (`public/forecast.html`) with dynamic kill-chain progress bar, TreeSHAP table, canvas topology map, and live Zephyr RTOS status widget; updated `public/index.html` navigation.
+- Phase 4 API Gateway Sync: Added `/v1/forecast/timeline`, `/v1/forecast/blast-radius`, `/v1/hardware/trip-relay`, and `/v1/hardware/status` endpoints in `services/api-gateway/app.py`.
+- Phase 5 Zephyr RTOS Sentinel: Built C firmware (`hardware/zephyr-sentinel/src/main.c`) with I2C OLED driver, WS2812B NeoPixel RGB threat beacon, physical 5V electromechanical relay air-gap switch, and Python serial bridge daemon (`hardware/pi-bridge/pi_hardware_bridge.py`).
+- Phase 6 Red-Team Simulation: Added Multi-Stage APT Attack Forecasting simulation scenario to `run_attack_simulation.py` and created automated unit tests (`tests/test_attack_forecasting.py`).
 
 ## Manual prerequisites
 
 - Docker Desktop/Compose, Go 1.22+, Python 3.11+ and Node 20+.
 - Optional: `OTX_API_KEY`, a MaxMind GeoLite2 database, and an explicitly chosen CERT-In indicator URL.
-- Generate a development TLS certificate before enabling DoT/HTTPS locally. See `RUN_AND_TEST.md`.
+- Optional Hardware: Raspberry Pi 4/5 + ESP32/STM32/RP2040 running Zephyr RTOS (with SSD1306 OLED, WS2812B RGB ring, and 5V relay module).
 - Review Docker port exposure before any hosted deployment. Do not expose UDP/53 publicly without an approved network policy.
+

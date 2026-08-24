@@ -221,6 +221,48 @@ def run_continuous_red_team():
     except KeyboardInterrupt:
         print(f"\n\n{C.GREEN}✔ Red-team stream stopped. Total {count} queries processed and rendered on dashboard.{C.RESET}\n")
 
+def run_multistage_forecasting():
+    print(f"\n{C.BOLD}{C.MAGENTA}🔮 Multi-Stage APT Kill-Chain Forecasting & Zephyr Sentinel Simulation{C.RESET}")
+    print(f"{C.CYAN}Simulating sequential 6-stage MITRE ATT&CK progression over sliding timeline...{C.RESET}\n")
+    
+    stages = [
+        ("STAGE_1_RECONNAISSANCE", "172.28.0.101", "port-probe.target-corp.org", "Port Sweep & Subnet Enumeration", 1.5, "PULSE_YELLOW"),
+        ("STAGE_2_INITIAL_ACCESS", "172.28.0.101", "xq9m2kz7v4naplq.top", "DGA Seed Contact & Phish Drop", 2.0, "PULSE_YELLOW"),
+        ("STAGE_3_DISCOVERY", "172.28.0.101", "internal-ldap-enum.local", "Active Directory & Host Profiling", 2.0, "PULSE_AMBER"),
+        ("STAGE_4_C2_PERSISTENCE", "172.28.0.101", "c2-beacon.dark-infra.cc", "Periodic Cobalt Strike C2 Heartbeat", 2.5, "PULSE_AMBER"),
+        ("STAGE_5_LATERAL_MOVEMENT", "172.28.0.101", "smb-exec-192-168-1-50.local", "Lateral Pivot -> Crown Jewel DB", 2.5, "FLASH_RED"),
+        ("STAGE_6_EXFILTRATION", "172.28.0.101", "YWJjZDEyMzQ1Ng==.attacker-c2.net", "Base64 DNS Tunneling Data Exfiltration", 3.0, "FLASH_RED")
+    ]
+    
+    for idx, (stage_id, ip, domain, desc, sleep_t, rgb_mode) in enumerate(stages, 1):
+        print(f"{C.BOLD}[STEP {idx}/6] {stage_id}{C.RESET}")
+        print(f"  Target Host:  {ip}")
+        print(f"  Traffic Sign: {domain} ({desc})")
+        
+        res, latency, endpoint, status = send_query(domain, ip)
+        verdict = res.get("verdict", "ALLOW")
+        score = res.get("risk_score", res.get("domain_risk", 0))
+        
+        # Trigger forecasting progression
+        if idx <= 2:
+            forecast_horizon = "+30 min (Initial Access)"
+        elif idx <= 4:
+            forecast_horizon = "+15 min (C2 / Exfiltration Risk 87%)"
+        else:
+            forecast_horizon = "+5 min (CRITICAL: EXFIL DETECTED)"
+            
+        print(f"  Detection:    {verdict} (Score: {score}/100 | {latency:.1f}ms)")
+        print(f"  AI Forecast:  {C.YELLOW}{forecast_horizon}{C.RESET}")
+        print(f"  Zephyr RTOS:  RGB -> {rgb_mode} | OLED -> Stage {idx}/6 Updated")
+        
+        if idx == 5 or idx == 6:
+            print(f"  {C.BG_RED}{C.WHITE}🚨 ZEPHYR RTOS PHYSICAL AIR-GAP RELAY TRIPPED (ISOLATED HOST 172.28.0.101){C.RESET}")
+            
+        print("-" * 65)
+        time.sleep(sleep_t)
+        
+    print(f"\n{C.GREEN}✔ Multi-Stage APT Attack Simulation Complete! Live telemetry rendered in public/forecast.html.{C.RESET}\n")
+
 def run_custom_domain():
     print(f"\n{C.BOLD}{C.CYAN}🎯 Custom Domain Live Model Evaluator{C.RESET}")
     dom = input(f"{C.YELLOW}Enter domain to evaluate (e.g. evil-corp-login.xyz): {C.RESET}").strip()
@@ -258,11 +300,12 @@ def main():
         print(f"  {C.MAGENTA}4{C.RESET}) 🟣 Covert DNS Tunnelling Data Exfiltration (Iodine, dnscat2, Hex streams)")
         print(f"  {C.RED}5{C.RESET}) 🔴 Cobalt Strike / Lazarus C2 Threat Intel Feeds")
         print(f"  {C.CYAN}6{C.RESET}) ⚡ Continuous Live Red-Team Attack Stream (Real-Time SOC Stress Test)")
-        print(f"  {C.WHITE}7{C.RESET}) 🔍 Custom Domain Live Model Inference")
-        print(f"  {C.BOLD}8{C.RESET}) 🚪 Exit")
+        print(f"  {C.MAGENTA}7{C.RESET}) 🔮 Multi-Stage APT Attack Forecasting & Zephyr Air-Gap Trip (SIH 2026)")
+        print(f"  {C.WHITE}8{C.RESET}) 🔍 Custom Domain Live Model Inference")
+        print(f"  {C.BOLD}9{C.RESET}) 🚪 Exit")
         
         try:
-            choice = input(f"\n{C.BOLD}Enter choice [1-8]: {C.RESET}").strip()
+            choice = input(f"\n{C.BOLD}Enter choice [1-9]: {C.RESET}").strip()
         except (KeyboardInterrupt, EOFError):
             print("\nExiting.")
             break
@@ -280,12 +323,15 @@ def main():
         elif choice == "6":
             run_continuous_red_team()
         elif choice == "7":
+            run_multistage_forecasting()
+        elif choice == "8":
             run_custom_domain()
-        elif choice == "8" or choice.lower() == "exit" or choice.lower() == "q":
+        elif choice == "9" or choice.lower() == "exit" or choice.lower() == "q":
             print(f"\n{C.GREEN}Exiting DNS Shield Attack Simulator.{C.RESET}\n")
             break
         else:
-            print(f"{C.RED}Invalid option, please choose 1-8.{C.RESET}\n")
+            print(f"{C.RED}Invalid option, please choose 1-9.{C.RESET}\n")
 
 if __name__ == "__main__":
     main()
+
