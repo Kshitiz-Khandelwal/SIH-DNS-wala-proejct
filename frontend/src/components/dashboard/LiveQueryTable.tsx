@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight, Search, Radio } from "lucide-react";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { DomainCell } from "@/components/DomainCell";
 import { formatTime } from "@/lib/utils";
@@ -30,37 +30,37 @@ export function LiveQueryTable({
   onSearchChange,
 }: LiveQueryTableProps) {
   return (
-    <div className="bg-[#0e1424] rounded-xl border border-slate-800/80 shadow-xl flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-slate-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-[#111827]">
-        <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 radar-beacon" />
+    <div className="bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-50/50">
+        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-sans">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 radar-beacon" />
           Real-Time Sovereign Query Stream
         </h3>
         <div className="flex flex-wrap gap-2 items-center">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="Search FQDN or Client IP..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-8 w-[200px] rounded-lg border border-slate-800 bg-[#070a12] pl-8 pr-3 text-xs font-mono text-slate-100 placeholder-slate-500 focus:border-blue-500 focus:outline-none transition"
+              className="h-8 w-[200px] rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-xs font-mono text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none shadow-2xs transition"
             />
           </div>
 
-          {/* Filter pills (Linear style) */}
-          <div className="flex gap-1 bg-[#070a12] p-1 rounded-lg border border-slate-800 font-mono text-xs">
+          {/* Filter pills */}
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 font-mono text-xs">
             {FILTER_PILLS.map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => onFilterChange(tab)}
                 className={cn(
-                  "px-3 py-1 rounded-md text-[10px] font-bold transition-all",
+                  "px-3 py-1 rounded-md text-[10px] font-bold transition-all cursor-pointer",
                   filter === tab
-                    ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "bg-white text-slate-900 shadow-2xs font-bold"
+                    : "text-slate-500 hover:text-slate-800"
                 )}
               >
                 {tab}
@@ -70,63 +70,66 @@ export function LiveQueryTable({
         </div>
       </div>
 
-      {/* Table */}
+      {/* Query rows */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left font-mono text-xs">
+        <table className="w-full text-left text-xs">
           <thead>
-            <tr className="bg-[#0b0f19] border-b border-slate-800 text-[10px] uppercase text-slate-400">
-              <th className="px-4 py-3">Timestamp ↓</th>
-              <th className="px-4 py-3">Queried Domain</th>
-              <th className="px-4 py-3">Client IP</th>
-              <th className="px-4 py-3">Risk Score</th>
-              <th className="px-4 py-3">Verdict</th>
-              <th className="px-4 py-3 text-right">Action</th>
+            <tr className="border-b border-slate-100 font-mono text-[10px] uppercase text-slate-400 bg-slate-50/30">
+              <th className="py-2.5 px-4 font-semibold">Timestamp</th>
+              <th className="py-2.5 px-4 font-semibold">Queried Domain</th>
+              <th className="py-2.5 px-4 font-semibold">Client IP</th>
+              <th className="py-2.5 px-4 font-semibold">Risk Score</th>
+              <th className="py-2.5 px-4 font-semibold">Verdict</th>
+              <th className="py-2.5 px-4 text-right font-semibold">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-slate-100">
             {events.length === 0 ? (
               <tr>
-                <td colSpan={6} className="h-32 text-center text-xs text-slate-500 font-mono">
-                  No telemetry matching the selected filter criteria.
+                <td colSpan={6} className="py-12 text-center text-slate-400 font-mono text-xs">
+                  No matching telemetry queries found.
                 </td>
               </tr>
             ) : (
               events.map((ev, idx) => (
-                <motion.tr
-                  key={ev.id || idx}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  className="hover:bg-slate-800/40 transition-colors"
+                <tr
+                  key={ev.id || `${ev.domain}-${idx}`}
+                  className="hover:bg-slate-50/80 transition-colors font-mono"
                 >
-                  <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
-                    {formatTime(ev.timestamp)}
+                  <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                    {formatTime(ev.timestamp || new Date().toISOString())}
                   </td>
-                  <td className="px-4 py-3 font-bold text-slate-100">
+                  <td className="py-3 px-4">
                     <DomainCell domain={ev.domain} />
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
-                    {ev.client_ip}
-                  </td>
-                  <td className="px-4 py-3 font-bold">
-                    <span className={cn(
-                      ev.risk_score >= 70 ? "text-rose-400" : ev.risk_score >= 40 ? "text-amber-400" : "text-emerald-400"
-                    )}>
+                  <td className="py-3 px-4 text-slate-600">{ev.client_ip || "10.0.0.42"}</td>
+                  <td className="py-3 px-4">
+                    <span
+                      className={cn(
+                        "font-bold",
+                        ev.risk_score > 70
+                          ? "text-rose-600"
+                          : ev.risk_score > 30
+                          ? "text-amber-600"
+                          : "text-emerald-600"
+                      )}
+                    >
                       {ev.risk_score}/100
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <VerdictBadge verdict={ev.verdict} />
+                  <td className="py-3 px-4">
+                    <VerdictBadge verdict={ev.verdict} glow={false} />
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="py-3 px-4 text-right">
                     <Link
-                      href={`/app/domain?d=${encodeURIComponent(ev.domain)}`}
-                      className="inline-flex items-center gap-1 text-[11px] font-mono text-blue-400 hover:text-blue-300 underline"
+                      href={`/app/domain/${ev.id || ev.domain}`}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline"
                     >
-                      Inspect <ChevronRight className="h-3 w-3" />
+                      <span>Inspect</span>
+                      <ChevronRight className="h-3 w-3" />
                     </Link>
                   </td>
-                </motion.tr>
+                </tr>
               ))
             )}
           </tbody>
