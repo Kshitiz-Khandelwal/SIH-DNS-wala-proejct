@@ -21,10 +21,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-xs font-mono text-slate-400 bg-[#070a12]">
+      <div className="flex min-h-screen items-center justify-center text-xs font-mono text-slate-400 bg-slate-50">
         <div className="flex items-center gap-3">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-          <span>AUTHENTICATING SOVEREIGN NODE...</span>
+          <span className="w-2 h-2 rounded-full bg-trace animate-ping" />
+          <span className="text-slate-500">Authenticating…</span>
         </div>
       </div>
     );
@@ -32,8 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isFlush = pathname === "/app/pipeline";
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-[#070a12] dot-grid text-slate-100 font-sans">
+  return <div className="flex h-screen overflow-hidden bg-slate-50 dot-grid text-slate-900 font-sans">
       <AppSidebar />
       <div className="flex flex-1 flex-col h-screen overflow-hidden min-w-0">
         <AppHeader />
