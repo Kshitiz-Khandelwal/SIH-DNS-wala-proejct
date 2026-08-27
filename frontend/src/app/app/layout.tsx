@@ -32,7 +32,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isFlush = pathname === "/app/pipeline";
 
-  return <div className="flex h-screen overflow-hidden bg-slate-50 dot-grid text-slate-900 font-sans">
+  return (
+    <div className="flex h-screen overflow-hidden bg-slate-50 dot-grid text-slate-900 font-sans">
       <AppSidebar />
       <div className="flex flex-1 flex-col h-screen overflow-hidden min-w-0">
         <AppHeader />

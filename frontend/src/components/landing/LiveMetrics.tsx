@@ -89,7 +89,7 @@ export function LiveMetrics() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {metrics.map((m, i) => {
             const Icon = m.icon;
-            const raw = (stats as Record<string, number>)[m.key] ?? 0;
+            const raw = (stats as unknown as Record<string, number>)[m.key] ?? 0;
             return (
               <motion.div
                 key={m.label}

@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useInView } from "@/hooks/useInView";
 import { ShieldCheck, BrainCircuit, Activity } from "lucide-react";
 
@@ -30,14 +30,14 @@ const layers = [
   },
 ];
 
-const container = {
+const container: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.12 } },
 };
 
-const card = {
+const card: Variants = {
   hidden: { opacity: 0, y: 28 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 export function HowItWorks() {
