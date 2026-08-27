@@ -3,7 +3,8 @@
 > **Official SIH 2026 Software Challenge Alignment:**  
 > **Problem Statement:** *AI based Network Attack Forecasting from Network Traffic Data*  
 > **Previous Baseline:** *Domain Name Server (DNS) Filtering Service using Threat Intel & AI/ML (SIH260003)*  
-> **Core Innovation:** Expanding reactive DNS threat filtering into a **proactive, multi-step network attack forecasting engine** backed by a physical **Raspberry Pi + Zephyr RTOS Hardware Sentinel**.
+> **Core Innovation:** Expanding reactive DNS threat filtering into a **proactive, multi-step network attack forecasting engine** backed by a physical **Raspberry Pi + Zephyr RTOS Hardware Sentinel**.  
+> **Live SOC Web Application:** [https://dnssecurityproject.vercel.app/app/dashboard](https://dnssecurityproject.vercel.app/app/dashboard) | [Forecast View](https://dnssecurityproject.vercel.app/app/forecast)
 
 ---
 

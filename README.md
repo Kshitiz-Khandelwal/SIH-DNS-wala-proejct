@@ -7,7 +7,15 @@
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=flat&logo=scikit-learn&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**Live Demo**: [https://sih-dns-wala-proejct-uhas.vercel.app/console/index.html](https://sih-dns-wala-proejct-uhas.vercel.app/console/index.html)
+### 🌐 Live Production Deployment
+
+[![Live Vercel Application](https://img.shields.io/badge/Vercel_Live_App-https%3A%2F%2Fdnssecurityproject.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://dnssecurityproject.vercel.app/app/dashboard)
+
+* **🚀 Live Command Center Dashboard:** [https://dnssecurityproject.vercel.app/app/dashboard](https://dnssecurityproject.vercel.app/app/dashboard)
+* **🔍 Live Domain Scanner & Landing:** [https://dnssecurityproject.vercel.app/](https://dnssecurityproject.vercel.app/)
+* **⏱️ AI MITRE ATT&CK Forecasting:** [https://dnssecurityproject.vercel.app/app/forecast](https://dnssecurityproject.vercel.app/app/forecast)
+* **⚡ 7-Stage Policy Pipeline:** [https://dnssecurityproject.vercel.app/app/pipeline](https://dnssecurityproject.vercel.app/app/pipeline)
+* **🧠 Explainable AI (XAI) Telemetry:** [https://dnssecurityproject.vercel.app/app/xai](https://dnssecurityproject.vercel.app/app/xai)
 
 
 DNS Shield is a microservice-based DNS security platform built for the **Smart India Hackathon (SIH) 2026**. 
