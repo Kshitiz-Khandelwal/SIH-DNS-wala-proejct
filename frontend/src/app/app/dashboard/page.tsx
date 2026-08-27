@@ -1,9 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, RefreshCw, Zap } from "lucide-react";
 import { getEvents, getStats, runSimulator } from "@/lib/api";
 import type { QueryResult, SimulatorType, StatsResponse } from "@/lib/types";
 import { StatCardGrid, type StatItem } from "@/components/dashboard/StatCardGrid";
@@ -26,7 +23,7 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [s, ev] = await Promise.all([getStats(), getEvents(25)]);
+      const [s, ev] = await Promise.all([getStats(), getEvents(30)]);
       setStats(s);
       setEvents(ev);
     } catch (err) {
@@ -70,11 +67,11 @@ export default function DashboardPage() {
 
   const highRiskEvents = events
     .filter((e) => e.verdict === "BLOCK" || e.risk_score >= 70)
-    .slice(0, 5);
+    .slice(0, 4);
 
   const statItems: StatItem[] = [
     {
-      label: "CLEAN QUERIES",
+      label: "CLEAN QUERIES (24H)",
       value: stats ? stats.allowed_24h : "1,284,910",
       sublabel: "99.2% benign corporate traffic",
       trend: "+4.2%",
@@ -82,9 +79,9 @@ export default function DashboardPage() {
       variant: "allow",
     },
     {
-      label: "HEURISTIC FLAGGED",
+      label: "SOC REVIEW QUEUE",
       value: stats ? stats.flagged_24h : "10,807",
-      sublabel: "Active SOC review queue",
+      sublabel: "Active SOC triage buffer",
       trend: "+3.7%",
       trendDirection: "up",
       variant: "flag",
@@ -100,7 +97,7 @@ export default function DashboardPage() {
     {
       label: "PIPELINE LATENCY SLA",
       value: "1.42ms",
-      sublabel: "Sub-millisecond cheap-to-expensive SLA",
+      sublabel: "Sub-millisecond SLA met",
       trend: "SLA MET",
       trendDirection: "up",
       variant: "neutral",
@@ -108,26 +105,21 @@ export default function DashboardPage() {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-6"
-    >
-      {/* KPI Metric Grid */}
+    <div className="w-full space-y-4 md:space-y-5 pb-8 animate-in fade-in duration-150">
+      {/* Tier 1: System Posture & Core Telemetry Summary */}
       <StatCardGrid items={statItems} />
 
-      {/* Red-Team Attack Simulator Harness */}
+      {/* Tier 3: Controlled Synthetic Test Bench */}
       <AttackSimulatorCard
         simulating={simulating}
         simulationResult={simulationResult}
         onSimulate={handleSimulate}
       />
 
-      {/* Main 2-Column Bento Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left 2 Cols: Live Telemetry Stream */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* Tier 2: Real-time Telemetry Stream & Analytical Panes */}
+      <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-12">
+        {/* Visual Centerpiece: Real-time Telemetry Stream (8 cols) */}
+        <div className="lg:col-span-8">
           <LiveQueryTable
             events={filteredEvents}
             totalCount={events.length}
@@ -138,13 +130,13 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Right 1 Col: Operations Bento */}
-        <div className="space-y-6">
-          <ThreatDistribution />
+        {/* Priority Threat Queue & Diagnostic Panes (4 cols) */}
+        <div className="lg:col-span-4 space-y-4 md:space-y-5">
           <HighRiskList events={highRiskEvents} />
+          <ThreatDistribution />
           <PipelineStatusList />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
