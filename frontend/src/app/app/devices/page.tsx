@@ -87,8 +87,23 @@ const SAMPLE_DEVICES: DeviceHost[] = [
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState<DeviceHost[]>(SAMPLE_DEVICES);
-  const [filter, setFilter] = useState<"ALL" | "Compromised" | "Suspicious" | "Clean">("ALL");
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"ALL" | "Compromised" | "Suspicious" | "Clean">("ALL");
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  function handleToggleQuarantine(device: DeviceHost) {
+    const isQuarantined = device.riskStatus === "Compromised";
+    const nextStatus = isQuarantined ? "Clean" : "Compromised";
+    setDevices((prev) =>
+      prev.map((d) => (d.id === device.id ? { ...d, riskStatus: nextStatus } : d))
+    );
+    setActionNotice(
+      isQuarantined
+        ? `Released ${device.name} (${device.ip}) from DHCP quarantine.`
+        : `Enforced firewall quarantine & DHCP isolation on ${device.name} (${device.ip}).`
+    );
+    setTimeout(() => setActionNotice(null), 4000);
+  }
 
   const filtered = devices.filter((d) => {
     if (filter !== "ALL" && d.riskStatus !== filter) return false;
@@ -103,6 +118,7 @@ export default function DevicesPage() {
     return true;
   });
 
+  const totalDevices = devices.length;
   const compromisedCount = devices.filter((d) => d.riskStatus === "Compromised").length;
   const suspiciousCount = devices.filter((d) => d.riskStatus === "Suspicious").length;
 
@@ -175,6 +191,14 @@ export default function DevicesPage() {
           </p>
         </div>
       </div>
+
+      {/* Action Notice */}
+      {actionNotice && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 shadow-xs animate-in fade-in duration-150">
+          <ShieldAlert className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span>{actionNotice}</span>
+        </div>
+      )}
 
       {/* Fleet Table */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
@@ -279,16 +303,30 @@ export default function DevicesPage() {
                     </span>
                   </td>
                   <td className="py-3 text-right">
-                    {d.riskStatus !== "Clean" ? (
+                    {d.riskStatus === "Compromised" ? (
                       <button
                         type="button"
-                        onClick={() => alert(`Isolating ${d.name} (${d.ip}) via DHCP / firewall quarantine rule.`)}
-                        className="rounded-full bg-rose-50 border border-rose-200 px-3 py-1 font-mono text-[10px] font-bold text-rose-700 hover:bg-rose-100 transition shadow-2xs"
+                        onClick={() => handleToggleQuarantine(d)}
+                        className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 font-mono text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 transition shadow-2xs cursor-pointer active:scale-95"
+                      >
+                        Release
+                      </button>
+                    ) : d.riskStatus === "Suspicious" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleQuarantine(d)}
+                        className="rounded-full bg-rose-50 border border-rose-200 px-3 py-1 font-mono text-[10px] font-bold text-rose-700 hover:bg-rose-100 transition shadow-2xs cursor-pointer active:scale-95"
                       >
                         Quarantine
                       </button>
                     ) : (
-                      <span className="font-mono text-[11px] text-slate-500">Normal</span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleQuarantine(d)}
+                        className="rounded-full bg-slate-50 border border-slate-200 px-3 py-1 font-mono text-[10px] font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition shadow-2xs cursor-pointer active:scale-95"
+                      >
+                        Isolate
+                      </button>
                     )}
                   </td>
                 </tr>

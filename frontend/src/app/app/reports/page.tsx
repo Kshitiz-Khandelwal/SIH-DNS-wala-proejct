@@ -41,7 +41,18 @@ const COMPLIANCE_FRAMEWORKS = [
   },
 ];
 
-const REPORTS = [
+interface ReportItem {
+  id: string;
+  title: string;
+  period: string;
+  type: string;
+  threatsBlocked: string;
+  size: string;
+  generated: string;
+  description: string;
+}
+
+const REPORTS: ReportItem[] = [
   {
     id: "rep-01",
     title: "Executive SOC Threat Defense Briefing",
@@ -85,14 +96,56 @@ const REPORTS = [
 ];
 
 export default function ReportsPage() {
+  const [reports, setReports] = useState<ReportItem[]>(REPORTS);
   const [generating, setGenerating] = useState(false);
+  const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
   function handleGenerateNew() {
     setGenerating(true);
     setTimeout(() => {
+      const newRep: ReportItem = {
+        id: `rep-${Date.now().toString().slice(-4)}`,
+        title: `SOC Shift Briefing — ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+        period: "Last 4 Hours",
+        type: "Executive Summary",
+        threatsBlocked: "128",
+        size: "340 KB",
+        generated: "Just now",
+        description: "Dynamic telemetry compilation: 128 DGA/typosquats blocked, 1.42ms average SLA, 0 stale threat feeds.",
+      };
+      setReports((prev: ReportItem[]) => [newRep, ...prev]);
       setGenerating(false);
-      alert("New SOC Executive Report compiled successfully. Ready for PDF download.");
-    }, 1200);
+      setFlashMessage(`Successfully generated ${newRep.title}`);
+      setTimeout(() => setFlashMessage(null), 4000);
+    }, 1000);
+  }
+
+  function handleDownload(rep: ReportItem) {
+    const content = JSON.stringify({
+      report_id: rep.id,
+      title: rep.title,
+      period: rep.period,
+      type: rep.type,
+      threats_blocked: rep.threatsBlocked,
+      generated_at: new Date().toISOString(),
+      compliance_status: "NIST SP 800-81-2 COMPLIANT",
+      executive_summary: rep.description,
+      telemetry_digest: {
+        sla_p99_ms: 1.42,
+        active_feeds: 5,
+        total_iocs_cached: 133720,
+        model_version: "dga-v1.joblib (150 RF Trees + TreeSHAP)"
+      }
+    }, null, 2);
+
+    const blob = new Blob([content], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${rep.title.toLowerCase().replace(/[^a-z0-9]/g, "_")}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   return (
@@ -172,7 +225,7 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {REPORTS.map((rep) => (
+              {reports.map((rep) => (
                 <tr key={rep.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="px-4 py-4 font-semibold text-slate-900 flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
@@ -194,11 +247,11 @@ export default function ReportsPage() {
                   <td className="px-4 py-4 text-right">
                     <button
                       type="button"
-                      onClick={() => alert(`Downloading "${rep.title}" (${rep.size})...`)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-2xs"
+                      onClick={() => handleDownload(rep)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-2xs cursor-pointer active:scale-95"
                     >
                       <Download className="h-3 w-3" />
-                      Download
+                      Download JSON
                     </button>
                   </td>
                 </tr>

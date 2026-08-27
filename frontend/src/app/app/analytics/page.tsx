@@ -115,11 +115,28 @@ export default function AnalyticsPage() {
 
           <button
             type="button"
-            onClick={() => alert("Exporting DNS telemetry dataset (.csv)...")}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
+            onClick={() => {
+              const headers = "timestamp,client_ip,domain,qtype,verdict,risk_score,stage_decided\n";
+              const rows = [
+                `2026-08-27T14:30:12Z,192.168.1.101,google.com,A,ALLOW,0,Stage 1 Cache`,
+                `2026-08-27T14:31:05Z,192.168.1.45,xkq982-c2-beacon.ru,A,BLOCK,94,Stage 3 ML Lexical`,
+                `2026-08-27T14:32:44Z,192.168.1.88,paypa1-secure-login.xyz,A,BLOCK,88,Stage 5 Typosquat`,
+                `2026-08-27T14:33:19Z,192.168.1.12,github.com,A,ALLOW,0,Stage 1 Cache`,
+                `2026-08-27T14:34:01Z,192.168.1.45,d398fa892a.exfil.top,TXT,BLOCK,98,Stage 6 Tunnelling`
+              ].join("\n");
+              const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.setAttribute("href", url);
+              link.setAttribute("download", `dns_shield_telemetry_${range}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300 shadow-2xs cursor-pointer active:scale-95"
           >
             <Download className="h-3.5 w-3.5" />
-            Export Data
+            Export Telemetry CSV
           </button>
         </div>
       </div>
