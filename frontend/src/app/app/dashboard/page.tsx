@@ -4,11 +4,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { getEvents, getStats, runSimulator } from "@/lib/api";
 import type { QueryResult, SimulatorType, StatsResponse } from "@/lib/types";
 import { StatCardGrid, type StatItem } from "@/components/dashboard/StatCardGrid";
+import { PipelineFlowVisualizer } from "@/components/dashboard/PipelineFlowVisualizer";
 import { AttackSimulatorCard } from "@/components/dashboard/AttackSimulatorCard";
 import { LiveQueryTable } from "@/components/dashboard/LiveQueryTable";
 import { ThreatDistribution } from "@/components/dashboard/ThreatDistribution";
 import { HighRiskList } from "@/components/dashboard/HighRiskList";
-import { PipelineStatusList } from "@/components/dashboard/PipelineStatusList";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -21,11 +21,21 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<"ALL" | "BLOCK" | "FLAG" | "ALLOW">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Pipeline flow state
+  const [selectedEvent, setSelectedEvent] = useState<QueryResult | null>(null);
+  const [hasLiveBlock, setHasLiveBlock] = useState(false);
+
   const loadData = useCallback(async () => {
     try {
       const [s, ev] = await Promise.all([getStats(), getEvents(30)]);
       setStats(s);
       setEvents(ev);
+
+      // Check if newest event is a BLOCK to trigger brief single-pulse alert
+      if (ev.length > 0 && ev[0].verdict === "BLOCK") {
+        setHasLiveBlock(true);
+        setTimeout(() => setHasLiveBlock(false), 800);
+      }
     } catch (err) {
       console.error("Failed to load dashboard data", err);
     } finally {
@@ -44,6 +54,7 @@ export default function DashboardPage() {
       setSimulating(type);
       const res = await runSimulator(type);
       setSimulationResult(res);
+      setSelectedEvent(res);
       await loadData();
     } catch (e) {
       console.error("Simulation failed", e);
@@ -69,35 +80,42 @@ export default function DashboardPage() {
     .filter((e) => e.verdict === "BLOCK" || e.risk_score >= 70)
     .slice(0, 4);
 
+  const activeDisplayQuery = selectedEvent || (events.length > 0 ? events[0] : null);
+  const decidingStage = activeDisplayQuery?.verdict === "ALLOW"
+    ? 1
+    : activeDisplayQuery?.risk_score && activeDisplayQuery.risk_score >= 70
+    ? 5
+    : 3;
+
   const statItems: StatItem[] = [
     {
-      label: "CLEAN QUERIES (24H)",
+      label: "TOTAL QUERY VOLUME (24H)",
       value: stats ? stats.allowed_24h : "1,284,910",
-      sublabel: "99.2% benign corporate traffic",
+      sublabel: "99.2% benign corporate queries",
       trend: "+4.2%",
       trendDirection: "up",
       variant: "allow",
     },
     {
-      label: "SOC REVIEW QUEUE",
-      value: stats ? stats.flagged_24h : "10,807",
-      sublabel: "Active SOC triage buffer",
-      trend: "+3.7%",
-      trendDirection: "up",
-      variant: "flag",
-    },
-    {
-      label: "BLOCKED ZERO-DAY",
+      label: "ZERO-DAY DROPS (24H)",
       value: stats ? stats.blocked_24h : "8,007",
-      sublabel: "DGA & Base64 Tunneling dropped",
+      sublabel: "0.62% block rate enforced",
       trend: "-0.2%",
       trendDirection: "down",
       variant: "block",
     },
     {
+      label: "SOC REVIEW QUEUE",
+      value: stats ? stats.flagged_24h : "10,807",
+      sublabel: "Heuristics awaiting analyst triage",
+      trend: "+3.7%",
+      trendDirection: "up",
+      variant: "flag",
+    },
+    {
       label: "PIPELINE LATENCY SLA",
       value: "1.42ms",
-      sublabel: "Sub-millisecond SLA met",
+      sublabel: "Sub-millisecond cascade",
       trend: "SLA MET",
       trendDirection: "up",
       variant: "neutral",
@@ -105,20 +123,28 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="w-full space-y-4 md:space-y-5 pb-8 animate-in fade-in duration-150">
-      {/* Tier 1: System Posture & Core Telemetry Summary */}
-      <StatCardGrid items={statItems} />
+    <div className="w-full space-y-3.5 pb-8 animate-in fade-in duration-150">
+      {/* 1. Primary Operational Stat Row */}
+      <StatCardGrid items={statItems} hasLiveBlock={hasLiveBlock} />
 
-      {/* Tier 3: Controlled Synthetic Test Bench */}
+      {/* 2. Visual 7-Stage Pipeline Traversal Stepper */}
+      <PipelineFlowVisualizer
+        activeStage={decidingStage}
+        verdict={activeDisplayQuery?.verdict}
+        activeDomain={activeDisplayQuery?.domain}
+        isProcessing={simulating !== null}
+      />
+
+      {/* 3. Controlled Synthetic Test Bench */}
       <AttackSimulatorCard
         simulating={simulating}
         simulationResult={simulationResult}
         onSimulate={handleSimulate}
       />
 
-      {/* Tier 2: Real-time Telemetry Stream & Analytical Panes */}
-      <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-12">
-        {/* Visual Centerpiece: Real-time Telemetry Stream (8 cols) */}
+      {/* 4. Telemetry Stream & Priority Threat Panes */}
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
+        {/* Visual Centerpiece: Real-time Telemetry Stream with In-Place Row Accordion (8 cols) */}
         <div className="lg:col-span-8">
           <LiveQueryTable
             events={filteredEvents}
@@ -127,14 +153,14 @@ export default function DashboardPage() {
             searchQuery={searchQuery}
             onFilterChange={setFilter}
             onSearchChange={setSearchQuery}
+            onSelectEvent={setSelectedEvent}
           />
         </div>
 
         {/* Priority Threat Queue & Diagnostic Panes (4 cols) */}
-        <div className="lg:col-span-4 space-y-4 md:space-y-5">
+        <div className="lg:col-span-4 space-y-3.5">
           <HighRiskList events={highRiskEvents} />
           <ThreatDistribution />
-          <PipelineStatusList />
         </div>
       </div>
     </div>
