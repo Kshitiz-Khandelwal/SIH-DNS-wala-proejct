@@ -2,7 +2,6 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 import { Check, Shield, Database, Brain, Activity, Zap, Server, ShieldAlert } from "lucide-react";
 
 export interface PipelineStageInfo {
@@ -11,16 +10,19 @@ export interface PipelineStageInfo {
   shortName: string;
   latency: string;
   icon: React.ComponentType<{ className?: string }>;
+  accentColor: string;
+  lightBg: string;
+  borderColor: string;
 }
 
 export const PIPELINE_STAGES: PipelineStageInfo[] = [
-  { num: 1, name: "Redis L1 Bloom Cache", shortName: "Cache", latency: "<0.1ms", icon: Database },
-  { num: 2, name: "Sovereign Allowlist", shortName: "Allowlist", latency: "0.1ms", icon: Shield },
-  { num: 3, name: "Lexical & Entropy", shortName: "Lexical", latency: "0.2ms", icon: Activity },
-  { num: 4, name: "Threat Feeds (RPZ)", shortName: "Threat Intel", latency: "0.6ms", icon: Database },
-  { num: 5, name: "Random Forest ML", shortName: "RF-150 ML", latency: "1.1ms", icon: Brain },
-  { num: 6, name: "Quarantine Action", shortName: "Quarantine", latency: "0.8ms", icon: ShieldAlert },
-  { num: 7, name: "Resolver Upstream", shortName: "Resolver", latency: "1.4ms", icon: Server },
+  { num: 1, name: "Redis L1 Bloom Cache", shortName: "Cache", latency: "<0.1ms", icon: Database, accentColor: "text-blue-600", lightBg: "bg-blue-50/60", borderColor: "border-blue-200" },
+  { num: 2, name: "Sovereign Whitelist", shortName: "Whitelist", latency: "0.1ms", icon: Shield, accentColor: "text-emerald-600", lightBg: "bg-emerald-50/60", borderColor: "border-emerald-200" },
+  { num: 3, name: "Lexical & Entropy", shortName: "Entropy", latency: "0.2ms", icon: Activity, accentColor: "text-cyan-600", lightBg: "bg-cyan-50/60", borderColor: "border-cyan-200" },
+  { num: 4, name: "Threat Feeds (RPZ)", shortName: "Threat Intel", latency: "0.6ms", icon: Database, accentColor: "text-amber-600", lightBg: "bg-amber-50/60", borderColor: "border-amber-200" },
+  { num: 5, name: "Random Forest ML", shortName: "RF-150 ML", latency: "1.1ms", icon: Brain, accentColor: "text-purple-600", lightBg: "bg-purple-50/60", borderColor: "border-purple-200" },
+  { num: 6, name: "Quarantine Active", shortName: "Quarantine", latency: "0.8ms", icon: ShieldAlert, accentColor: "text-rose-600", lightBg: "bg-rose-50/60", borderColor: "border-rose-200" },
+  { num: 7, name: "Resolver Upstream", shortName: "Resolver", latency: "1.4ms", icon: Server, accentColor: "text-indigo-600", lightBg: "bg-indigo-50/60", borderColor: "border-indigo-200" },
 ];
 
 interface PipelineFlowVisualizerProps {
@@ -37,29 +39,36 @@ export function PipelineFlowVisualizer({
   isProcessing = false,
 }: PipelineFlowVisualizerProps) {
   const verdictColors = {
-    ALLOW: { text: "text-emerald-700", bg: "bg-emerald-500", border: "border-emerald-500", badgeBg: "bg-emerald-50 text-emerald-800 border-emerald-200" },
-    FLAG:  { text: "text-amber-700", bg: "bg-amber-500", border: "border-amber-500", badgeBg: "bg-amber-50 text-amber-800 border-amber-200" },
-    BLOCK: { text: "text-rose-700", bg: "bg-rose-500", border: "border-rose-500", badgeBg: "bg-rose-50 text-rose-800 border-rose-200" },
+    ALLOW: { text: "text-emerald-700", bg: "bg-emerald-500", border: "border-emerald-500", badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+    FLAG:  { text: "text-amber-700", bg: "bg-amber-500", border: "border-amber-500", badgeBg: "bg-amber-50 text-amber-700 border-amber-200" },
+    BLOCK: { text: "text-rose-700", bg: "bg-rose-500", border: "border-rose-500", badgeBg: "bg-rose-50 text-rose-700 border-rose-200" },
   };
 
   const currentTheme = verdict ? verdictColors[verdict] : verdictColors.BLOCK;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-2xs">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 mb-3.5">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-slate-700" />
-          <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-900">
-            7-Stage Detection &amp; Classification Pipeline
-          </h3>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs">
+            <Zap className="h-4 w-4" />
+          </div>
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block leading-none">
+              7-STAGE CASCADE WATERFALL
+            </span>
+            <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-900 mt-1">
+              Live Detection &amp; Classification Traversal
+            </h3>
+          </div>
         </div>
         {activeDomain && (
           <div className="flex items-center gap-2 font-mono text-[11px]">
-            <span className="text-slate-500">Active Query:</span>
+            <span className="text-slate-500">Evaluated Query:</span>
             <span className="font-bold text-slate-900 truncate max-w-[200px]">{activeDomain}</span>
             {verdict && (
-              <span className={cn("px-1.5 py-0.2 rounded font-bold border text-[10px]", currentTheme.badgeBg)}>
-                {verdict} @ Stage {activeStage}
+              <span className={cn("px-2 py-0.5 rounded-md font-bold border text-[10px]", currentTheme.badgeBg)}>
+                {verdict} @ Stage 0{activeStage}
               </span>
             )}
           </div>
@@ -67,7 +76,7 @@ export function PipelineFlowVisualizer({
       </div>
 
       {/* Stepper visualizer */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
         {PIPELINE_STAGES.map((s) => {
           const isDecidedHere = s.num === activeStage;
           const isTraversed = s.num <= activeStage;
@@ -77,38 +86,38 @@ export function PipelineFlowVisualizer({
             <div
               key={s.num}
               className={cn(
-                "relative rounded-md border p-2.5 transition-all duration-200 flex flex-col justify-between text-left",
+                "relative rounded-xl border p-3 transition-all duration-200 flex flex-col justify-between text-left shadow-2xs",
                 isDecidedHere
-                  ? `border-${verdict === "ALLOW" ? "emerald" : verdict === "FLAG" ? "amber" : "rose"}-400 bg-slate-50 ring-1 ring-slate-200 shadow-2xs`
+                  ? "border-blue-400 bg-blue-50/40 ring-2 ring-blue-100 shadow-xs"
                   : isTraversed
-                  ? "border-slate-300 bg-slate-50/50"
-                  : "border-slate-200 bg-white opacity-70"
+                  ? cn(s.borderColor, s.lightBg)
+                  : "border-slate-200 bg-white"
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] font-bold text-slate-400">
+                <span className={cn("font-mono text-[10px] font-bold", s.accentColor)}>
                   0{s.num}
                 </span>
-                <span className="font-mono text-[10px] text-slate-500">
+                <span className="font-mono text-[10px] text-slate-500 font-semibold">
                   {s.latency}
                 </span>
               </div>
 
-              <div className="my-2">
+              <div className="my-2.5">
                 <p className="text-xs font-bold text-slate-900 leading-tight">
                   {s.shortName}
                 </p>
-                <p className="text-[10px] text-slate-500 truncate font-sans">
+                <p className="text-[10px] text-slate-500 truncate font-sans mt-0.5">
                   {s.name.split(" ")[0]}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between pt-1.5 border-t border-slate-100">
-                <Icon className="h-3 w-3 text-slate-400" />
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <Icon className={cn("h-3.5 w-3.5", s.accentColor)} />
                 {isDecidedHere ? (
-                  <span className={cn("h-2 w-2 rounded-full", currentTheme.bg, "animate-pulse")} />
+                  <span className={cn("h-2.5 w-2.5 rounded-full shadow-xs", currentTheme.bg, "animate-pulse")} />
                 ) : isTraversed ? (
-                  <Check className="h-3 w-3 text-slate-400" />
+                  <Check className={cn("h-3.5 w-3.5", s.accentColor)} />
                 ) : (
                   <span className="h-1.5 w-1.5 rounded-full bg-slate-200" />
                 )}
