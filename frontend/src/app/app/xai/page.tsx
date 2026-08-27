@@ -328,23 +328,174 @@ export default function XAIPage() {
       )}
 
       {activeTab === "math" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {SHAP_FEATURES.map((feat) => (
-            <div key={feat.name} className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
-                <span className="font-bold text-slate-900 text-sm">{feat.name}</span>
-                <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                  {feat.mathSymbol}
-                </span>
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 p-5 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
+                <Code2 className="h-5 w-5" />
               </div>
-              <div className="rounded-lg bg-slate-900 text-slate-100 p-3 font-mono text-xs overflow-x-auto mb-3">
-                <code>{feat.formula}</code>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 font-sans">
+                  Mathematical &amp; Algorithmic Foundations
+                </h2>
+                <p className="text-xs text-slate-600">
+                  Deterministic equations and feature extraction metrics powering the 150-Tree Random Forest classifier and TreeSHAP attribution.
+                </p>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Calculated over sliding n-gram windows. Benign language corpora exhibit low perplexity and predictable vowel clustering; high entropy deviations indicate DGA or tunnelling.
-              </p>
             </div>
-          ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Formula 1 */}
+            <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">INFORMATION THEORY</span>
+                    <h3 className="font-bold text-slate-900 text-sm">Shannon Entropy</h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md shadow-2xs">
+                    H(X)
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-900 p-3 text-emerald-400 font-mono text-xs overflow-x-auto shadow-inner mb-3">
+                  <code>H(X) = - ∑ P(xᵢ) · log₂(P(xᵢ))</code>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Measures character randomness and diversity. Normal English words score <strong className="text-slate-800">2.5–3.2 bits</strong>; pseudo-random DGA malware domains score <strong className="text-rose-700">&gt;4.0 bits</strong>.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>Safe baseline: &lt;3.5</span>
+                <span className="font-semibold text-rose-600">Malware: &gt;4.2</span>
+              </div>
+            </div>
+
+            {/* Formula 2 */}
+            <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">LANGUAGE MODELING</span>
+                    <h3 className="font-bold text-slate-900 text-sm">Bi-gram Perplexity</h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-md shadow-2xs">
+                    PP(W)
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-900 p-3 text-emerald-400 font-mono text-xs overflow-x-auto shadow-inner mb-3">
+                  <code>PP(W) = P(w₁...wₙ)⁻¹/ᴺ = 2^(H(W))</code>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Quantifies the statistical likelihood of letter transitions under standard English corpora. Unusual sequences like <code className="text-slate-800 font-bold">'q9'</code> or <code className="text-slate-800 font-bold">'zk'</code> trigger high perplexity flags.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>Natural pairs: High P</span>
+                <span className="font-semibold text-rose-600">Synthetic: Low P</span>
+              </div>
+            </div>
+
+            {/* Formula 3 */}
+            <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">PHONETICS &amp; MORPHOLOGY</span>
+                    <h3 className="font-bold text-slate-900 text-sm">Consonant-to-Vowel Ratio</h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md shadow-2xs">
+                    R_cv
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-900 p-3 text-emerald-400 font-mono text-xs overflow-x-auto shadow-inner mb-3">
+                  <code>R_cv = N_cons / max(1, N_vowels)</code>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Checks phonetic pronounceability. Human-registered domains balance vowels and consonants. Algorithmic malware domains exhibit runs of <strong className="text-rose-700">4+ consonants</strong> with zero vowels.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>English: ~1.5–2.0</span>
+                <span className="font-semibold text-rose-600">DGA: &gt;5.0</span>
+              </div>
+            </div>
+
+            {/* Formula 4 */}
+            <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">STRING MORPHOLOGY</span>
+                    <h3 className="font-bold text-slate-900 text-sm">Subdomain Depth &amp; Length</h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-md shadow-2xs">
+                    L_(str)
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-900 p-3 text-emerald-400 font-mono text-xs overflow-x-auto shadow-inner mb-3">
+                  <code>Score = min(1.0, L_domain / 45)</code>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Enforces RFC 1035 label compliance and detects DNS tunneling data exfiltration channels hiding encoded payloads across nested subdomain labels.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>Standard: &lt;24 chars</span>
+                <span className="font-semibold text-rose-600">Exfil: &gt;45 chars</span>
+              </div>
+            </div>
+
+            {/* Formula 5 */}
+            <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">STRING DISTANCE</span>
+                    <h3 className="font-bold text-slate-900 text-sm">Levenshtein Brand Distance</h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-md shadow-2xs">
+                    D_L
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-900 p-3 text-emerald-400 font-mono text-xs overflow-x-auto shadow-inner mb-3">
+                  <code>D_L(s₁, s₂) = min edit ops (ins/del/sub)</code>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Measures edit distance against top corporate brands to catch visual typosquatting and homoglyphs (e.g. <code className="text-slate-800 font-bold">'rnicrosoft'</code> $\rightarrow$ Microsoft, edit distance 1).
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>Benign: 0 or &gt;3</span>
+                <span className="font-semibold text-amber-600">Typosquat: 1–2</span>
+              </div>
+            </div>
+
+            {/* Formula 6 */}
+            <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">EXPLAINABLE AI</span>
+                    <h3 className="font-bold text-slate-900 text-sm">TreeSHAP Game Theory</h3>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md shadow-2xs">
+                    φᵢ(f,x)
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-900 p-3 text-emerald-400 font-mono text-xs overflow-x-auto shadow-inner mb-3">
+                  <code>f(x) = φ₀ + ∑ φᵢ(x)</code>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Calculates exact Shapley feature attributions across all 150 ensemble trees in polynomial $O(TLD^2)$ time, generating a mathematically provable risk breakdown.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                <span>Green: -Safe Pull</span>
+                <span className="font-semibold text-rose-600">Red: +Risk Driver</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
