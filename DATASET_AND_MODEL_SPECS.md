@@ -2,83 +2,73 @@
 
 > **See also**: Full auditable documentation in [DATASET_CARD.md](./DATASET_CARD.md) · [MODEL_CARD.md](./MODEL_CARD.md) · [BENCHMARK_RESULTS.md](./BENCHMARK_RESULTS.md)
 
+> ⚠️ **Audit note**: Earlier versions of this file cited 1.35M domains, 38 features, a `dga_rf_150.joblib` artifact, and 99.42% accuracy. None of these matched the actual repository. All numbers below are verified against `data/dga_dataset.csv`, `dga-v2.metadata.json`, and `dga-v2.metrics.json`.
+
 
 ## 1. Dataset Overview & Corpus Size
 
 | Dimension | Specification | Notes |
 |---|---|---|
-| **Total Domain Records** | **1,350,000 FQDNs** | Balanced research-grade corpus |
-| **Raw Uncompressed Size** | **485.4 MB** | Raw DNS queries, labels, and WHOIS/metadata JSON |
-| **Processed Feature Matrix** | **142.8 MB** (Parquet / Compressed CSV) | 38 numerical & normalized feature dimensions |
-| **Class Distribution** | **750,000 Benign (55.5%) / 600,000 Malicious (44.5%)** | Hardened to minimize False Positive Rate (FPR < 0.01%) |
-| **Train / Validation / Test Split** | **80% Train (1,080,000) / 20% Holdout Test (270,000)** | Stratified 10-fold cross-validation |
+| **Total Domain Records** | **10,001 FQDNs** | `data/dga_dataset.csv`, 452 KB on disk |
+| **Class Distribution** | **5,001 Benign (50%) / 5,000 Malicious (50%)** | Balanced; 6 DGA families in malicious class |
+| **Train / Holdout Split** | **8,000 train / 2,000 holdout** (chronological) | Sorted by `observed_at`, last 20% as holdout |
 
 ---
 
 ## 2. Primary Data Sources & Composition
 
-### A. Benign Baseline (750,000 Samples)
-1. **Tranco Top 1 Million Research List (600,000 Samples)**:
-   - Hardened research ranking list aggregated from Alexa, Cisco Umbrella, Majestic, and Farsight Security.
-   - Eliminates single-provider bias and transient DDOS/flash-crowd poisoning (*Citation: Le Pochat et al., NDSS 2019*).
-2. **Enterprise Cloud & Internal Service Corpus (150,000 Samples)**:
-   - High-throughput benign service subdomains (Microsoft 365, Azure, Google Cloud, AWS CloudFront, Cloudflare, Akamai).
+### A. Benign Baseline (5,001 Samples — actual)
 
-### B. Malicious DGA & Threat Intelligence (600,000 Samples)
-1. **BAM (Bader et al.) DGA Research Corpus (400,000 Samples)**:
-   - Spans over **50+ active malware DGA families**, including:
-     - **Arithmetic & PRNG DGAs**: *Conficker*, *Gameover Zeus*, *Cryptolocker*, *Necurs*, *Locky*, *Torpig*.
-     - **Dictionary-based DGAs**: *Suppobox*, *Matsnu*, *Gozi/ISFB*, *Ranbyus*.
-     - **Wordlist Permutation DGAs**: *Banjori*, *Tinba*, *Nymaim*.
-2. **Live Feed Indicators & Phishing (200,000 Samples)**:
-   - Active indicators from **Abuse.ch URLhaus**, **PhishTank**, **AlienVault OTX**, **Emerging Threats**, and **OpenPhish**.
+- Predominantly `.com` top-domain list entries. ~97% `.com`, zero `.in`/`.gov.in`/`.co.in`.
+- **Known gap**: zero hyphenated domains in training. See `data/benign_augmentation.csv` for the starter fix.
+
+### B. Malicious DGA (5,000 Samples — actual)
+
+6 DGA families from `dga-v2.metadata.json`:
+1. **matsnu** (Dictionary DGA)
+2. **conficker** (PRNG / arithmetic DGA)
+3. **kraken** (PRNG DGA)
+4. **cryptolocker** (Seed-based DGA)
+5. **generic** (Mixed)
+6. **suppobox** (Dictionary DGA)
 
 ---
 
-## 3. Extracted Feature Dimensions (38 Features)
+## 3. Extracted Feature Dimensions (19 Engineered + TF-IDF)
 
-1. **Information-Theoretic Features**:
-   - Shannon Entropy: $H(X) = -\sum_{i=1}^n P(x_i) \log_2 P(x_i)$
-   - Bi-gram Character Perplexity: $PP(W) = 2^{H(W)}$
-   - Vowel Entropy & Distribution
-2. **Phonetic & Structural Morphology**:
-   - Consonant-to-Vowel Ratio: $R_{cv} = \frac{N_{\text{consonants}}}{N_{\text{vowels}} + 1}$
-   - Maximum Consecutive Consonant Run (Flagged if $\ge 5$)
-   - Digit Injection Ratio ($N_{\text{digits}} / \text{Length}$)
-   - Subdomain Nesting Depth & String Length
-3. **Lexical Anomaly & Typosquatting Signals**:
-   - Unicode TR39 Skeleton Transformation
-   - Jaro-Winkler Distance to Alexa/Tranco Top 1,000 Corporate Brands
-   - TLD Historical Abuse & Suspicion Weight
+The model uses **19 engineered lexical features** (from `dga-v2.metadata.json`) plus char 2-4gram TF-IDF. The complete feature list is documented in [MODEL_CARD.md Section 4B](./MODEL_CARD.md).
+
+Key feature categories:
+1. **Information-Theoretic**: Shannon entropy, vowel/consonant/digit ratios
+2. **Structural Morphology**: max consecutive consonant/digit run, label depth, string length
+3. **Lexical Anomaly Signals**: punycode, risky TLD flag, TLD risk score
+4. **Brand Proximity**: min Levenshtein + Damerau-Levenshtein to 39-brand dictionary, homoglyph detection
+5. **Simulated signals (currently 0.0)**: `alexa_rank_simulated`, `nrd_age_simulated` — wiring to live data is a planned improvement
+
+The TF-IDF component produces ~68,185 char n-gram features (2–4grams) from the full 10,001-row training set.
 
 ---
 
 ## 4. Production Model Artifact Sizes & Inference Performance
 
-| Component | Serialized File Size | Memory Footprint (RAM) | Latency SLA |
+| Component | File | Size | Latency SLA |
 |---|---|---|---|
-| **Random Forest Ensemble (`dga_rf_150.joblib`)** | **28.4 MB** | ~45 MB in memory | **1.1 ms** (CPU) |
-| **Redis Murmur3 Bloom Filter (`bloom.rdb`)** | **1.2 MB** | ~1.5 MB bitset | **<0.1 ms** |
-| **RPZ Radix Tree Cache (`rpz_trie.bin`)** | **18.6 MB** | ~24 MB | **0.18 ms** |
-| **TreeSHAP Weight Matrices (`shap_weights.npy`)** | **8.2 MB** | ~12 MB | **0.9 ms** |
+| **Random Forest Classifier (`dga-v2.joblib`)** | `services/ml-inference/artifacts/dga-v2.joblib` | **3.6 MB** | **~1 ms** (CPU) |
+| **Redis Verdict Cache** | In-memory (Redis 7) | Varies | **<0.1 ms** (cache hit) |
+
+> **Note**: Earlier versions of this table listed `dga_rf_150.joblib` (28.4 MB), `bloom.rdb` (1.2 MB), `rpz_trie.bin` (18.6 MB), and `shap_weights.npy` (8.2 MB). None of these files exist in the repo. Only `dga-v2.joblib` (3.6 MB) exists as a verified artifact.
 
 ---
 
-## 5. Model Evaluation Metrics (Training-Split Results)
+## 5. Model Evaluation Metrics (dga-v2, Verified from `dga-v2.metrics.json`)
 
-> ⚠️ **Methodological Disclosure**: The metrics below are computed on a stratified 80/20 train-test split from the same source corpus. They do **not** yet account for:
-> - Cross-family holdout (unseen DGA families)
-> - Adversarial/evasion domain evaluation
-> - Temporal holdout (domains only seen after a training cutoff date)
->
-> Full independent benchmarks — including per-class breakdowns, confusion matrix, baseline comparisons, and adversarial evaluation — are being documented in [`BENCHMARK_RESULTS.md`](./BENCHMARK_RESULTS.md).
+> **Source**: 2,000-row chronological holdout. These numbers are from a real run on the actual `data/dga_dataset.csv`. The SHA-256 is `3e4a0c744200a32b097075553c3b8ebb3b9007ef0b3d98a29752a814354da908`.
 
-| Metric | Training-Split Value | Notes |
-|---|---|---|
-| **Classification Accuracy** | **99.42%** | Training/test split only; accuracy is a secondary metric on imbalanced DNS data |
-| **Precision** | **0.9931** | True positives / (true positives + false positives) |
-| **Recall** | **0.9905** | True positives / (true positives + false negatives) |
-| **F1-Score** | **0.9918** | Harmonic mean of precision and recall |
-| **False Positive Rate (FPR)** | **<0.01%** | On internal test split; real-world FPR validation pending |
-| **Hardware** | Pure CPU execution (0 GPU dependency) |
-| **Throughput target** | **15,000+ QPS per server instance** (target, not yet load-tested) |
+| Metric | Benign (0) | Malicious (1) | Notes |
+|---|---|---|---|
+| **Precision** | 0.994 | **1.000** | Zero false positives on 2K holdout |
+| **Recall** | **1.000** | **0.994** | 6 malicious missed out of 1,000 |
+| **F1-Score** | 0.997 | 0.997 | |
+| **Accuracy** | **99.7%** | | |
+| **Cross-family recall** | — | **97.2%** | Train on 3 DGA families, test on 3 unseen |
+| **Throughput target** | | | ~15,000 QPS est. (not load-tested) |

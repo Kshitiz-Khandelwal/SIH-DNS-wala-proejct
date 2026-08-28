@@ -35,7 +35,6 @@ services:
     restart: unless-stopped
     volumes:
     - redis_data:/data
-    - redis_data:/data
   clickhouse:
     image: clickhouse/clickhouse-server:24.8-alpine
     ports:
@@ -47,7 +46,6 @@ services:
       CLICKHOUSE_PASSWORD: ''
     volumes:
     - ../services/analytics-store/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
-    - clickhouse_data:/var/lib/clickhouse
     - clickhouse_data:/var/lib/clickhouse
     healthcheck:
       test:
@@ -73,12 +71,14 @@ services:
     - lab
     restart: unless-stopped
   ml-inference:
-    build: ../services/ml-inference
+    build:
+      context: ..
+      dockerfile: services/ml-inference/Dockerfile
     env_file: ../.env
     ports:
     - 8000:8000
     volumes:
-    - ../ml-training/artifacts:/app/artifacts:ro
+    - ../services/ml-inference/artifacts:/app/services/ml-inference/artifacts:ro
     networks:
     - lab
     restart: unless-stopped
@@ -135,7 +135,9 @@ services:
     - lab
     restart: unless-stopped
   api-gateway:
-    build: ../services/api-gateway
+    build:
+      context: ..
+      dockerfile: services/api-gateway/Dockerfile
     env_file: ../.env
     ports:
     - 8080:8080
@@ -176,7 +178,7 @@ services:
     - lab
     restart: unless-stopped
   dashboard:
-    build: ../dashboard
+    build: ../frontend
     environment:
     - NEXT_PUBLIC_API_URL=http://localhost:8080
     ports:

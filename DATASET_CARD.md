@@ -1,9 +1,11 @@
 # DNS Shield — Dataset Card
 
-> **Version**: 1.0  
-> **Last Updated**: 2026-08-20  
-> **Maintained by**: Kshitiz Khandelwal  
+> **Version**: 2.0
+> **Last Updated**: 2026-08-28 (reconciled with actual repo contents)
+> **Maintained by**: Kshitiz Khandelwal
 > **Related Documents**: [MODEL_CARD.md](./MODEL_CARD.md) · [DATASET_AND_MODEL_SPECS.md](./DATASET_AND_MODEL_SPECS.md) · [BENCHMARK_RESULTS.md](./BENCHMARK_RESULTS.md)
+
+> ⚠️ **Audit note**: Earlier versions of this card cited 1,350,000 domains, 750K/600K class splits, and 485 MB file sizes. None of this corresponded to the actual `data/dga_dataset.csv` in the repo (10,001 rows, 452 KB). All numbers below are verified against the real file.
 
 ---
 
@@ -21,43 +23,37 @@ This dataset is used exclusively to train and evaluate the DNS Shield lexical cl
 
 | Dimension | Value | Notes |
 |---|---|---|
-| **Total records** | **1,350,000 FQDNs** | Balanced research-grade corpus |
-| **Class distribution** | **750,000 Benign (55.6%) / 600,000 Malicious (44.4%)** | Mild positive skew to minimize FPR |
-| **Stored format** | CSV (`domain, label [, observed_at]`) | Parquet compressed copy: 142.8 MB |
-| **Raw uncompressed size** | **485.4 MB** | Raw DNS queries, labels, WHOIS/metadata JSON |
-| **Feature matrix size** | **142.8 MB** (Parquet/Compressed CSV) | 38 numerical + normalised feature dimensions |
-| **Train / Test split** | **80% Train (1,080,000) / 20% Holdout (270,000)** | See Section 5 for split strategy |
+| **Total records** | **10,001 domains** | Balanced research-grade corpus (`data/dga_dataset.csv`, 452 KB) |
+| **Class distribution** | **5,001 Benign (50%) / 5,000 Malicious (50%)** | Balanced; 6 DGA families |
+| **Stored format** | CSV (`domain, label [, observed_at]`) | 452 KB on disk |
+| **Train / Test split** | **8,000 train / 2,000 holdout** (chronological) | See Section 5 for split strategy |
 
 ---
 
 ## 3. Data Sources
 
-### 3A. Benign Baseline — 750,000 Domains
+### 3A. Benign Baseline — 5,001 Domains (actual)
 
-| Source | Count | Description | Licence | URL |
-|---|---|---|---|---|
-| **Tranco Top-1M Research List** | 600,000 | Hardened ranking aggregated from Alexa, Cisco Umbrella, Majestic, Farsight Security. Eliminates single-provider bias. | Public | [tranco-list.eu](https://tranco-list.eu) |
-| **Enterprise Cloud & CDN Subdomains** | 150,000 | High-throughput benign subdomains from Microsoft 365, Azure, Google Cloud, AWS CloudFront, Cloudflare, Akamai | Observed/Public | Internal sample |
+The benign portion of `data/dga_dataset.csv` is primarily `.com` domains sourced from public top-domain lists. Key composition facts:
 
-> **Citation for Tranco**: Le Pochat, V., Van Goethem, T., Tajalizadehkhoob, S., Korczy´nski, M., & Joosen, W. (2019). *Tranco: A Research-Oriented Top Sites Ranking Hardened Against Manipulation*. NDSS 2019. DOI: 10.14722/ndss.2019.23386
+- ~97% `.com` TLD — zero `.in`, `.gov.in`, `.co.in` examples
+- Zero hyphenated domains
+- This narrow TLD coverage is a known limitation (see Section 8): it causes false positives on legitimate Indian institutional domains
 
-### 3B. Malicious DGA & Threat Intelligence — 600,000 Domains
+> **Expansion needed**: A `data/benign_augmentation.csv` (195 rows) of Indian govt and hyphenated domains is included as a starter patch. Recommend extending with a filtered Tranco `.in` list before the demo.
 
-| Source | Count | Threat Types | Licence | URL |
-|---|---|---|---|---|
-| **BAM DGA Research Corpus** | 400,000 | Arithmetic DGAs, PRNG DGAs, Dictionary DGAs, Wordlist Permutation DGAs — 50+ malware families | Academic (non-commercial) | [Bader et al., 2022](https://github.com/baderj/domain_generation_algorithms) |
-| **Abuse.ch URLhaus** | 100,000 | Live malware hosting URLs, active C2 domains | CC0 Public Domain | [urlhaus.abuse.ch](https://urlhaus.abuse.ch) |
-| **PhishTank + OpenPhish** | 50,000 | Phishing domains, brand impersonation | CC0 / Public | [phishtank.org](https://phishtank.org) |
-| **AlienVault OTX + Emerging Threats** | 50,000 | Mixed IOCs: DGA, C2, malware infrastructure | Free / OTX API | [otx.alienvault.com](https://otx.alienvault.com) |
+### 3B. Malicious DGA — 5,000 Domains (actual)
 
-#### DGA Family Coverage (BAM Corpus)
+All malicious examples are DGA-generated domains across 6 families (from `dga-v2.metadata.json`):
 
-| Family Type | Representative Families |
+| DGA Family | Type |
 |---|---|
-| **Arithmetic / PRNG DGA** | Conficker, Gameover Zeus, Cryptolocker, Necurs, Locky, Torpig, DirCrypt |
-| **Dictionary DGA** | Suppobox, Matsnu, Gozi/ISFB, Ranbyus, Bedep |
-| **Wordlist Permutation DGA** | Banjori, Tinba, Nymaim, Ramnit, Symmi |
-| **Seeded/Time-based DGA** | Murofet, Dyre, Qakbot, Vawtrak |
+| **matsnu** | Dictionary DGA |
+| **conficker** | PRNG / arithmetic DGA |
+| **kraken** | PRNG DGA |
+| **cryptolocker** | Seed-based DGA |
+| **generic** | Mixed |
+| **suppobox** | Dictionary DGA |
 
 > **⚠️ Cross-family holdout status**: At least 3 complete DGA families are reserved for adversarial/unseen-family evaluation. This is documented as pending work in [BENCHMARK_RESULTS.md](./BENCHMARK_RESULTS.md).
 
@@ -112,7 +108,7 @@ python ml-training/train.py --data data/dga_dataset.csv --chronological ...
 - Uses the earliest N% for training, the most recent 20% for testing
 - Prevents a domain seen during training from leaking into the test set
 
-> **⚠️ Current status**: The internal 99.42% accuracy metrics in [DATASET_AND_MODEL_SPECS.md](./DATASET_AND_MODEL_SPECS.md) used **stratified random split**. A chronological split evaluation is planned and will be documented in [BENCHMARK_RESULTS.md](./BENCHMARK_RESULTS.md).
+> **Current status**: The active model is `dga-v2`, trained with chronological split on `data/dga_dataset.csv` (10,001 rows). Verified metrics are in `services/ml-inference/artifacts/dga-v2.metrics.json`: Accuracy 99.7%, Malicious Recall 99.4%, Cross-family recall 97.2%. An earlier model (`dga-v1`) was trained on a 99-row toy file — that model is now superseded.
 
 ---
 
@@ -135,14 +131,15 @@ The training script computes a SHA-256 hash of the dataset file at training time
 
 ```json
 {
-  "dataset_sha256": "<sha256-of-training-csv>",
-  "dataset_rows": 1350000,
-  "train_rows": 1080000,
-  "holdout_rows": 270000
+  "dataset_sha256": "3e4a0c744200a32b097075553c3b8ebb3b9007ef0b3d98a29752a814354da908",
+  "dataset_rows": 10000,
+  "train_rows": 8000,
+  "holdout_rows": 2000,
+  "split_strategy": "chronological"
 }
 ```
 
-This ensures that any trained model artifact can be traced back to a specific, immutable dataset snapshot.
+This is the actual content of `dga-v2.metadata.json`. Reproducible with the same dataset SHA-256.
 
 ---
 

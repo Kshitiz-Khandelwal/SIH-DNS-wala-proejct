@@ -1,9 +1,11 @@
 # DNS Shield — Model Card
 
-> **Version**: 1.0  
-> **Last Updated**: 2026-08-20  
+> **Version**: 2.0  
+> **Last Updated**: 2026-08-28 (retrained on full dataset)  
 > **Maintained by**: Kshitiz Khandelwal  
 > **Related Documents**: [DATASET_CARD.md](./DATASET_CARD.md) · [BENCHMARK_RESULTS.md](./BENCHMARK_RESULTS.md) · [DATASET_AND_MODEL_SPECS.md](./DATASET_AND_MODEL_SPECS.md)
+
+> ⚠️ **Audit note**: An earlier version of this card cited a `dga_rf_150.joblib` artifact and a 1.35M-domain dataset. Neither existed in the repo. The current active model is `dga-v2.joblib`, trained on the actual `data/dga_dataset.csv` (10,001 rows). Metrics below are verified from `dga-v2.metrics.json`.
 
 ---
 
@@ -11,15 +13,15 @@
 
 | Property | Value |
 |---|---|
-| **Model name** | DNS Shield Lexical Classifier (`dga_rf_150`) |
+| **Model name** | DNS Shield Lexical Classifier (`dga-v2`) |
 | **Task** | Binary classification: Benign (0) vs Malicious (1) DNS domain |
 | **Algorithm** | Random Forest Ensemble + char TF-IDF n-grams (via scikit-learn `FeatureUnion` + `Pipeline`) |
 | **Feature schema** | `char-tfidf-2-4grams + engineered-lexical-v2` |
-| **Artifact file** | `ml-training/artifacts/dga-v1.joblib` |
+| **Artifact file** | `services/ml-inference/artifacts/dga-v2.joblib` (3.6 MB) |
 | **Serialisation** | `joblib` (pickle-compatible, Python 3.11) |
 | **Inference interface** | `model.predict_proba([domain_string])` → `[[p_benign, p_malicious]]` |
 | **Random seed** | `random_state=42` (all estimators and splits) |
-| **Dependency** | `dns_shield_features.py` must be on `PYTHONPATH` at inference time |
+| **Dependency** | `dns_shield_features.py` must be on `PYTHONPATH` at inference time — **required at Docker build time** |
 
 ---
 
@@ -85,9 +87,9 @@ The model uses a `FeatureUnion` of two feature branches applied to the raw domai
 
 Char-level 2–4 gram TF-IDF vectors computed from the raw domain string. Captures DGA-specific character transition patterns that differ from natural language domain names.
 
-### 4B. Engineered Lexical Features (11 features)
+### 4B. Engineered Lexical Features (19 features)
 
-These are computed by `dns_shield_features.py::domain_features()` and are exactly reproducible:
+These are computed by `dns_shield_features.py::domain_features()` and are exactly reproducible (verified from `dga-v2.metadata.json`):
 
 | # | Feature Name | Formula / Description | DGA Signal |
 |---|---|---|---|
@@ -102,8 +104,16 @@ These are computed by `dns_shield_features.py::domain_features()` and are exactl
 | 9 | `longest_digit_run` | Max consecutive digits | Indicates random digit injection |
 | 10 | `label_count` | `domain.count('.') + 1` | Unusually deep subdomain nesting |
 | 11 | `has_digit` | `1.0 if any digit else 0.0` | Binary: contains any digit |
+| 12 | `punycode` | `1.0 if domain starts with xn--` | Internationalised / homoglyph indicator |
+| 13 | `risky_tld` | `1.0` if TLD in high-abuse list | `.tk`, `.ga`, `.ml`, `.cf` etc. |
+| 14 | `alexa_rank_simulated` | Simulated popularity rank (0.0 placeholder — not yet wired to live data) | Low-ranked domains more suspicious |
+| 15 | `nrd_age_simulated` | Simulated domain age (0.0 placeholder — not yet wired to WHOIS) | Newly-registered domains more suspicious |
+| 16 | `min_levenshtein_to_brand` | Min edit distance from domain to 39-brand dictionary | Typosquat proximity signal |
+| 17 | `min_dameraulevenshtein_to_brand` | Min Damerau-Levenshtein distance (handles transpositions) | Catches swap-adjacent-char typosquats |
+| 18 | `has_homoglyph` | Unicode skeleton matching vs. brand dictionary | Catches visually deceptive domains |
+| 19 | `tld_risk_score` | Numeric risk weight for TLD (0.0–1.0) | Weighted abuse risk by TLD |
 
-> **Note**: The `DATASET_AND_MODEL_SPECS.md` mentions 38 features — this refers to the combined dimensionality including TF-IDF n-gram features. The 11 engineered features above are the interpretable, fixed-dimension component. The TF-IDF component is variable-dimension and vocabulary-dependent.
+> **Note**: Features 14–15 (`alexa_rank_simulated`, `nrd_age_simulated`) are currently hardcoded to `0.0` — they show zero importance in `feature_importances_`. Wiring them to real data (WHOIS cache already exists in `app.py`) would improve recall on NRD-based attacks.
 
 ---
 
@@ -136,18 +146,20 @@ model = Pipeline([("features", features), ("classifier", classifier)])
 
 ---
 
-## 6. Evaluation Metrics (Training-Split)
+## 6. Evaluation Metrics (dga-v2, Verified)
 
-> **⚠️ Important**: The metrics below are from the internal 80/20 stratified train-test split. They do **not** represent independent cross-family or adversarial evaluation.
+> **Source**: `services/ml-inference/artifacts/dga-v2.metrics.json` — 2,000-row chronological holdout (last 20% by `observed_at`). These are real numbers from a real run, not estimates.
 
-| Metric | Value | Notes |
-|---|---|---|
-| **Accuracy** | 99.42% | Secondary metric on imbalanced DNS data |
-| **Precision** | 0.9931 | Malicious class precision |
-| **Recall** | 0.9905 | Malicious class recall |
-| **F1-Score (weighted)** | 0.9918 | Primary optimisation target during CV |
-| **False Positive Rate** | <0.01% | On internal test split only |
-| **Inference latency** | ~1.1 ms | Single domain, CPU, no batching |
+| Metric | Benign class (0) | Malicious class (1) | Notes |
+|---|---|---|---|
+| **Precision** | 0.994 | **1.000** | Zero false positives on this holdout |
+| **Recall** | **1.000** | **0.994** | 6 malicious missed out of 1,000 |
+| **F1-Score** | 0.997 | 0.997 | |
+| **Accuracy** | **99.7%** | | Holdout: 2,000 rows (1,000 per class) |
+| **Cross-family recall** | — | **97.2%** | Trained on 3 DGA families, tested on 3 unseen — the honest generalization number |
+| **Inference latency** | ~1 ms | | Single domain, CPU, no batching |
+
+> **Training set**: `data/dga_dataset.csv` — 10,001 rows, balanced, 6 DGA families (matsnu, conficker, kraken, cryptolocker, generic, suppobox). Split: 8,000 train / 2,000 holdout, chronological.
 
 ### 6A. Metrics Still Needed
 
@@ -225,44 +237,36 @@ Every `/v1/query` API response includes the top-contributing features and their 
 ## 11. Reproduction Instructions
 
 ```bash
-# 1. Set up environment
+# 1. Set up environment (from repo root)
 python -m venv .venv
-source .venv/bin/activate        # or .venv\Scripts\activate on Windows
-pip install -r requirements.txt
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+export PYTHONPATH=$(pwd)          # Windows: $env:PYTHONPATH = (Get-Location).Path
 
-# 2. Place your labelled dataset at data/dga_dataset.csv
+pip install -r services/ml-inference/requirements.txt
+
+# 2. Dataset is already at data/dga_dataset.csv (10,001 rows, 6 DGA families)
 # Format: domain,label[,observed_at]
 # label: 0=benign, 1=malicious
 
-# 3. Train with default stratified split
-python ml-training/train.py \
-  --data data/dga_dataset.csv \
-  --name dga \
-  --version 1 \
-  --source "Tranco Top-1M + BAM DGA Corpus + URLhaus (see DATASET_CARD.md)" \
-  --algorithm rf
-
-# 4. Train with chronological split (recommended for honest evaluation)
+# 3. Reproduce dga-v2 exactly (chronological split — the correct evaluation method)
 python ml-training/train.py \
   --data data/dga_dataset.csv \
   --name dga \
   --version 2 \
-  --source "Tranco Top-1M + BAM DGA Corpus + URLhaus (see DATASET_CARD.md)" \
-  --algorithm rf \
+  --source "data/dga_dataset.csv (10001 rows, balanced, 6 families)" \
   --chronological
 
-# 5. Run adversarial evaluation on the trained model
+# Artifacts written to: services/ml-inference/artifacts/
+#   dga-v2.joblib                   — Active model artifact (3.6 MB)
+#   dga-v2.metrics.json             — Classification report (2,000-row holdout)
+#   dga-v2.metadata.json            — Full provenance (dataset sha256, params, timestamps)
+#   dga-v2.feature-baseline.json    — Training feature distribution baseline
+
+# 4. Run adversarial evaluation against the new model
 python ml-training/adversarial_eval.py \
   --data data/dga_dataset.csv \
-  --model ml-training/artifacts/dga-v1.joblib \
-  --name dga --version 1
-
-# Artifacts written to: ml-training/artifacts/
-#   dga-v1.joblib              — Model artifact
-#   dga-v1.metrics.json        — Classification report
-#   dga-v1.metadata.json       — Full provenance (dataset sha256, params, timestamps)
-#   dga-v1.feature-baseline.json — Training feature distribution baseline
-#   adversarial_report.json    — Adversarial evaluation results
+  --model services/ml-inference/artifacts/dga-v2.joblib \
+  --name dga --version 2
 ```
 
 All seeds are fixed (`random_state=42`). Given the same dataset CSV (same SHA-256), this pipeline is fully reproducible.

@@ -11,11 +11,18 @@
 ```
 PHASE 1  ✅ COMPLETE  — Credibility & Documentation Cleanup       (commit: 9d39e11)
 PHASE 2  ✅ COMPLETE  — Dataset Card & Model Card                 (commit: 8e428ce)
+PHASE 2B ✅ COMPLETE  — Docker & Model Fixes (2026-08-28)
+                         - dga-v1 (99-row) to dga-v2 (10,001-row): Accuracy 99.7%, Recall 99.4%
+                         - ml-inference Dockerfile: ships dns_shield_features.py (was missing, caused 500s)
+                         - api-gateway Dockerfile: ships flow_ingest + forecasting_engine modules
+                         - requirements.txt UTF-16 null-byte corruption fixed (shap now installs)
+                         - docker-compose.yml: build contexts, artifacts path, dashboard UI all fixed
+                         - All 5 docs with fabricated 1.35M/99.42% numbers corrected to real data
 PHASE 3  🗺️ NEXT      — ML Benchmarking & Metrics Hardening
 PHASE 4  🗺️ PENDING   — Architecture & Deployment Hardening
 PHASE 5  🗺️ PENDING   — ML Engine Improvements
 PHASE 6  🗺️ PENDING   — Behavioral & Tunnelling Engine Upgrade
-PHASE 7  🗺️ PENDING   — Typosquatting Similarity Engine
+PHASE 7  🗺️ PENDING   — Typosquatting Similarity Engine (no trained model exists yet)
 PHASE 8  🗺️ PENDING   — XAI Engine Hardening
 PHASE 9  🗺️ PENDING   — Safe Active Response Controls
 PHASE 10 🗺️ PENDING   — Live Attack Demonstration Scripts
@@ -46,9 +53,14 @@ These rules were established through deep technical audit. Violating them will u
 
 ### 1.2 The Accuracy Rule
 
-- **Never cite `99.42%` accuracy alone.** It must always be accompanied by: Precision, Recall, F1, FPR, and the disclaimer that it is a training-split result, not an independent cross-family or adversarial evaluation.
-- The correct framing is: *"Reported Training-Split Metrics: Accuracy 99.42% · Precision 0.9931 · Recall 0.9905 · F1 0.9918 · FPR <0.01% · ⚠️ training/test split only"*
-- See [`BENCHMARK_RESULTS.md`](./BENCHMARK_RESULTS.md) for the pending independent benchmarks.
+- The active model is **`dga-v2`**, trained on the full `data/dga_dataset.csv` (10,001 rows), chronological split.
+- **Verified metrics** (from `services/ml-inference/artifacts/dga-v2.metrics.json`, 2,000-row holdout):
+  - Accuracy: **99.7%** · Malicious Precision: **1.000** · Malicious Recall: **0.994** · F1: **0.997**
+  - Cross-family recall: **97.2%** (trained on 3 DGA families, tested on 3 unseen — the honest generalization number)
+- **Never cite the old 99.42% figures.** They came from `dga-v1`, which was trained on a 99-row toy file (`data/tiny_dataset.csv`) and evaluated on a 20-row holdout. That model is superseded and archived.
+- Always accompany any metric with: dataset size, holdout size, split strategy, and whether it is cross-family or same-family evaluation.
+- See [`BENCHMARK_RESULTS.md`](./BENCHMARK_RESULTS.md) for the pending adversarial and per-family breakdowns.
+
 
 ### 1.3 The CERT-In Rule
 

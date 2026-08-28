@@ -34,6 +34,8 @@ except ImportError:
 app = FastAPI(title="DNS Shield ML Inference", version="1.2.0")
 store = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 ARTIFACT_DIR = Path(os.getenv("MODEL_ARTIFACT_DIR", "/app/artifacts"))
+if not ARTIFACT_DIR.exists():
+    ARTIFACT_DIR = Path(__file__).resolve().parent / "artifacts"
 WHOIS_TTL_SECONDS = int(os.getenv("WHOIS_CACHE_TTL_SECONDS", str(7 * 24 * 3600)))
 TOP_DOMAINS = ["google.com", "youtube.com", "facebook.com", "amazon.com", "wikipedia.org", "isro.gov.in", "microsoft.com", "github.com", "apple.com", "netflix.com", "linkedin.com", "instagram.com"]
 VOWELS = set("aeiou")
