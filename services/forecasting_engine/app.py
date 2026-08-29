@@ -36,12 +36,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("forecasting-engine")
 
 FLOW_INGEST_URL = os.getenv("FLOW_INGEST_URL", "http://localhost:8006")
+ANALYTICS_STORE_URL = os.getenv("ANALYTICS_STORE_URL", "http://localhost:8005")
 
 app = FastAPI(
     title="DNS Shield Forecasting Engine",
     version="1.0.0",
     description="Temporal MITRE ATT&CK kill-chain forecaster with TTC and preemptive containment.",
 )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
@@ -77,8 +79,28 @@ def _get_all_hosts() -> List[str]:
     return []
 
 
+def _log_forecast_audit(result):
+    """Best-effort async logging of forecast verdicts to analytics-store."""
+    try:
+        payload = {
+            "host_ip": result.host_ip,
+            "current_stage": result.current_stage,
+            "current_stage_confidence": result.current_stage_confidence,
+            "overall_threat_score": result.overall_threat_score,
+            "time_to_compromise_min": result.time_to_compromise_min,
+            "predicted_15m": result.forecast_horizon_15m.stage_id,
+            "predicted_30m": result.forecast_horizon_30m.stage_id,
+            "predicted_60m": result.forecast_horizon_60m.stage_id,
+            "relay_engaged": bool(result.hardware_relay_required or _relay_state["engaged"]),
+        }
+        requests.post(f"{ANALYTICS_STORE_URL}/forecast/events", json=payload, timeout=0.2)
+    except Exception:
+        pass  # Non-blocking best-effort audit
+
+
 def _forecast_to_dict(result) -> Dict[str, Any]:
     """Convert AttackForecastResult dataclass to JSON-serializable dict."""
+    _log_forecast_audit(result)
     d = asdict(result)
     # Enrich with stage metadata
     d["current_stage_meta"] = STAGE_METADATA.get(result.current_stage, {})
@@ -118,6 +140,7 @@ def _forecast_to_dict(result) -> Dict[str, Any]:
         "confidence_cone": h60["confidence_cone"],
     }
     return d
+
 
 
 # ─── API Endpoints ────────────────────────────────────────────────────────────

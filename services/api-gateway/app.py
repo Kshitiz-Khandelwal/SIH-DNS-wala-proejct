@@ -41,6 +41,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health", tags=["operations"])
+@app.get("/v1/health", tags=["operations"])
+@app.get("/api/v1/health", tags=["operations"])
+def health():
+    return {"status": "ok", "service": "api-gateway", "version": "1.1.0"}
+
+
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 SERVICES = {
     "ml": os.getenv("ML_URL", "http://localhost:8000"),
@@ -616,93 +623,8 @@ HARDWARE_SENTINEL_STATE = {
 }
 
 
-@app.get("/v1/forecast/timeline", tags=["forecasting"])
-@app.get("/api/v1/forecast/timeline", tags=["forecasting"])
-def get_forecast_timeline(host_ip: str = "172.28.0.101"):
-    """Return active multi-stage attack predictions and temporal forecasting horizons."""
-    global HARDWARE_SENTINEL_STATE
-    now = time.time()
-    
-    # Check if flow collector is active or generate representative live stream
-    timeline = flow_collector.get_host_timeline(host_ip) if flow_collector else []
-    
-    # If no flows yet, create baseline multi-flow session for realistic visualization
-    if not timeline and attack_forecaster:
-        # Default active demonstration profile
-        forecast = attack_forecaster.evaluate_host_timeline(host_ip, [
-            {"features": {"total_bytes": 4500, "syn_ratio": 0.45, "dns_query_count": 18, "iat_mean": 1.2}, "dst_port": 53, "dns_queries": ["xq9m2kz7v4naplq.top", "c2-beacon.dark-infra.cc"]}
-        ])
-    elif attack_forecaster:
-        forecast = attack_forecaster.evaluate_host_timeline(host_ip, timeline)
-    else:
-        # Fallback simulation object
-        return {
-            "host_ip": host_ip,
-            "timestamp": now,
-            "current_stage": "STAGE_2_INITIAL_ACCESS",
-            "current_stage_confidence": 0.88,
-            "overall_threat_score": 74,
-            "stage_metadata": STAGE_METADATA.get("STAGE_2_INITIAL_ACCESS", {}),
-            "forecast_15m": {"stage": "STAGE_4_C2_PERSISTENCE", "prob": 0.82, "time_min": 12.5},
-            "forecast_30m": {"stage": "STAGE_5_LATERAL_MOVEMENT", "prob": 0.74, "time_min": 26.0},
-            "forecast_60m": {"stage": "STAGE_6_EXFILTRATION", "prob": 0.85, "time_min": 54.0},
-            "blast_radius_nodes": ["192.168.1.10", "192.168.1.50", "192.168.1.120"],
-            "preemptive_actions": [
-                {"action": "PREEMPTIVE_VLAN_ISOLATION", "priority": "HIGH", "target": host_ip},
-                {"action": "DEPLOY_DECOY_HONEYPOT", "priority": "MEDIUM", "target": "192.168.1.50"}
-            ],
-            "hardware_relay_required": False
-        }
 
-    # Synchronize Hardware RGB and OLED text based on threat severity
-    stage_idx = list(STAGE_METADATA.keys()).index(forecast.current_stage) if forecast.current_stage in STAGE_METADATA else 0
-    if stage_idx == 0:
-        HARDWARE_SENTINEL_STATE["rgb_mode"] = "SOLID_GREEN"
-        HARDWARE_SENTINEL_STATE["oled_status_text"] = "STATUS: ARMED / SECURE"
-    elif stage_idx <= 2:
-        HARDWARE_SENTINEL_STATE["rgb_mode"] = "PULSE_YELLOW"
-        HARDWARE_SENTINEL_STATE["oled_status_text"] = f"STAGE: RECON/ACCESS ({int(forecast.current_stage_confidence*100)}%)"
-    elif stage_idx <= 4:
-        HARDWARE_SENTINEL_STATE["rgb_mode"] = "PULSE_AMBER"
-        HARDWARE_SENTINEL_STATE["oled_status_text"] = f"WARN: C2 IN PROGRESS (+15m EXFIL)"
-    else:
-        HARDWARE_SENTINEL_STATE["rgb_mode"] = "FLASH_RED"
-        HARDWARE_SENTINEL_STATE["oled_status_text"] = "CRITICAL: EXFIL PROJECTED"
 
-    return {
-        "host_ip": forecast.host_ip,
-        "timestamp": forecast.timestamp,
-        "current_stage": forecast.current_stage,
-        "current_stage_confidence": forecast.current_stage_confidence,
-        "overall_threat_score": forecast.overall_threat_score,
-        "stage_metadata": STAGE_METADATA.get(forecast.current_stage, {}),
-        "forecast_15m": {
-            "stage": forecast.forecast_horizon_15m.stage_id,
-            "label": forecast.forecast_horizon_15m.stage_label,
-            "prob": forecast.forecast_horizon_15m.probability,
-            "time_min": forecast.forecast_horizon_15m.estimated_time_to_stage_min,
-            "confidence_cone": forecast.forecast_horizon_15m.confidence_cone
-        },
-        "forecast_30m": {
-            "stage": forecast.forecast_horizon_30m.stage_id,
-            "label": forecast.forecast_horizon_30m.stage_label,
-            "prob": forecast.forecast_horizon_30m.probability,
-            "time_min": forecast.forecast_horizon_30m.estimated_time_to_stage_min,
-            "confidence_cone": forecast.forecast_horizon_30m.confidence_cone
-        },
-        "forecast_60m": {
-            "stage": forecast.forecast_horizon_60m.stage_id,
-            "label": forecast.forecast_horizon_60m.stage_label,
-            "prob": forecast.forecast_horizon_60m.probability,
-            "time_min": forecast.forecast_horizon_60m.estimated_time_to_stage_min,
-            "confidence_cone": forecast.forecast_horizon_60m.confidence_cone
-        },
-        "blast_radius_nodes": forecast.blast_radius_nodes,
-        "shap_explanations": forecast.shap_explanations,
-        "preemptive_actions": forecast.preemptive_actions,
-        "hardware_relay_required": forecast.hardware_relay_required,
-        "all_stages": STAGE_METADATA
-    }
 
 
 @app.get("/v1/forecast/blast-radius", tags=["forecasting"])

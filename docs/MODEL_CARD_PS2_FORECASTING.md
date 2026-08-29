@@ -1,0 +1,49 @@
+# Model Card — DNS Shield X-Forecast (PS2 Temporal Attack Forecaster)
+
+## 1. Model Overview & Purpose
+- **Model Name**: DNS Shield Temporal Markov Kill-Chain Forecaster (`v2.1.0-ps2`)
+- **Problem Statement**: SIH 2026 PS2 — AI-Based Cyber Attack Forecasting System & Temporal Kill-Chain Trajectory.
+- **Architecture**: Stateful 7-Stage Markov State Transition Graph + Temporal Sliding-Window Feature Extractor + Additive TreeSHAP Explainer.
+- **Target Horizons**: 
+  - $t+0$: Current Active MITRE ATT&CK Phase
+  - $t+15\text{m}$: 15-Minute Next Hop Stage & Confidence Cone
+  - $t+30\text{m}$: 30-Minute Intermediate Escalation Projection
+  - $t+60\text{m}$: 60-Minute Exfiltration / Culmination Horizon
+
+---
+
+## 2. Mathematical Formalization of Time-to-Compromise (TTC)
+
+### Formal Formula Disclosure
+$$\text{TTC}(s, \mathbf{x}) = \left(\sum_{k=s+1}^{6} T_k\right) \times \left(1.0 - 0.45 \cdot \text{clip}\left(\frac{\text{burst\_qps}}{25.0}, 0.0, 1.0\right)\right) \times \left(0.60 + 0.40 \cdot (1.0 - C)\right)$$
+
+Where:
+1. **$s \in \{0, 1, 2, 3, 4, 5, 6\}$**: Current classified kill-chain stage index.
+2. **$T_k$**: Canonical baseline stage duration constants (minutes):
+   - $T_1$ (Reconnaissance): $10.0\text{ min}$
+   - $T_2$ (Initial Access): $15.0\text{ min}$
+   - $T_3$ (Discovery): $12.0\text{ min}$
+   - $T_4$ (C2 Persistence): $18.0\text{ min}$
+   - $T_5$ (Lateral Movement): $22.0\text{ min}$
+   - $T_6$ (Exfiltration / Impact): $0.0\text{ min}$ (Terminal state)
+3. **$\text{burst\_qps}$**: Measured query / flow burst rate over the 900-second session window. Automated APT scripting with high burst velocity compresses phase duration by up to $45\%$.
+4. **$C \in [0.0, 1.0]$**: Current stage model confidence. High confidence projects streamlined attacker advancement ($0.60\times$), whereas low confidence models attacker hesitation and dwell time ($1.00\times$).
+5. **Boundary Conditions**: For Benign ($s=0$) and Terminal Exfiltration ($s=6$), $\text{TTC} = 0.0\text{ min}$.
+
+---
+
+## 3. Scope & Operational Boundaries
+
+### Supported Ingestion Modalities
+- **Structured NetFlow / IPFIX JSON**: Ingestion via `POST /flow/batch` and `POST /flow/packet`.
+- **PCAP / PCAP-NG File Parsing**: Struct-based raw Ethernet / IPv4 / TCP / UDP / DNS frame extractor via `POST /flow/pcap`.
+
+### Explicit Scope Constraints & Limitations
+- **No Raw UDP Socket Kernel Daemon**: In accordance with the modular microservice architecture, live packet ingestion operates over structured HTTP endpoints. A promiscuous kernel socket daemon (e.g. `AF_PACKET` / raw `pcap_loop`) is omitted in this demonstration build in favor of reproducible containerized JSON/PCAP flow telemetry.
+- **PCAP Safety Boundary**: PCAP file uploads are capped at $20\text{ MB}$ (`MAX_PCAP_SIZE_BYTES`), execute with bounded memory allocation, and are designated as a **Lab & Evaluation Diagnostic Endpoint**.
+
+---
+
+## 4. Hardware Relay Preemptive Trigger Logic
+- When the projected threat reaches $\text{STAGE\_5}$ (Lateral Movement) or $\text{STAGE\_4}$ with high velocity ($\text{TTC} < 15\text{m}$), the engine flags `hardware_relay_required = True`.
+- Signals the Zephyr RTOS Microcontroller (ESP32-S3 / RP2040) on GPIO 18 to isolate external network egress, neutralizing the attack before data exfiltration occurs.

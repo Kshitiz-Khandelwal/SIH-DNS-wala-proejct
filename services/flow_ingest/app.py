@@ -278,25 +278,80 @@ def ingest_batch(payload: BatchPayload):
     return {"status": "ok", "ingested": count}
 
 
-@app.post("/flow/pcap", tags=["ingest"])
+MAX_PCAP_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB safety cap
+
+
+@app.post("/flow/pcap", tags=["ingest-lab-only"])
 async def ingest_pcap(file: UploadFile = File(...)):
-    """Upload a PCAP file. Parses Ethernet + IP + TCP/UDP/DNS layers."""
-    if not file.filename.endswith((".pcap", ".pcapng", ".cap")):
-        raise HTTPException(status_code=400, detail="File must be a .pcap / .pcapng / .cap file")
-    content = await file.read()
-    packets = parse_pcap_bytes(content)
+    """Lab & Diagnostic Testing Endpoint: Upload a PCAP file for offline flow analysis.
+    
+    SECURITY NOTICE:
+    - This endpoint is designed for local test bench & offline evaluation.
+    - File size is capped at 20 MB.
+    - Untrusted packet parsing is isolated and returns structured HTTP 422 on malformed input.
+    - Not intended for unauthenticated public ingress without mTLS/VPN boundary.
+    """
+    if not file.filename or not file.filename.endswith((".pcap", ".pcapng", ".cap")):
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "INVALID_EXTENSION", "message": "File must be a .pcap, .pcapng, or .cap file"}
+        )
+    
+    try:
+        content = await file.read()
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "READ_ERROR", "message": f"Could not read uploaded stream: {e}"}
+        )
+
+    if len(content) > MAX_PCAP_SIZE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail={
+                "error": "PAYLOAD_TOO_LARGE",
+                "message": f"PCAP exceeds {MAX_PCAP_SIZE_BYTES // (1024*1024)} MB lab size limit ({len(content)} bytes received)."
+            }
+        )
+
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "EMPTY_FILE", "message": "Uploaded PCAP file is 0 bytes."}
+        )
+
+    try:
+        packets = parse_pcap_bytes(content)
+    except Exception as err:
+        logger.error(f"Unexpected parser failure on {file.filename}: {err}")
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "PARSER_FAILURE", "message": f"Malformed packet structures in PCAP: {err}"}
+        )
+
     if not packets:
-        raise HTTPException(status_code=422, detail="Could not parse any packets from PCAP. Ensure it is a valid PCAP (libpcap format).")
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "UNRECOGNIZED_PCAP_FORMAT",
+                "message": "Could not parse any valid IPv4 TCP/UDP/DNS frames. Ensure file uses standard libpcap format."
+            }
+        )
+
     for pkt in packets:
         _ingest_flow_dict(pkt)
+
     hosts = list({p["src_ip"] for p in packets})
-    logger.info(f"PCAP upload: {len(packets)} packets from {len(hosts)} source IPs")
+    logger.info(f"PCAP upload: {len(packets)} packets from {len(hosts)} source IPs parsed safely")
     return {
         "status": "ok",
         "filename": file.filename,
+        "bytes_received": len(content),
         "packets_parsed": len(packets),
         "source_hosts": hosts[:20],
+        "lab_mode": True,
     }
+
 
 
 @app.post("/flow/simulate/{host_ip}", tags=["simulation"])

@@ -184,29 +184,37 @@ class AttackForecastingEngine:
             "STAGE_6_EXFILTRATION": 0.0
         }
 
-        # Reconnaissance scoring (high port diversity, high SYN ratio)
-        if feats["unique_ports"] > 10 or feats["syn_ratio"] > 0.4:
-            scores["STAGE_1_RECONNAISSANCE"] += 0.75 + min(0.2, feats["unique_ports"] * 0.01)
+        # Stage 1: Reconnaissance (SYN port scans across diverse ports or external probes)
+        if feats["syn_ratio"] > 0.5 and feats["unique_ports"] >= 3:
+            scores["STAGE_1_RECONNAISSANCE"] += 0.85 + min(0.1, feats["unique_ports"] * 0.01)
 
-        # C2 Beaconing (heartbeat regularity + beacon domains)
+        # Stage 2: Initial Access (DGA queries / phishing lookups)
+        dga_queries = sum(1 for f in flows if any(k in (f.get("dns_query") or "").lower() for k in ["dga", "top", "xyz", "biz", "seed"]))
+        if dga_queries > 0:
+            scores["STAGE_2_INITIAL_ACCESS"] += 0.88
+
+        # Stage 3: Internal Subnet Discovery (Active Directory, LDAP 389/636, Kerberos 88, NetBIOS 139)
+        disc_ports = sum(1 for f in flows if f.get("dst_port") in [139, 389, 636, 88])
+        if disc_ports >= 2:
+            scores["STAGE_3_DISCOVERY"] += 0.90
+
+        # Stage 4: C2 Persistence (heartbeat periodicity / beaconing)
         if feats["c2_heartbeat_regularity"] > 0.5:
-            scores["STAGE_4_C2_PERSISTENCE"] += 0.85
+            scores["STAGE_4_C2_PERSISTENCE"] += 0.92
         
-        # DNS Tunneling / Exfiltration (payload markers + burst QPS)
-        if feats["dns_tunnel_markers"] > 0:
-            if feats["burst_qps"] > 15:
-                scores["STAGE_6_EXFILTRATION"] += 0.92
-            else:
-                scores["STAGE_4_C2_PERSISTENCE"] += 0.70
+        # Stage 5: Lateral Movement (large internal TCP connections / remote services port 445 with sustained data)
+        lateral_flows = [f for f in flows if f.get("dst_port") == 445 and (f.get("dst_ip", "").startswith("10.") or f.get("dst_ip", "").startswith("192.168."))]
+        if len(lateral_flows) >= 5 and feats["syn_ratio"] < 0.2:
+            scores["STAGE_5_LATERAL_MOVEMENT"] += 0.94
 
-        # Lateral movement (internal subnet targeting)
-        internal_dsts = sum(1 for f in flows if f.get("dst_ip", "").startswith("192.168.") or f.get("dst_ip", "").startswith("10."))
-        if internal_dsts > 3 and feats["unique_ports"] > 3:
-            scores["STAGE_5_LATERAL_MOVEMENT"] += 0.80
+        # Stage 6: DNS Tunneling / Bulk Exfiltration (high tunnel markers / large chunked egress)
+        if feats["dns_tunnel_markers"] > 0:
+            scores["STAGE_6_EXFILTRATION"] += 0.96
 
         # Normal fallback if clean
         if max(scores.values()) == 0.1:
             scores["STAGE_0_BENIGN"] = 0.95
+
 
         # Pick best stage
         current_stage = max(scores, key=scores.get)
@@ -216,15 +224,47 @@ class AttackForecastingEngine:
         stage_idx = STAGES.index(current_stage)
         threat_score = int(min(100, (stage_idx / 6.0) * 85 + (confidence * 15))) if stage_idx > 0 else 5
 
-        # Time-to-Compromise (TTC) — estimated minutes until STAGE_6_EXFILTRATION
-        # Derived from remaining stages × average stage transition time weighted by confidence
-        # Stage transition averages (minutes): RECON~8, INIT~12, DISC~10, C2~15, LAT~20, EXFIL~0
-        stage_durations = [0, 8, 12, 10, 15, 20, 0]  # per stage
-        remaining_stages = max(0, 6 - stage_idx)
-        base_ttc = sum(stage_durations[stage_idx + 1: 7]) if stage_idx < 6 else 0
-        # Faster progression for high-confidence advanced stages
-        velocity_factor = 0.6 + 0.4 * (1 - confidence)  # lower confidence = slower (uncertain)
-        time_to_compromise_min = round(base_ttc * velocity_factor, 1)
+        # ---------------------------------------------------------------------
+        # Time-to-Compromise (TTC) Calculation & Formal Provenance
+        # ---------------------------------------------------------------------
+        # FORMULA DISCLOSURE:
+        #   TTC(s, x) = BaseDuration(s) * VelocityModifier(QPS) * ConfidenceUncertainty(C)
+        #
+        # Where:
+        #   1. BaseDuration(s) = sum_{k=s+1}^{6} T_k
+        #      Canonical baseline phase durations:
+        #        T_1 (Recon)       = 10.0 min
+        #        T_2 (Init Access) = 15.0 min
+        #        T_3 (Discovery)   = 12.0 min
+        #        T_4 (C2 Persist)  = 18.0 min
+        #        T_5 (Lateral Mov) = 22.0 min
+        #        T_6 (Exfiltrate)  = 0.0 min
+        #
+        #   2. VelocityModifier(QPS) = 1.0 - 0.45 * min(burst_qps / 25.0, 1.0)
+        #      Higher query/packet burst rates indicate automated APT tooling,
+        #      accelerating the transition speed up to 45% faster.
+        #
+        #   3. ConfidenceUncertainty(C) = 0.60 + 0.40 * (1.0 - confidence)
+        #      High model confidence (C -> 1.0) projects direct path progression (0.60x),
+        #      while low confidence factors in attacker dwell time and hesitancy (1.00x).
+        # ---------------------------------------------------------------------
+        stage_durations = [0.0, 10.0, 15.0, 12.0, 18.0, 22.0, 0.0]
+        
+        if stage_idx == 0:
+            # Benign baseline has no active compromise trajectory
+            time_to_compromise_min = 0.0
+        elif stage_idx >= 6:
+            # Already at impact / exfiltration phase
+            time_to_compromise_min = 0.0
+        else:
+            base_remaining_duration = sum(stage_durations[stage_idx + 1: 7])
+            # Velocity factor: packet burst / query rate acceleration
+            burst_rate = float(feats.get("burst_qps", 0.0))
+            velocity_modifier = max(0.55, 1.0 - 0.45 * min(burst_rate / 25.0, 1.0))
+            # Uncertainty scaling
+            confidence_factor = 0.60 + 0.40 * (1.0 - confidence)
+            time_to_compromise_min = round(base_remaining_duration * velocity_modifier * confidence_factor, 1)
+
 
         # Step 2: Forecast Future Horizons (+15m, +30m, +60m)
         trans = self.transition_matrix.get(current_stage, {"STAGE_0_BENIGN": 1.0})

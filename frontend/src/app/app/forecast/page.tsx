@@ -165,6 +165,7 @@ export default function ForecastPage() {
   const [data, setData] = useState<ForecastData>(DEFAULT_FALLBACK);
   const [hosts, setHosts] = useState<HostSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [serviceOffline, setServiceOffline] = useState(false);
   const [relayTripped, setRelayTripped] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [simStage, setSimStage] = useState<string | null>(null);
@@ -187,10 +188,17 @@ export default function ForecastPage() {
       const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
-        if (!json.error) setData(json);
+        if (!json.error) {
+          setData(json);
+          setServiceOffline(false);
+        } else {
+          setServiceOffline(true);
+        }
+      } else {
+        setServiceOffline(true);
       }
     } catch {
-      // keep existing data
+      setServiceOffline(true);
     } finally {
       setLoading(false);
     }
@@ -207,6 +215,7 @@ export default function ForecastPage() {
       setHosts([]);
     }
   }, []);
+
 
   useEffect(() => {
     fetchForecast();
@@ -382,6 +391,27 @@ export default function ForecastPage() {
         </div>
       </div>
 
+      {/* ── Degraded State Warning (Honest UX) ─────────────────────────────────── */}
+      {serviceOffline && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-center justify-between gap-4 text-amber-900 shadow-sm">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <div className="font-bold text-sm">Forecasting Engine Offline / Degraded State</div>
+              <div className="text-xs text-amber-700 mt-0.5">
+                Could not connect to <span className="font-mono">forecasting-engine</span> (port 8007). Showing cached baseline profile. Start the backend with <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-[11px]">python run_backend.py</code> to view live predictions.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={fetchForecast}
+            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg shrink-0 transition-colors"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
       {/* ── Sim Notification ─────────────────────────────────────────────────── */}
       {simStage && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3 text-sm">
@@ -393,6 +423,7 @@ export default function ForecastPage() {
           <button onClick={() => setSimStage(null)} className="ml-auto text-blue-400 hover:text-blue-700 text-xs">✕</button>
         </div>
       )}
+
 
       {/* ── KPI Row ──────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">

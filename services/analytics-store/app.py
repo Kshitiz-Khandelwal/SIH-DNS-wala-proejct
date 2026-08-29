@@ -55,7 +55,23 @@ def init_sqlite():
             timestamp TEXT
         )
         """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS forecast_events (
+            id TEXT PRIMARY KEY,
+            timestamp TEXT,
+            host_ip TEXT,
+            current_stage TEXT,
+            current_stage_confidence REAL,
+            overall_threat_score INTEGER,
+            time_to_compromise_min REAL,
+            predicted_15m TEXT,
+            predicted_30m TEXT,
+            predicted_60m TEXT,
+            relay_engaged INTEGER
+        )
+        """)
 init_sqlite()
+
 
 
 class Event(BaseModel):
@@ -245,10 +261,74 @@ async def pcap(file: UploadFile = File(...)):
     return {"mode": "passive", "format": "pcap", "filename": file.filename, "extracted_queries": queries, "note": "only UDP/53 DNS queries are extracted; DoH/DoT are encrypted and require endpoint logs"}
 
 
+class ForecastAuditRecord(BaseModel):
+    id: str | None = None
+    timestamp: str | None = None
+    host_ip: str
+    current_stage: str
+    current_stage_confidence: float = 0.0
+    overall_threat_score: int = 0
+    time_to_compromise_min: float = 0.0
+    predicted_15m: str = ""
+    predicted_30m: str = ""
+    predicted_60m: str = ""
+    relay_engaged: bool = False
+
+
+@app.post("/forecast/events", tags=["forecast-audit"])
+def log_forecast_event(record: ForecastAuditRecord):
+    """Store temporal forecasting verdict and TTC snapshot for forensic audit."""
+    rec_id = record.id or str(uuid.uuid4())
+    ts = record.timestamp or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+    row = (
+        rec_id,
+        ts,
+        record.host_ip,
+        record.current_stage,
+        record.current_stage_confidence,
+        record.overall_threat_score,
+        record.time_to_compromise_min,
+        record.predicted_15m,
+        record.predicted_30m,
+        record.predicted_60m,
+        1 if record.relay_engaged else 0,
+    )
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            INSERT OR REPLACE INTO forecast_events 
+            (id, timestamp, host_ip, current_stage, current_stage_confidence, overall_threat_score, 
+             time_to_compromise_min, predicted_15m, predicted_30m, predicted_60m, relay_engaged)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, row)
+    return {"status": "ok", "id": rec_id, "host_ip": record.host_ip}
+
+
+@app.get("/forecast/events", tags=["forecast-audit"])
+def get_forecast_events(limit: int = 50, host_ip: str | None = None):
+    """Query recent forecasting timeline verdicts."""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        if host_ip:
+            cursor = conn.execute(
+                "SELECT * FROM forecast_events WHERE host_ip = ? ORDER BY timestamp DESC LIMIT ?",
+                (host_ip, limit)
+            )
+        else:
+            cursor = conn.execute(
+                "SELECT * FROM forecast_events ORDER BY timestamp DESC LIMIT ?",
+                (limit,)
+            )
+        rows = [dict(r) for r in cursor.fetchall()]
+    return {"events": rows, "count": len(rows)}
+
+
 @app.get("/health", tags=["operations"])
 def health():
-    try:
-        clickhouse("SELECT 1", timeout=1)
-        return {"status": "ok", "backend": "ClickHouse"}
-    except requests.RequestException:
-        return {"status": "degraded", "backend": "ClickHouse"}
+    if HAS_CLICKHOUSE:
+        try:
+            clickhouse("SELECT 1", timeout=1)
+            return {"status": "ok", "backend": "ClickHouse"}
+        except requests.RequestException:
+            return {"status": "degraded", "backend": "ClickHouse"}
+    return {"status": "ok", "backend": "SQLite-Local"}
+
