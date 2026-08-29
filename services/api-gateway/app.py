@@ -195,6 +195,7 @@ def decide_verdict(risk: int, threat_hit: bool, uncertainty_band: str | None) ->
 
 
 @app.post("/v1/query", tags=["detection"])
+@app.post("/api/v1/query", tags=["detection"])
 def query(request: Query) -> dict[str, Any]:
     """Run the cheap-to-expensive seven-stage filtering pipeline with XAI evidence."""
     started = time.perf_counter()
@@ -349,6 +350,7 @@ def query(request: Query) -> dict[str, Any]:
 
 
 @app.get("/v1/events", tags=["analytics"])
+@app.get("/api/v1/events", tags=["analytics"])
 def events(limit: int = 100):
     try:
         return requests.get(ANALYTICS + f"/events?limit={min(max(limit, 1), 500)}", timeout=1).json()
@@ -357,6 +359,7 @@ def events(limit: int = 100):
 
 
 @app.get("/v1/stats", tags=["analytics"])
+@app.get("/api/v1/stats", tags=["analytics"])
 def stats(hours: int = 24):
     try:
         response = requests.get(ANALYTICS + f"/stats?hours={min(max(hours, 1), 720)}", timeout=1)
@@ -367,6 +370,7 @@ def stats(hours: int = 24):
 
 
 @app.get("/v1/trends", tags=["analytics"])
+@app.get("/api/v1/trends", tags=["analytics"])
 def trends(hours: int = 24, domain: str | None = None, client_ip: str | None = None):
     params = {"hours": min(max(hours, 1), 720)}
     if domain: params["domain"] = normalize_domain(domain)
@@ -380,6 +384,7 @@ def trends(hours: int = 24, domain: str | None = None, client_ip: str | None = N
 
 
 @app.get("/v1/devices/{ip}", tags=["analytics"])
+@app.get("/api/v1/devices/{ip}", tags=["analytics"])
 def device(ip: str):
     data, error = service_json("behavioral", "GET", f"/devices/{ip}", timeout=2)
     if error: raise HTTPException(status_code=503, detail=error)
@@ -387,6 +392,7 @@ def device(ip: str):
 
 
 @app.get("/v1/domains/{domain}", tags=["analytics"])
+@app.get("/api/v1/domains/{domain}", tags=["analytics"])
 def domain_profile(domain: str):
     data, error = service_json("behavioral", "GET", f"/domains/{normalize_domain(domain)}", timeout=2)
     if error: raise HTTPException(status_code=503, detail=error)
@@ -394,12 +400,14 @@ def domain_profile(domain: str):
 
 
 @app.get("/v1/incidents", tags=["analytics"])
+@app.get("/api/v1/incidents", tags=["analytics"])
 def incidents():
     data, error = service_json("behavioral", "GET", "/incidents", timeout=2)
     return [] if error else data
 
 
 @app.get("/v1/incidents/{incident_id}", tags=["analytics"])
+@app.get("/api/v1/incidents/{incident_id}", tags=["analytics"])
 def incident_detail(incident_id: str):
     data, error = service_json("behavioral", "GET", f"/incidents/{incident_id}", timeout=2)
     if error: raise HTTPException(status_code=503, detail=error)
@@ -407,6 +415,7 @@ def incident_detail(incident_id: str):
 
 
 @app.get("/v1/feed-health", tags=["operations"])
+@app.get("/api/v1/feed-health", tags=["operations"])
 def feed_health():
     data, error = service_json("threat-intel", "GET", "/feeds/health", timeout=2)
     if error: raise HTTPException(status_code=503, detail=error)
@@ -414,6 +423,8 @@ def feed_health():
 
 
 @app.get("/v1/model-monitoring", tags=["operations"])
+@app.get("/api/v1/model-monitoring", tags=["operations"])
+@app.get("/api/v1/models/metadata", tags=["operations"])
 def model_monitoring():
     data, error = service_json("ml", "GET", "/monitoring", timeout=2)
     if error: raise HTTPException(status_code=503, detail=error)
