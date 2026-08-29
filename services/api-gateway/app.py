@@ -49,6 +49,11 @@ SERVICES = {
     "threat-intel": os.getenv("THREAT_INTEL_URL", "http://localhost:8003"),
     "active-response": os.getenv("ACTIVE_RESPONSE_URL", "http://localhost:8004"),
 }
+ML = SERVICES["ml"]
+BEHAVIORAL = SERVICES["behavioral"]
+GEO = SERVICES["geo"]
+THREAT_INTEL = SERVICES["threat-intel"]
+ACTIVE_RESPONSE = SERVICES["active-response"]
 ANALYTICS = os.getenv("ANALYTICS_STORE_URL", "http://localhost:8005")
 CACHE_TTL_SECONDS = int(os.getenv("VERDICT_CACHE_TTL_SECONDS", "300"))
 API_KEY = os.getenv("GATEWAY_API_KEY", "")
@@ -407,7 +412,10 @@ def stats(hours: int = 24):
             quarantine_resp = requests.get(ACTIVE_RESPONSE + "/quarantine", timeout=0.5)
             if quarantine_resp.status_code == 200:
                 q_data = quarantine_resp.json()
-                open_incidents_count = len(q_data) if isinstance(q_data, list) else len(q_data.get("hosts", []))
+                if isinstance(q_data, dict):
+                    open_incidents_count = len(q_data.get("rules", {}))
+                elif isinstance(q_data, list):
+                    open_incidents_count = len(q_data)
         except Exception:
             open_incidents_count = 0
         

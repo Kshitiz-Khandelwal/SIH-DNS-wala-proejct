@@ -9,24 +9,24 @@ This document details the exact provenance, sources, mathematical algorithms, an
 * **File Path**: `data/eval_100k_domains.csv`
 * **Total Records**: **110,150 domains**
 * **File Format**: CSV (`domain,label,family,source,split_category,rank_bucket`)
-* **SHA-256 Hash**: `8f1adccdd3fcad0c33a7ab327de9428683d38e4625b70582a368e177954da46c`
-* **Generation Timestamp**: `2026-08-29 05:41:44 UTC`
-* **Generation Script**: [`generate_100k_eval_dataset.py`](file:///C:/Users/Admin/Desktop/Kshitiz/SIH-DNS-wala-project/generate_100k_eval_dataset.py)
+* **SHA-256 Hash**: `0a665a9ff8c48f1cf8d9f15b0e337315fbef9f9c655497c817612356664d45b8`
+* **Generation Timestamp**: `2026-08-29 05:57:54 UTC`
+* **Generation Script**: [`generate_100k_eval_dataset.py`](generate_100k_eval_dataset.py)
 * **Zero-Leakage Condition**:
   $$\text{eval\_domains} \cap \text{train\_domains} = \emptyset \quad (\text{Exact } 0 \text{ overlapping strings})$$
 
 ---
 
-## 2. Benign Domain Corpus (55,000 Domains)
+## 2. Benign Domain Corpus (55,000 Domains) — Synthetic Combinatorial Stress Test
 
-To evaluate real-world False Positive Rates (FPR), benign domains are partitioned into **4 Tranco-style popularity rank tiers**, ensuring the model is tested against both high-reputation sovereign infrastructure and challenging long-tail / newly-registered domains:
+To evaluate the exact boundary limits and lexical vulnerability of the ML model, the 55,000 benign domains were generated using a **synthetic combinatorial stress-test framework** partitioned into 4 architectural complexity tiers. This framework intentionally creates challenging legitimate-patterned domains (with subdomains, hyphens, numbers, and marketing gTLDs) to measure whether the lexical model over-indexes on string complexity:
 
-| Rank Bucket | Sample Count | Provenance / Domain Characteristics |
+| Tier Identifier | Sample Count | Generation Strategy & Domain Characteristics |
 |---|---|---|
-| **Tier 1: `tranco_top_1k`** | 5,000 | Top-1K Global Cloud Providers, Tech Giants, Media Portals, and Indian Sovereign Infrastructure (`isro.gov.in`, `nic.in`, `drdo.gov.in`, `cert-in.org`, `uidai.gov.in`, `aiims.edu`). |
-| **Tier 2: `tranco_1k_10k`** | 15,000 | Mid-sized Global Enterprises, Banking, Logistics, Universities, and Regional Portals (`.de`, `.fr`, `.jp`, `.edu`, `.ac.uk`). |
-| **Tier 3: `tranco_10k_100k`** | 20,000 | Niche SaaS platforms, Developer Repositories, Startup APIs, and Modern ccTLDs (`.io`, `.dev`, `.app`, `.ai`, `.cloud`, `.co`). |
-| **Tier 4: `tranco_100k_1m_longtail`** | 15,000 | Multi-hyphenated long-tail domains, obscure gTLDs (`.online`, `.xyz`, `.top`, `.site`, `.store`, `.club`, `.space`), simulating the hardest benign detection boundary. |
+| **Tier 1: `synthetic_tier1_brand_prefixes`** | 5,000 | Combinations of standard infrastructure prefixes (`api`, `app`, `cdn`, `auth`, `sec`, `sync`) with top-brand and sovereign root names (`google`, `microsoft`, `apple`, `isro.gov`, `nic`, `drdo.gov`, `uidai.gov`) across `.com`, `.in`, `.gov.in`. |
+| **Tier 2: `synthetic_tier2_enterprise_stems`** | 15,000 | Multi-word enterprise roots (`university`, `hospital`, `banking`, `telecom`, `logistics`) combined with geographic regions (`delhi`, `mumbai`, `london`, `tokyo`, `paris`, `singapore`) across ccTLDs (`.de`, `.fr`, `.jp`, `.edu`, `.ac.uk`). |
+| **Tier 3: `synthetic_tier3_saas_stems`** | 20,000 | Modern SaaS vocabulary pairs (`vector`, `quantum`, `nexus`, `apex`, `strata`, `orbit` + `analytics`, `security`, `metrics`, `platform`) across modern tech TLDs (`.io`, `.dev`, `.app`, `.ai`, `.cloud`, `.co`). |
+| **Tier 4: `synthetic_tier4_hyphenated_longtail`** | 15,000 | Multi-hyphenated long-tail and numeric-suffixed marketing domains (`fast-smart-green-1.online`, `super-tools-free-4779.shop`) across newer gTLDs (`.online`, `.xyz`, `.top`, `.site`, `.store`, `.club`, `.space`), deliberately testing the hardest lexical boundary. |
 
 ---
 

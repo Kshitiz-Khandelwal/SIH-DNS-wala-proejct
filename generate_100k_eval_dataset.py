@@ -492,16 +492,16 @@ def build_evaluation_dataset():
     seen_domains = set()
     
     # --- 1. Benign Dataset (55,000 domains) ---
-    print("[*] Generating 55,000 Benign Domains across 4 Tranco-Style Rank Tiers...")
+    print("[*] Generating 55,000 Benign Domains across 4 Synthetic Stress Tiers...")
     benign_generators = [
-        (generate_benign_tier1_top1k, 5000, "tranco_top_1k"),
-        (generate_benign_tier2_1k_10k, 15000, "tranco_1k_10k"),
-        (generate_benign_tier3_10k_100k, 20000, "tranco_10k_100k"),
-        (generate_benign_tier4_longtail, 15000, "tranco_100k_1m_longtail"),
+        (generate_benign_tier1_top1k, 5000, "synthetic_tier1_brand_prefixes", "brand_prefixes"),
+        (generate_benign_tier2_1k_10k, 15000, "synthetic_tier2_enterprise_stems", "enterprise_stems"),
+        (generate_benign_tier3_10k_100k, 20000, "synthetic_tier3_saas_stems", "saas_stems"),
+        (generate_benign_tier4_longtail, 15000, "synthetic_tier4_hyphenated_longtail", "hyphenated_longtail"),
     ]
     
     benign_count = 0
-    for gen_fn, target_count, source_name in benign_generators:
+    for gen_fn, target_count, source_name, rank_bucket in benign_generators:
         tier_items = gen_fn(target_count + 1000)
         tier_added = 0
         for domain, rank_bucket in tier_items:
