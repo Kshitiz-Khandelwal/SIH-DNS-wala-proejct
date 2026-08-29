@@ -401,13 +401,23 @@ def stats(hours: int = 24):
         blocked = counts.get("BLOCK", 0)
         total = allowed + flagged + blocked
         
+        # Query real quarantined hosts / active incidents from Active Response service
+        open_incidents_count = 0
+        try:
+            quarantine_resp = requests.get(ACTIVE_RESPONSE + "/quarantine", timeout=0.5)
+            if quarantine_resp.status_code == 200:
+                q_data = quarantine_resp.json()
+                open_incidents_count = len(q_data) if isinstance(q_data, list) else len(q_data.get("hosts", []))
+        except Exception:
+            open_incidents_count = 0
+        
         return {
             "window_hours": hours,
             "total_events": total,
             "allowed_24h": allowed,
             "flagged_24h": flagged,
             "blocked_24h": blocked,
-            "open_incidents": max(1, flagged // 3 + blocked // 5) if (flagged + blocked) > 0 else 0,
+            "open_incidents": open_incidents_count,
             "by_verdict": by_verdict
         }
     except requests.RequestException:

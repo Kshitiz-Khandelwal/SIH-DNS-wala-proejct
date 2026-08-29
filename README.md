@@ -48,16 +48,20 @@ It intercepts DNS requests and evaluates them through a **7-stage detection pipe
 
 - **DGA training set**: `data/dga_dataset.csv` — 10,000 domains, balanced 5,000 benign / 5,000 malicious across 6 DGA families (matsnu, conficker, kraken, cryptolocker, generic, suppobox).
 - **Engineered features**: 19 (Shannon entropy, digit/vowel/consonant ratios, longest digit/consonant run, Damerau-Levenshtein distance to a 39-brand dictionary including Indian institutions, homoglyph detection, TLD risk score, plus character 2-4gram TF-IDF).
-- **10,000-Domain Full Benchmark** (`python test_10k_domains.py`):
-  - **Accuracy**: **99.95%**
+- **10,000-Domain Standard In-Distribution Validation** (`python test_10k_domains.py`):
+  - **Overall Accuracy**: **99.95%**
   - **Precision (Malicious)**: **100.00%** (0 false alarms on 5,000 benign domains)
-  - **Recall (Malicious)**: **99.90%** (4,995 out of 5,000 attacks blocked)
+  - **Recall (Malicious)**: **99.90%** (4,995 out of 5,000 in-distribution attacks blocked)
   - **False Positive Rate**: **0.00%**
   - **ROC-AUC**: **100.00%**
-- **Cross-family generalization** (trained on 3 DGA families, tested on 3 unseen families — the real test of zero-day malware detection): **97.2% recall**.
+- **100,000+ Domain Leak-Free Zero-Day Evaluation** (`python benchmark_100k.py` on 110,150 domains):
+  - **Strict Leakage Audit**: $\text{eval\_domains} \cap \text{train\_domains} = \emptyset$ (**0 overlapping strings / 100% disjoint**)
+  - **Zero-Day Recall on 14 Unseen DGA Families**: **97.98%** (39,340 out of 40,150 attacks detected across `corebot`, `locky`, `banjori`, `dyre`, `qakbot`, `tinba`, `vawtrak`, `ramnit`, `necurs`, `gozi`, `simda`, `pykspa`, `virut`)
+  - **In-Distribution Holdout Recall**: **97.69%** (14,653 / 15,000 unseen strings from native 6 families)
+  - **Full Provenance & Report**: See [`PROVENANCE.md`](PROVENANCE.md) and [`docs/100K_HONEST_BENCHMARK_REPORT.md`](docs/100K_HONEST_BENCHMARK_REPORT.md)
 - **Latency & Throughput Profile**:
   - **Hot-Path Redis Cache**: **< 0.5 ms** (easily satisfies the sub-10ms real-time DNS resolution SLA).
-  - **Cold-Path Lexical Extraction**: **~15–30 ms** on single-thread CPU for un-cached full 19-feature extraction + 150-tree Random Forest evaluation.
+  - **Cold-Path Lexical Extraction**: **~30–35 ms** on single-thread CPU for un-cached full 19-feature extraction + 150-tree Random Forest evaluation.
 - **Explainable Temporal Kill-Chain Forecasting**:
   - Predicts MITRE ATT&CK progression (Reconnaissance $\to$ Initial Access $\to$ Discovery $\to$ C2 Persistence $\to$ Lateral Movement $\to$ Exfiltration) 15 to 60 minutes in advance using a deterministic Markov state-transition matrix. Available in UI at `/app/forecast`.
 

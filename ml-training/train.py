@@ -117,13 +117,13 @@ def load_rows(path: Path) -> list[dict]:
 
 def split_rows(rows: list[dict], test_size: float, chronological: bool, cross_family: bool):
     if cross_family:
-        families = list(set(r["family"] for r in rows if r["family"] != "benign"))
         import random
-        random.seed(42)
-        holdout_families = set(random.sample(families, min(3, len(families))))
+        families = sorted(list(set(r["family"] for r in rows if r["family"] != "benign")))
+        rng = random.Random(42)
+        holdout_families = set(rng.sample(families, min(3, len(families))))
         train = [r for r in rows if r["family"] not in holdout_families]
-        test = [r for r in rows if r["family"] in holdout_families or (r["family"] == "benign" and random.random() < test_size)]
-        return train, test, f"cross-family-holdout:{','.join(holdout_families)}"
+        test = [r for r in rows if r["family"] in holdout_families or (r["family"] == "benign" and rng.random() < test_size)]
+        return train, test, f"cross-family-holdout:{','.join(sorted(holdout_families))}"
         
     if chronological:
         if not all(row["observed_at"] for row in rows):

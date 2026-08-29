@@ -131,6 +131,26 @@ def main():
     p99 = np.percentile(latencies, 99)
     mean_lat = np.mean(latencies)
 
+    # Live Redis Cache Measurement (Optional)
+    redis_status_str = "[SKIPPED — Redis server offline or not running]"
+    try:
+        import redis
+        r = redis.Redis(host="localhost", port=6379, socket_timeout=0.1)
+        if r.ping():
+            # Benchmark 500 real cache operations
+            r_times = []
+            for i in range(500):
+                t0 = time.perf_counter()
+                r.get(f"bench_key_{i}")
+                r_times.append((time.perf_counter() - t0) * 1000)
+            r_p99 = np.percentile(r_times, 99)
+            r_pass = "PASS" if r_p99 <= 10.0 else "FAIL"
+            redis_status_str = f"[{r_pass}] (Measured p99: {r_p99:.3f} ms <= 10.00 ms budget)"
+    except Exception:
+        redis_status_str = "[SKIPPED — Redis server offline or not running]"
+
+    cold_pass = "PASS" if p99 <= 50.0 else "FAIL"
+
     print("\n" + "=" * 75)
     print("  LATENCY & THROUGHPUT BENCHMARK (REAL MEASUREMENTS)")
     print("=" * 75)
@@ -140,8 +160,8 @@ def main():
     print(f"  50th Percentile (p50):     {p50:.3f} ms")
     print(f"  95th Percentile (p95):     {p95:.3f} ms")
     print(f"  99th Percentile (p99):     {p99:.3f} ms")
-    print(f"  Cold-Path Analysis:        Full un-cached 19-feature extraction + 150-tree inference (~{p50:.1f}ms)")
-    print(f"  Hot-Path Cache Target:     PASSED (< 0.50 ms via Redis in-memory lookup)")
+    print(f"  Cold-Path SLA (<50ms):     [{cold_pass}] ({p99:.2f} ms p99 <= 50.00 ms)")
+    print(f"  Hot-Path Cache Target:     {redis_status_str}")
 
     print("\n" + "=" * 75)
     print("  [+] ALL 10,000 DOMAINS VALIDATED SUCCESSFULLY WITH ZERO ERRORS")
