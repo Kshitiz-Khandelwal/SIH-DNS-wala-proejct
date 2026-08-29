@@ -1,9 +1,10 @@
 """
-DNS Shield X-Forecast — Temporal AI Attack Forecasting Engine
-============================================================
-Implements a multi-stage Markov & Temporal Sequence Neural Model for predicting
-cyberattack kill-chain progression across 15 to 60 minute prediction horizons.
-Integrates exact TreeSHAP feature explanations and preemptive defensive triggers.
+DNS Shield X-Forecast — Temporal Attack Forecasting Engine
+==========================================================
+Implements an explainable, deterministic multi-stage Markov State Transition
+Model & MITRE ATT&CK Kill-Chain Forecaster for predicting cyberattack progression
+across 15 to 60 minute prediction horizons. Integrates exact feature explanations
+and preemptive defensive triggers.
 """
 
 import time
