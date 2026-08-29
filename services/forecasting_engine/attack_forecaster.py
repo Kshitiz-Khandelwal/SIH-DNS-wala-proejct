@@ -96,6 +96,7 @@ class AttackForecastResult:
     current_stage: str
     current_stage_confidence: float
     overall_threat_score: int  # 0 to 100
+    time_to_compromise_min: float  # PS2 required field: estimated minutes until full exfiltration/impact
     forecast_horizon_15m: StagePrediction
     forecast_horizon_30m: StagePrediction
     forecast_horizon_60m: StagePrediction
@@ -215,6 +216,16 @@ class AttackForecastingEngine:
         stage_idx = STAGES.index(current_stage)
         threat_score = int(min(100, (stage_idx / 6.0) * 85 + (confidence * 15))) if stage_idx > 0 else 5
 
+        # Time-to-Compromise (TTC) — estimated minutes until STAGE_6_EXFILTRATION
+        # Derived from remaining stages × average stage transition time weighted by confidence
+        # Stage transition averages (minutes): RECON~8, INIT~12, DISC~10, C2~15, LAT~20, EXFIL~0
+        stage_durations = [0, 8, 12, 10, 15, 20, 0]  # per stage
+        remaining_stages = max(0, 6 - stage_idx)
+        base_ttc = sum(stage_durations[stage_idx + 1: 7]) if stage_idx < 6 else 0
+        # Faster progression for high-confidence advanced stages
+        velocity_factor = 0.6 + 0.4 * (1 - confidence)  # lower confidence = slower (uncertain)
+        time_to_compromise_min = round(base_ttc * velocity_factor, 1)
+
         # Step 2: Forecast Future Horizons (+15m, +30m, +60m)
         trans = self.transition_matrix.get(current_stage, {"STAGE_0_BENIGN": 1.0})
         next_likely_stage = max(trans, key=trans.get)
@@ -297,6 +308,7 @@ class AttackForecastingEngine:
             current_stage=current_stage,
             current_stage_confidence=round(confidence, 3),
             overall_threat_score=threat_score,
+            time_to_compromise_min=time_to_compromise_min,
             forecast_horizon_15m=h15,
             forecast_horizon_30m=h30,
             forecast_horizon_60m=h60,

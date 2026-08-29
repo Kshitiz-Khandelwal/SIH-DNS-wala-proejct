@@ -12,13 +12,15 @@ import signal
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SERVICES = [
-    ("threat-intel", 8003, "services/threat-intel"),
-    ("ml-inference", 8000, "services/ml-inference"),
-    ("behavioral-engine", 8001, "services/behavioral-engine"),
-    ("geo-intel", 8002, "services/geo-intel"),
-    ("active-response", 8004, "services/active-response"),
-    ("analytics-store", 8005, "services/analytics-store"),
-    ("api-gateway", 8081, "services/api-gateway"),
+    ("threat-intel",        8003, "services/threat-intel"),
+    ("ml-inference",        8000, "services/ml-inference"),
+    ("behavioral-engine",   8001, "services/behavioral-engine"),
+    ("geo-intel",           8002, "services/geo-intel"),
+    ("active-response",     8004, "services/active-response"),
+    ("analytics-store",     8005, "services/analytics-store"),
+    ("flow-ingest",         8006, "services/flow_ingest"),    # PS2: NetFlow/PCAP ingestion
+    ("forecasting-engine",  8007, "services/forecasting_engine"),  # PS2: Kill-chain forecaster
+    ("api-gateway",         8081, "services/api-gateway"),
 ]
 
 def check_redis():
@@ -64,18 +66,20 @@ def main():
         p = subprocess.Popen(cmd, cwd=cwd, env=env)
         processes.append((name, port, p))
     
-    print("\n[+] All 7 microservices launched. Waiting for startup...\n")
-    time.sleep(3)
+    print("\n[+] All 9 microservices launched. Waiting for startup...\n")
+    time.sleep(4)
     
     print("=" * 60)
     print("  SERVICES RUNNING & READY:")
-    print("  - ML Inference:      http://localhost:8000/docs")
-    print("  - Behavioral Engine: http://localhost:8001/docs")
-    print("  - Geo-Intel:         http://localhost:8002/docs")
-    print("  - Threat Intel:      http://localhost:8003/docs")
-    print("  - Active Response:   http://localhost:8004/docs")
-    print("  - Analytics Store:   http://localhost:8005/docs")
-    print("  - API Gateway:       http://localhost:8080/docs")
+    print("  - ML Inference:       http://localhost:8000/docs")
+    print("  - Behavioral Engine:  http://localhost:8001/docs")
+    print("  - Geo-Intel:          http://localhost:8002/docs")
+    print("  - Threat Intel:       http://localhost:8003/docs")
+    print("  - Active Response:    http://localhost:8004/docs")
+    print("  - Analytics Store:    http://localhost:8005/docs")
+    print("  - Flow Ingest [PS2]:  http://localhost:8006/docs")
+    print("  - Forecasting [PS2]:  http://localhost:8007/docs")
+    print("  - API Gateway:        http://localhost:8081/docs")
     print("=" * 60)
     print("Press Ctrl+C to terminate all services.\n")
     

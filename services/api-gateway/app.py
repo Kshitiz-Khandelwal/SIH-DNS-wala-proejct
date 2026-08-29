@@ -55,6 +55,8 @@ GEO = SERVICES["geo"]
 THREAT_INTEL = SERVICES["threat-intel"]
 ACTIVE_RESPONSE = SERVICES["active-response"]
 ANALYTICS = os.getenv("ANALYTICS_STORE_URL", "http://localhost:8005")
+FLOW_INGEST = os.getenv("FLOW_INGEST_URL", "http://localhost:8006")
+FORECASTING = os.getenv("FORECASTING_URL", "http://localhost:8007")
 CACHE_TTL_SECONDS = int(os.getenv("VERDICT_CACHE_TTL_SECONDS", "300"))
 API_KEY = os.getenv("GATEWAY_API_KEY", "")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("GATEWAY_RATE_LIMIT_PER_MINUTE", "240"))
@@ -757,6 +759,125 @@ def get_hardware_status():
     global HARDWARE_SENTINEL_STATE
     HARDWARE_SENTINEL_STATE["last_heartbeat"] = time.time()
     return HARDWARE_SENTINEL_STATE
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PS2 — AI Network Attack Forecasting Endpoints
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/v1/forecast/timeline", tags=["ps2-forecasting"])
+@app.get("/api/v1/forecast/timeline", tags=["ps2-forecasting"])
+def forecast_timeline():
+    """Most threatening active host kill-chain forecast with TTC."""
+    try:
+        r = requests.get(FORECASTING + "/forecast/timeline", timeout=1.5)
+        return r.json() if r.status_code == 200 else {"error": "forecasting service unavailable"}
+    except Exception:
+        return {"error": "forecasting service offline", "host_ip": "N/A",
+                "current_stage": "STAGE_0_BENIGN", "overall_threat_score": 0,
+                "time_to_compromise_min": 0, "shap_explanations": [], "all_stages": {}}
+
+
+@app.get("/v1/forecast/hosts", tags=["ps2-forecasting"])
+@app.get("/api/v1/forecast/hosts", tags=["ps2-forecasting"])
+def forecast_all_hosts():
+    """Threat-score ranked summary of all actively monitored hosts."""
+    try:
+        r = requests.get(FORECASTING + "/forecast/hosts", timeout=1.5)
+        return r.json() if r.status_code == 200 else {"hosts": [], "count": 0}
+    except Exception:
+        return {"hosts": [], "count": 0}
+
+
+@app.get("/v1/forecast/{host_ip}", tags=["ps2-forecasting"])
+@app.get("/api/v1/forecast/{host_ip}", tags=["ps2-forecasting"])
+def forecast_host(host_ip: str):
+    """Full forecast for a specific host IP."""
+    try:
+        r = requests.get(FORECASTING + f"/forecast/{host_ip}", timeout=1.5)
+        if r.status_code == 404:
+            raise HTTPException(status_code=404, detail=r.json().get("detail", "No data"))
+        return r.json()
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="Forecasting service offline")
+
+
+@app.post("/v1/flow/ingest", tags=["ps2-flow"])
+@app.post("/api/v1/flow/ingest", tags=["ps2-flow"])
+async def flow_ingest_batch(request: Request):
+    """Accept batch JSON packet telemetry from simulator or external collector."""
+    try:
+        body = await request.json()
+        r = requests.post(FLOW_INGEST + "/flow/batch", json=body, timeout=2)
+        return r.json() if r.status_code == 200 else {"status": "error", "detail": r.text}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+@app.post("/v1/flow/ingest/pcap", tags=["ps2-flow"])
+@app.post("/api/v1/flow/ingest/pcap", tags=["ps2-flow"])
+async def flow_ingest_pcap(file: UploadFile = File(...)):
+    """Upload a PCAP file — parsed and ingested into the flow collector."""
+    try:
+        content = await file.read()
+        r = requests.post(
+            FLOW_INGEST + "/flow/pcap",
+            files={"file": (file.filename, content, "application/octet-stream")},
+            timeout=10,
+        )
+        if r.status_code == 422:
+            raise HTTPException(status_code=422, detail=r.json().get("detail", "PCAP parse error"))
+        return r.json()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Flow ingest service error: {e}")
+
+
+@app.post("/v1/flow/simulate/{host_ip}", tags=["ps2-flow"])
+@app.post("/api/v1/flow/simulate/{host_ip}", tags=["ps2-flow"])
+def flow_simulate_stage(host_ip: str):
+    """Advance the synthetic APT kill-chain simulation by one stage for host_ip."""
+    try:
+        r = requests.post(FLOW_INGEST + f"/flow/simulate/{host_ip}", timeout=2)
+        return r.json() if r.status_code == 200 else {"status": "error"}
+    except Exception:
+        return {"status": "error", "detail": "Flow ingest service offline"}
+
+
+@app.post("/v1/flow/simulate/{host_ip}/full", tags=["ps2-flow"])
+@app.post("/api/v1/flow/simulate/{host_ip}/full", tags=["ps2-flow"])
+def flow_simulate_full(host_ip: str):
+    """Inject all 6 APT kill-chain stages at once for demo."""
+    try:
+        r = requests.post(FLOW_INGEST + f"/flow/simulate/{host_ip}/full", timeout=5)
+        return r.json() if r.status_code == 200 else {"status": "error"}
+    except Exception:
+        return {"status": "error", "detail": "Flow ingest service offline"}
+
+
+@app.get("/v1/flow/hosts", tags=["ps2-flow"])
+@app.get("/api/v1/flow/hosts", tags=["ps2-flow"])
+def flow_active_hosts():
+    """List all hosts currently being monitored in the flow collector."""
+    try:
+        r = requests.get(FLOW_INGEST + "/flow/hosts", timeout=1)
+        return r.json() if r.status_code == 200 else {"hosts": []}
+    except Exception:
+        return {"hosts": []}
+
+
+@app.delete("/v1/flow/hosts/{host_ip}", tags=["ps2-flow"])
+@app.delete("/api/v1/flow/hosts/{host_ip}", tags=["ps2-flow"])
+def flow_reset_host(host_ip: str):
+    """Reset / clear all flow data for a monitored host."""
+    try:
+        r = requests.delete(FLOW_INGEST + f"/flow/hosts/{host_ip}", timeout=1)
+        return r.json()
+    except Exception:
+        return {"status": "error"}
 
 
 # Mount public folder for standalone HTML UI
