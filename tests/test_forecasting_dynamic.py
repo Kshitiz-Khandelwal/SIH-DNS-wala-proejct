@@ -22,12 +22,14 @@ ANALYTICS_URL = "http://localhost:8005"
 class TestDynamicForecasting(unittest.TestCase):
 
     def setUp(self):
-        # Reset test host session
-        self.test_host = "172.28.100.55"
+        # Generate a unique host IP per test run to ensure isolated session state
+        import uuid
+        self.test_host = f"172.28.100.{uuid.uuid4().int % 200 + 10}"
         try:
             requests.delete(f"{FLOW_URL}/flow/hosts/{self.test_host}", timeout=1)
         except Exception:
             pass
+
 
     def test_01_all_services_health(self):
         """Verify all PS2 microservices report healthy status."""
@@ -106,15 +108,18 @@ class TestDynamicForecasting(unittest.TestCase):
 
     def test_04_analytics_store_audit_persistence(self):
         """Verify forecast evaluations are written to the analytics-store audit log."""
-        # Trigger an evaluation
+        # 1. Ingest telemetry so host has an active session
+        requests.post(f"{FLOW_URL}/flow/simulate/{self.test_host}", timeout=2)
+        # 2. Trigger evaluation which logs audit record
         requests.get(f"{FORECAST_URL}/forecast/{self.test_host}", timeout=2)
-        time.sleep(0.5)
+        time.sleep(0.3)
 
-        # Query analytics audit log
+        # 3. Query analytics audit log
         r = requests.get(f"{ANALYTICS_URL}/forecast/events?host_ip={self.test_host}", timeout=2)
         self.assertEqual(r.status_code, 200)
         events = r.json().get("events", [])
         self.assertGreater(len(events), 0, "Forecast evaluation should be logged in analytics-store")
+
         
         latest = events[0]
         self.assertEqual(latest["host_ip"], self.test_host)
