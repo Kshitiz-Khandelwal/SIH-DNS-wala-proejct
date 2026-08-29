@@ -66,10 +66,9 @@ def main():
         p = subprocess.Popen(cmd, cwd=cwd, env=env)
         processes.append((name, port, p))
     
-    print("\n[+] All 9 microservices launched. Running health checks...\n")
-    time.sleep(3)
+    print("\n[+] All 9 microservices launched. Waiting for startup & warming up services...\n")
 
-    # Explicit health checks per service to prevent silent failures
+    # Retry-with-backoff health check loop to prevent race conditions during service boot
     import urllib.request
     import urllib.error
 
@@ -85,35 +84,56 @@ def main():
         "api-gateway": "http://localhost:8081/health",
     }
 
+    print("-" * 65)
+    print("  STARTUP HEALTH VERIFICATION (Polling up to 15s per service):")
+    
     all_passed = True
-    print("-" * 60)
-    print("  STARTUP HEALTH VERIFICATION:")
     for name, port, p in processes:
         url = health_endpoints.get(name, f"http://localhost:{port}/health")
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "DNS-Shield-HealthCheck"})
-            with urllib.request.urlopen(req, timeout=2.0) as resp:
-                if resp.status in (200, 204):
-                    print(f"  [PASS] {name:<20} (port {port}) -> HTTP {resp.status} OK")
-                else:
-                    print(f"  [WARN] {name:<20} (port {port}) -> HTTP {resp.status}")
-                    all_passed = False
-        except Exception as err:
-            # Check docs endpoint as fallback if /health is not defined
+        docs_url = f"http://localhost:{port}/docs"
+        
+        passed = False
+        last_error = ""
+        start_t = time.time()
+        
+        while time.time() - start_t < 15.0:
+            if p.poll() is not None:
+                last_error = f"Process terminated unexpectedly with code {p.returncode}"
+                break
             try:
-                docs_url = f"http://localhost:{port}/docs"
-                req2 = urllib.request.Request(docs_url, headers={"User-Agent": "DNS-Shield-HealthCheck"})
-                with urllib.request.urlopen(req2, timeout=1.5) as resp2:
-                    print(f"  [PASS] {name:<20} (port {port}) -> HTTP {resp2.status} (docs)")
-            except Exception:
-                print(f"  [FAIL] {name:<20} (port {port}) -> OFFLINE ({type(err).__name__})")
-                all_passed = False
-    print("-" * 60)
+                req = urllib.request.Request(url, headers={"User-Agent": "DNS-Shield-HealthCheck"})
+                with urllib.request.urlopen(req, timeout=1.0) as resp:
+                    if resp.status in (200, 204):
+                        elapsed = round(time.time() - start_t, 1)
+                        print(f"  [PASS] {name:<20} (port {port}) -> HTTP {resp.status} OK ({elapsed}s)")
+                        passed = True
+                        break
+            except Exception as err:
+                last_error = type(err).__name__
+                # Try /docs as alternative endpoint
+                try:
+                    req_docs = urllib.request.Request(docs_url, headers={"User-Agent": "DNS-Shield-HealthCheck"})
+                    with urllib.request.urlopen(req_docs, timeout=1.0) as resp_docs:
+                        if resp_docs.status in (200, 204):
+                            elapsed = round(time.time() - start_t, 1)
+                            print(f"  [PASS] {name:<20} (port {port}) -> HTTP {resp_docs.status} OK (docs, {elapsed}s)")
+                            passed = True
+                            break
+                except Exception:
+                    pass
+            time.sleep(0.5)
+
+        if not passed:
+            print(f"  [FAIL] {name:<20} (port {port}) -> OFFLINE after 15s ({last_error})")
+            all_passed = False
+
+    print("-" * 65)
 
     if all_passed:
-        print("[+] All 9 microservices are healthy and responding.\n")
+        print("[+] All 9 microservices are healthy, fully warmed up, and responding.\n")
     else:
-        print("[!] Warning: Some services did not pass health check. Review output above.\n")
+        print("[!] Warning: Some services did not pass health check within 15s. Review output above.\n")
+
 
     print("=" * 60)
     print("  SERVICES RUNNING & READY:")

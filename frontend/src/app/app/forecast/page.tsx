@@ -620,20 +620,23 @@ export default function ForecastPage() {
             )}
           </div>
 
-          {/* Zephyr Hardware Panel */}
+          {/* Zephyr Hardware Sentinel (Emulated Signal) */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
               <Cpu className="w-4 h-4 text-blue-600" />
               <h2 className="text-sm font-bold text-slate-900">Zephyr RTOS Sentinel</h2>
-              <span className="text-[10px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded ml-auto">ESP32</span>
+              <span className="text-[10px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded ml-auto">Emulation</span>
             </div>
             <div className="bg-slate-950 rounded-lg p-3 font-mono text-[11px] text-sky-400 space-y-1 border border-slate-800">
               <div className="flex justify-between text-sky-300 font-bold border-b border-sky-900/50 pb-1">
                 <span>PROBE</span><span>{Math.round(Math.random() * 15 + 35)}.{Math.floor(Math.random() * 9)} QPS</span>
               </div>
-              <div className="text-slate-200 font-bold">STATUS: {relayTripped ? "AIR-GAP ENGAGED" : "ARMED / SECURE"}</div>
+              <div className="text-slate-200 font-bold">SIGNAL: {relayTripped ? "AIR-GAP ENGAGED (EMULATED)" : "ARMED / SECURE (EMULATED)"}</div>
               <div className="text-slate-400">THREAT: {threatScore} / 100</div>
               <div className="text-amber-400">TTC: ~{ttcMin > 0 ? ttcMin : "0"}m to STAGE_6</div>
+              <div className="text-slate-500 text-[10px] pt-1 border-t border-slate-800">
+                Mode: Software Air-Gap Signal (GPIO 18 Mock)
+              </div>
               {data.hardware_relay_required && (
                 <div className="text-red-400 font-bold animate-pulse">⚡ RELAY TRIP RECOMMENDED</div>
               )}
@@ -648,9 +651,10 @@ export default function ForecastPage() {
               )}
             >
               {relayTripped ? <RotateCcw className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
-              {relayTripped ? "RESTORE NETWORK TRUNK" : "⚡ TRIP AIR-GAP RELAY"}
+              {relayTripped ? "RESTORE NETWORK TRUNK" : "⚡ TRIP AIR-GAP RELAY SIGNAL"}
             </button>
           </div>
+
         </div>
 
         {/* CENTER: Kill-Chain Timeline (6 cols) */}
@@ -794,15 +798,15 @@ export default function ForecastPage() {
         {/* RIGHT: SHAP + Blast Radius + Actions (3 cols) */}
         <div className="lg:col-span-3 space-y-4">
 
-          {/* TreeSHAP */}
+          {/* Feature Attributions (Kill-Chain Indicator Weights) */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
               <div>
-                <h2 className="text-sm font-bold text-slate-900">TreeSHAP Explanations</h2>
-                <p className="text-[10px] text-slate-400 mt-0.5">Additive feature attributions (φ)</p>
+                <h2 className="text-sm font-bold text-slate-900">Feature Attributions & Evidence</h2>
+                <p className="text-[10px] text-slate-400 mt-0.5">Additive indicator weights (TreeSHAP in ML Lexical Engine)</p>
               </div>
               <span className="text-[9px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">
-                100% XAI
+                XAI Signals
               </span>
             </div>
             <div className="space-y-2">
@@ -825,6 +829,7 @@ export default function ForecastPage() {
               ))}
             </div>
           </div>
+
 
           {/* Blast Radius */}
           {(data.blast_radius_nodes && data.blast_radius_nodes.length > 0) ? (

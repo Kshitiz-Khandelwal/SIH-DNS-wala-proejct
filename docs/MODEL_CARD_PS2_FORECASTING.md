@@ -44,6 +44,13 @@ Where:
 
 ---
 
-## 4. Hardware Relay Preemptive Trigger Logic
+## 4. Hardware Relay Preemptive Trigger Logic (Software Emulation)
 - When the projected threat reaches $\text{STAGE\_5}$ (Lateral Movement) or $\text{STAGE\_4}$ with high velocity ($\text{TTC} < 15\text{m}$), the engine flags `hardware_relay_required = True`.
-- Signals the Zephyr RTOS Microcontroller (ESP32-S3 / RP2040) on GPIO 18 to isolate external network egress, neutralizing the attack before data exfiltration occurs.
+- **Software Emulation Disclosure**: In this reference implementation, the relay trip is an emulated software signal payload designed to interface with a Zephyr RTOS Microcontroller (ESP32-S3 / RP2040) over GPIO 18. **No physical microcontroller board is required or physically attached in this standard software evaluation build.**
+
+---
+
+## 5. Explainability Architecture & Taxonomy
+- **ML Lexical Inference (`services/ml-inference`)**: Uses true TreeSHAP (`shap.TreeExplainer`) on Random Forest & LightGBM lexical models to generate exact mathematical Shapley attribution values ($\phi$) for character entropy, n-grams, and vowel ratios.
+- **Temporal Attack Forecasting (`services/forecasting_engine`)**: Uses normalized additive heuristic indicator weights across session burst QPS, C2 heartbeat periodicity, SYN flood ratio, and DNS tunneling markers to explain kill-chain phase classification.
+

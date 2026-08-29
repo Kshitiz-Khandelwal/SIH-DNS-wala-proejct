@@ -139,7 +139,12 @@ def _forecast_to_dict(result) -> Dict[str, Any]:
         "time_min": h60["estimated_time_to_stage_min"],
         "confidence_cone": h60["confidence_cone"],
     }
+    # Provide feature_attributions as primary, shap_explanations as alias
+    d["feature_attributions"] = d.get("feature_attributions", [])
+    d["shap_explanations"] = d["feature_attributions"]
+    d["hardware_mode"] = "SIMULATED_MOCK_EMULATION"  # Discloses that relay is software emulated
     return d
+
 
 
 

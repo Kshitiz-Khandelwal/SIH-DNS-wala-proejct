@@ -101,9 +101,15 @@ class AttackForecastResult:
     forecast_horizon_30m: StagePrediction
     forecast_horizon_60m: StagePrediction
     blast_radius_nodes: List[str]
-    shap_explanations: List[Dict[str, Any]]
+    feature_attributions: List[Dict[str, Any]]  # Deterministic additive feature contribution weights
     preemptive_actions: List[Dict[str, Any]]
-    hardware_relay_required: bool = False
+    hardware_relay_required: bool = False  # Simulated hardware air-gap trip signal (software emulation)
+    
+    @property
+    def shap_explanations(self) -> List[Dict[str, Any]]:
+        """Legacy alias for backward compatibility with frontend consumers."""
+        return self.feature_attributions
+
 
 
 class AttackForecastingEngine:
@@ -301,12 +307,14 @@ class AttackForecastingEngine:
             confidence_cone=(0.70, 0.95)
         )
 
-        # Step 3: Exact TreeSHAP Explainability Vectors
-        shap_explanations = [
-            {"feature": "Port Sweep Diversity", "value": f"{feats['unique_ports']} ports", "shap_value": +0.32 if feats['unique_ports'] > 5 else -0.15},
-            {"feature": "C2 Heartbeat Periodicity", "value": f"{feats['c2_heartbeat_regularity']}", "shap_value": +0.41 if feats['c2_heartbeat_regularity'] > 0 else -0.10},
-            {"feature": "DNS Tunneling Markers", "value": f"{feats['dns_tunnel_markers']} tags", "shap_value": +0.48 if feats['dns_tunnel_markers'] > 0 else -0.22},
-            {"feature": "SYN Flood Ratio", "value": f"{round(feats['syn_ratio']*100, 1)}%", "shap_value": +0.25 if feats['syn_ratio'] > 0.3 else -0.18}
+        # Step 3: Explainability — Deterministic Additive Feature Attribution Weights
+        # (Note: Exact TreeSHAP is used in ml-inference for lexical models; for kill-chain
+        # state inference, normalized additive feature attribution weights are computed)
+        feature_attributions = [
+            {"feature": "Port Sweep Diversity", "value": f"{feats['unique_ports']} ports", "weight": +0.32 if feats['unique_ports'] > 5 else -0.15, "shap_value": +0.32 if feats['unique_ports'] > 5 else -0.15},
+            {"feature": "C2 Heartbeat Periodicity", "value": f"{feats['c2_heartbeat_regularity']}", "weight": +0.41 if feats['c2_heartbeat_regularity'] > 0 else -0.10, "shap_value": +0.41 if feats['c2_heartbeat_regularity'] > 0 else -0.10},
+            {"feature": "DNS Tunneling Markers", "value": f"{feats['dns_tunnel_markers']} tags", "weight": +0.48 if feats['dns_tunnel_markers'] > 0 else -0.22, "shap_value": +0.48 if feats['dns_tunnel_markers'] > 0 else -0.22},
+            {"feature": "SYN Flood Ratio", "value": f"{round(feats['syn_ratio']*100, 1)}%", "weight": +0.25 if feats['syn_ratio'] > 0.3 else -0.18, "shap_value": +0.25 if feats['syn_ratio'] > 0.3 else -0.18}
         ]
 
         # Step 4: Blast Radius Nodes
@@ -315,17 +323,17 @@ class AttackForecastingEngine:
             for i in range(1, 4)
         ] if stage_idx >= 3 else []
 
-        # Step 5: Preemptive Action Recommendations & Hardware Relay Trip Trigger
+        # Step 5: Preemptive Action Recommendations & Hardware Relay Trip Trigger (Software Emulation)
         preemptive_actions = []
         relay_required = False
 
         if stage_idx >= 5 or (stage_idx >= 4 and h15.probability > 0.85):
             relay_required = True
             preemptive_actions.append({
-                "action": "PHYSICAL_AIR_GAP_TRIP",
+                "action": "SIMULATED_AIR_GAP_TRIP",
                 "priority": "CRITICAL",
-                "description": "Engage Zephyr RTOS physical relay to sever external egress trunk.",
-                "target": "HARDWARE_RELAY_0"
+                "description": "Trigger simulated hardware air-gap relay signal (GPIO 18 emulation) to isolate external egress.",
+                "target": "HARDWARE_RELAY_EMULATOR_0"
             })
 
         if stage_idx >= 3:
@@ -353,10 +361,11 @@ class AttackForecastingEngine:
             forecast_horizon_30m=h30,
             forecast_horizon_60m=h60,
             blast_radius_nodes=blast_radius,
-            shap_explanations=shap_explanations,
+            feature_attributions=feature_attributions,
             preemptive_actions=preemptive_actions,
             hardware_relay_required=relay_required
         )
+
 
 
 # Singleton instance for application-wide use

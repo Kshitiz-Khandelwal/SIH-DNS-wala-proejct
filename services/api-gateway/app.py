@@ -608,19 +608,23 @@ except ImportError:
         attack_forecaster = None  # type: ignore
 
 
-# Global Hardware Relay State
+# Hardware Sentinel State (Software Simulation / Emulated Signal)
 HARDWARE_SENTINEL_STATE = {
-    "device_name": "Zephyr-RTOS-Sentinel-v2",
-    "mcu_type": "ESP32-S3 / RP2040 Dual-Core",
-    "rtos": "Zephyr RTOS v3.6.0-LTS",
+    "device_name": "Zephyr-RTOS-Sentinel-Emulator",
+    "mcu_type": "ESP32-S3 / RP2040 (Software Emulation Mode)",
+    "rtos": "Zephyr RTOS v3.6.0-LTS Emulated Interface",
+    "simulation_mode": True,
+    "physical_device_connected": False,
     "relay_engaged": False,
     "relay_trip_timestamp": None,
     "auto_rollback_seconds": 900,
-    "oled_status_text": "STATUS: ARMED / SECURE",
+    "oled_status_text": "STATUS: ARMED / SECURE (EMULATED)",
     "rgb_mode": "SOLID_GREEN",  # SOLID_GREEN, PULSE_YELLOW, PULSE_AMBER, FLASH_RED
     "qps_ticker": 42.8,
-    "last_heartbeat": time.time()
+    "last_heartbeat": time.time(),
+    "note": "Simulated hardware trip signal. Real physical GPIO/serial I/O requires attached microcontroller board."
 }
+
 
 
 
