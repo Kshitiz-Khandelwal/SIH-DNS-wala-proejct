@@ -37,8 +37,13 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import joblib
 import numpy as np
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -166,6 +171,9 @@ train_rows, test_rows, split_strategy = split_rows(rows, args.test_size, args.ch
 train_domains, train_labels = [row["domain"] for row in train_rows], [row["label"] for row in train_rows]
 test_domains, test_labels = [row["domain"] for row in test_rows], [row["label"] for row in test_rows]
 
+print(f"[*] Dataset: {data_path} ({len(rows):,} rows)")
+print(f"[*] Split strategy: {split_strategy} ({len(train_rows):,} train, {len(test_rows):,} test)")
+
 base_model = build_model(args.algorithm, args.tree_count)
 
 tuning_used = False
@@ -177,6 +185,8 @@ if args.tune:
     else:
         grid = tuning_grid(args.algorithm)
         n_candidates = min(args.tune_iterations, int(np.prod([len(v) for v in grid.values()])))
+        print(f"[*] Running hyperparameter search ({n_candidates} iterations, {cv_folds_used} CV folds)...")
+        print("    (Tip: use --no-tune for fast single-pass ~4s training)")
         search = RandomizedSearchCV(
             base_model,
             param_distributions=grid,
@@ -191,15 +201,21 @@ if args.tune:
         tuning_used = True
         best_params = search.best_params_
         best_cv_score = search.best_score_
+        print(f"[+] Tuning complete! Best CV F1-Score: {best_cv_score * 100:.2f}%")
 
 if not tuning_used:
+    print(f"[*] Fitting {args.algorithm.upper()} model directly on {len(train_domains):,} domains...")
     model = base_model
     model.fit(train_domains, train_labels)
     best_params = None
     best_cv_score = None
+    print("[+] Model fitting complete.")
 
+print(f"[*] Evaluating on {len(test_domains):,} holdout domains...")
 predictions = model.predict(test_domains)
 report = classification_report(test_labels, predictions, output_dict=True, zero_division=0)
+acc = float(report.get("accuracy", 0.0))
+print(f"[+] Holdout Accuracy: {acc * 100:.2f}%")
 
 
 def _verify_artifact_reloads_standalone(artifact_path: Path, sample_domain: str) -> None:

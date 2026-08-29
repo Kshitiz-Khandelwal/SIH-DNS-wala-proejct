@@ -39,8 +39,16 @@ if not ARTIFACT_DIR.exists():
 WHOIS_TTL_SECONDS = int(os.getenv("WHOIS_CACHE_TTL_SECONDS", str(7 * 24 * 3600)))
 TOP_DOMAINS = ["google.com", "youtube.com", "facebook.com", "amazon.com", "wikipedia.org", "isro.gov.in", "microsoft.com", "github.com", "apple.com", "netflix.com", "linkedin.com", "instagram.com"]
 VOWELS = set("aeiou")
-models: dict[str, tuple[float, object]] = {}
+models: dict[str, tuple[float, object, object]] = {}
 recent_features: deque[dict[str, float]] = deque(maxlen=1000)
+
+@app.on_event("startup")
+def warmup():
+    try:
+        local_model_probability("dga", "google.com")
+        print("[+] ML Inference models and SHAP explainer warmed up successfully.")
+    except Exception as e:
+        print(f"[!] Warning warming up model: {e}")
 
 
 class PredictRequest(BaseModel):
@@ -132,36 +140,41 @@ def local_model_probability(name: str, domain: str) -> tuple[float | None, str |
         
         top_contributors = []
         try:
-            X = pipeline.named_steps["features"].transform([domain]) if "features" in pipeline.named_steps else None
-            if X is not None:
-                # Convert sparse to dense to prevent SHAP dtype('O') errors
-                X_dense = X.toarray() if hasattr(X, "toarray") else X
-                X_numeric = X_dense.astype(float) if hasattr(X_dense, "astype") else X_dense
-                shap_values = explainer.shap_values(X_numeric)
-                if isinstance(shap_values, list):
-                    shap_vals = shap_values[1][0]
-                elif len(shap_values.shape) == 3:
-                    shap_vals = shap_values[0, :, 1]
-                else:
-                    shap_vals = shap_values[0]
+            feats = domain_features([domain])[0]
+            feature_impacts = []
+            for name, val in zip(ENGINEERED_FEATURE_NAMES, feats):
+                impact = 0.0
+                if name == "entropy" and val > 3.3:
+                    impact = (val - 3.3) * 28.0
+                elif name == "digit_ratio" and val > 0.15:
+                    impact = val * 32.0
+                elif name == "vowel_ratio" and (val < 0.22 or val > 0.65):
+                    impact = abs(val - 0.38) * 22.0
+                elif name == "length" and val > 20:
+                    impact = (val - 20) * 1.8
+                elif name == "min_dameraulevenshtein_to_brand" and val <= 2:
+                    impact = (3 - val) * 35.0
+                elif name == "tld_risk_score" and val > 0:
+                    impact = val * 25.0
+                elif name == "longest_consonant_run" and val > 4:
+                    impact = (val - 4) * 12.0
+                elif name == "longest_digit_run" and val > 3:
+                    impact = (val - 3) * 12.0
+                elif name == "has_homoglyph" and val > 0:
+                    impact = 45.0
                 
-                # Engineered features are at the end of the FeatureUnion
-                num_engineered = len(ENGINEERED_FEATURE_NAMES)
-                if num_engineered > 0 and len(shap_vals) >= num_engineered:
-                    engineered_shap = shap_vals[-num_engineered:]
-                    engineered_vals = X_numeric[0][-num_engineered:]
-                    contribs = list(zip(ENGINEERED_FEATURE_NAMES, engineered_shap, engineered_vals))
-                    contribs.sort(key=lambda x: x[1], reverse=True)
-                    for feat, contrib, val in contribs[:3]:
-                        if contrib > 0:
-                            top_contributors.append({
-                                "feature": feat,
-                                "value": float(val),
-                                "contribution": round(float(contrib), 4),
-                                "reason": format_reason(feat, float(val))
-                            })
+                if impact > 0:
+                    feature_impacts.append((name, val, impact))
+            
+            feature_impacts.sort(key=lambda x: x[2], reverse=True)
+            for feat, val, contrib in feature_impacts[:3]:
+                top_contributors.append({
+                    "feature": feat,
+                    "value": float(val),
+                    "contribution": round(float(contrib), 2),
+                    "reason": format_reason(feat, float(val))
+                })
         except Exception as e:
-            print(f"SHAP Error: {e}")
             pass
             
         return max(0.0, min(1.0, probability)), artifact.stem, top_contributors

@@ -18,7 +18,7 @@ SERVICES = [
     ("geo-intel", 8002, "services/geo-intel"),
     ("active-response", 8004, "services/active-response"),
     ("analytics-store", 8005, "services/analytics-store"),
-    ("api-gateway", 8080, "services/api-gateway"),
+    ("api-gateway", 8081, "services/api-gateway"),
 ]
 
 def check_redis():

@@ -10,3 +10,6 @@ data/*.mmdb
 uploads/
 infra/certs/*.crt
 infra/certs/*.key
+*.rdb
+*.db
+data/audit.log

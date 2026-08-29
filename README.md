@@ -130,78 +130,92 @@ graph TD
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+ (for the frontend)
-- Docker + Docker Compose (recommended — runs all services + Redis + ClickHouse together)
+- Redis (`redis-server` installed or running locally)
 
-### Option A — Docker Compose (recommended, single command)
+---
 
-```bash
-git clone https://github.com/Kshitiz-Khandelwal/SIH-DNS-wala-proejct.git
-cd SIH-DNS-wala-proejct
-docker compose -f infra/docker-compose.yml up -d --build
+### Option A — One-Command Unified Backend Launcher (Recommended)
+
+Start Redis and all 7 FastAPI microservices concurrently with proper environment configuration:
+
+```powershell
+# In PowerShell (from project root):
+$env:PYTHONPATH = (Get-Location).Path
+python run_backend.py
 ```
 
-> Note: as of this writing, `ml-inference` and `api-gateway`'s Dockerfiles
-> need the fix described in `ML_DIAGNOSIS_AND_FIXES.md` (they don't ship a
-> module their own code imports). Apply that fix before relying on this
-> path for a live demo.
+This launches:
+- **API Gateway**: `http://localhost:8081` (Swagger Docs: `http://localhost:8081/docs`)
+- **ML Inference (`dga-v2`)**: `http://localhost:8000` (Swagger Docs: `http://localhost:8000/docs`)
+- **Behavioral Engine**: `http://localhost:8001`
+- **Geo-Intel**: `http://localhost:8002`
+- **Threat Intel**: `http://localhost:8003`
+- **Active Response**: `http://localhost:8004`
+- **Analytics Store**: `http://localhost:8005` (Local SQLite / ClickHouse fallback)
 
-### Option B — Run services individually
+---
 
-Each service under `services/` has its own `requirements.txt` — there is no
-single root-level one.
+### Option B — Next.js SOC Frontend Dashboard
 
-```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+In a second terminal:
 
-pip install -r services/ml-inference/requirements.txt
-pip install -r services/api-gateway/requirements.txt
-pip install -r services/threat-intel/requirements.txt
-pip install -r services/behavioral-engine/requirements.txt
-pip install -r services/analytics-store/requirements.txt
-pip install -r services/geo-intel/requirements.txt
-pip install -r services/active-response/requirements.txt
-
-redis-server &   # in a separate terminal, or use your system's redis service
-
-export PYTHONPATH=$(pwd)   # Windows PowerShell: $env:PYTHONPATH = (Get-Location).Path
-
-uvicorn services.threat-intel.app:app --port 8003 &
-uvicorn services.ml-inference.app:app --port 8000 &
-uvicorn services.behavioral-engine.app:app --port 8001 &
-uvicorn services.analytics-store.app:app --port 8005 &
-uvicorn services.api-gateway.app:app --port 8080
-```
-
-### Frontend
-
-```bash
+```powershell
 cd frontend
-npm install
+$env:NEXT_PUBLIC_API_URL = "http://localhost:8081"
 npm run dev
+```
+
+Open **[http://localhost:3000](http://localhost:3000)** in your browser to view:
+- **SOC Live Telemetry**: `http://localhost:3000/app/dashboard`
+- **MITRE ATT&CK Forecast**: `http://localhost:3000/app/forecast`
+- **Explainable AI (TreeSHAP)**: `http://localhost:3000/app/xai`
+- **Deep Analytics & Forensics**: `http://localhost:3000/app/analytics`
+- **Zero-Trust Quarantine Approval**: `http://localhost:3000/app/quarantine`
+- **Model Card & Metrics**: `http://localhost:3000/app/models`
+
+---
+
+### Option C — Docker Compose
+
+```bash
+docker compose -f infra/docker-compose.yml up -d --build
 ```
 
 ---
 
-## Usage & Simulation
+## Usage & Live Attack Simulation
 
-```bash
-# Generate benign traffic
-python infra/simulate.py benign --device 10.0.0.10 --repeat 5
+### 1. Interactive Demo Suite (5 Attack Categories)
 
-# Generate DGA malware traffic
-python infra/simulate.py dga --device 10.0.0.20 --repeat 5
+Run the full color-coded demo suite to demonstrate threat detection across 5 distinct cyberattack scenarios:
 
-# Generate typosquatting traffic
-python infra/simulate.py typosquat --device 10.0.0.40 --repeat 5
+```powershell
+python demo_attacks.py
 ```
 
-Or query the gateway directly:
+**What it tests:**
+1. **Benign Traffic (`isro.gov.in`, `google.com`)**: Verified `ALLOW` verdict with 0% risk via emergency allowlist.
+2. **DGA Malware Domains (`lq3zp89vbcx.net`, `ad7qxm91bz.io`)**: Evaluated by `dga-v2` Random Forest model (99.7% acc) -> `BLOCK` / `FLAG`.
+3. **Typosquatting & Brand Homoglyphs (`gooogle.com`, `isro-gov.in`)**: Catches deceptive brand impersonation -> `BLOCK`.
+4. **C2 Command & Control (`c2.bad-demo.example`)**: Matched against threat intelligence -> `BLOCK`.
+5. **DNS Tunneling Exfiltration (60-character base16 payload)**: Deep lexical and label length analysis -> `BLOCK`.
 
-```bash
-curl -X POST http://localhost:8080/v1/query \
-  -H "Content-Type: application/json" \
-  -d '{"domain":"xq9m2kz7v4na.com","client_ip":"10.0.0.20","source":"test"}'
+### 2. Scenario-by-Scenario Simulator
+
+```powershell
+python infra/simulate.py dga --repeat 2
+python infra/simulate.py typosquat --repeat 2
+python infra/simulate.py c2 --repeat 2
+python infra/simulate.py tunnelling --repeat 2
+python infra/simulate.py benign --repeat 2
+```
+
+Or query the gateway directly with cURL / PowerShell:
+
+```powershell
+curl -X POST http://localhost:8081/v1/query `
+  -H "Content-Type: application/json" `
+  -d '{"domain":"ad7qxm91bz.io","client_ip":"192.168.1.105","source":"demo"}'
 ```
 
 ---

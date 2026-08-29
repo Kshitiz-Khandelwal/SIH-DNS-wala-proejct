@@ -1,0 +1,43 @@
+{
+  "artifact_schema_version": "dns-shield-model-v2",
+  "name": "dga",
+  "version": "2",
+  "created_at": "2026-08-29T05:24:38.184598+00:00",
+  "dataset_source": "data/dga_dataset.csv (10001 rows, balanced)",
+  "dataset_sha256": "a943a122df5c4c4bcfa3d93bee5fe81e2e9944d38d4830a983088ca054bd61ed",
+  "dataset_rows": 10000,
+  "train_rows": 8000,
+  "holdout_rows": 2000,
+  "split_strategy": "chronological",
+  "algorithm": "rf",
+  "feature_schema": "char-tfidf-2-4grams+engineered-lexical-v2",
+  "engineered_feature_names": [
+    "length",
+    "entropy",
+    "digit_ratio",
+    "vowel_ratio",
+    "consonant_ratio",
+    "unique_char_ratio",
+    "hyphen_ratio",
+    "longest_consonant_run",
+    "longest_digit_run",
+    "label_count",
+    "has_digit",
+    "punycode",
+    "risky_tld",
+    "alexa_rank_simulated",
+    "nrd_age_simulated",
+    "min_levenshtein_to_brand",
+    "min_dameraulevenshtein_to_brand",
+    "has_homoglyph",
+    "tld_risk_score"
+  ],
+  "hyperparameter_tuning": {
+    "enabled": false,
+    "cv_folds": null,
+    "best_params": null,
+    "best_cv_f1_weighted": null
+  },
+  "runtime_compatibility": "services/ml-inference local_model_probability uses predict_proba([domain]); verified by standalone subprocess reload at export time",
+  "feature_module": "dns_shield_features.py must ship alongside this artifact / be importable on the inference service's PYTHONPATH"
+}

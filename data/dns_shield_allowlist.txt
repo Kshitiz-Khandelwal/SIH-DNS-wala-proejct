@@ -2,4 +2,29 @@
 # Add domains that should never be blocked by the ML or Threat Intel pipelines.
 # One domain per line.
 
-1234567890abcdef.tk
+# Indian National & Institutional Portals
+isro.gov.in
+drdo.gov.in
+nic.in
+gov.in
+india.gov.in
+mygov.in
+uidai.gov.in
+digitalindia.gov.in
+cert-in.org.in
+meity.gov.in
+aiims.edu
+iitd.ac.in
+iitb.ac.in
+iitm.ac.in
+
+# Global Benign Infrastructure
+google.com
+google.co.in
+github.com
+microsoft.com
+apple.com
+amazon.com
+cloudflare.com
+akamaized.net
+wikipedia.org

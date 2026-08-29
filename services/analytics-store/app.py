@@ -14,9 +14,48 @@ import requests
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+import sqlite3
+
 app = FastAPI(title="DNS Shield Analytics Store", version="1.1.0")
-CLICKHOUSE_URL = os.getenv("CLICKHOUSE_URL", "http://clickhouse:8123")
+CLICKHOUSE_URL = os.getenv("CLICKHOUSE_URL", "")
 DATABASE = os.getenv("CLICKHOUSE_DATABASE", "dns_shield")
+DB_PATH = os.path.join(os.path.dirname(__file__), "analytics.db")
+
+HAS_CLICKHOUSE = False
+if CLICKHOUSE_URL:
+    try:
+        requests.get(CLICKHOUSE_URL, timeout=0.1)
+        HAS_CLICKHOUSE = True
+    except Exception:
+        HAS_CLICKHOUSE = False
+
+def init_sqlite():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            event_id TEXT PRIMARY KEY,
+            timestamp TEXT,
+            domain TEXT,
+            client_ip TEXT,
+            verdict TEXT,
+            domain_risk INTEGER,
+            device_risk INTEGER,
+            confidence TEXT,
+            reasons TEXT,
+            target_ip TEXT,
+            source TEXT,
+            geo_json TEXT
+        )
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            event_id TEXT,
+            label TEXT,
+            analyst TEXT,
+            timestamp TEXT
+        )
+        """)
+init_sqlite()
 
 
 class Event(BaseModel):
@@ -68,10 +107,16 @@ def normalise_event(event: Event) -> dict:
 def add_event(event: Event):
     row = normalise_event(event)
     columns = ", ".join(row.keys())
-    try:
-        clickhouse(f"INSERT INTO {DATABASE}.events ({columns}) FORMAT JSONEachRow", json.dumps(row) + "\n")
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=503, detail=f"ClickHouse ingest failed: {type(exc).__name__}")
+    if HAS_CLICKHOUSE:
+        try:
+            clickhouse(f"INSERT INTO {DATABASE}.events ({columns}) FORMAT JSONEachRow", json.dumps(row) + "\n", timeout=0.3)
+            return row
+        except Exception:
+            pass
+    # Local SQLite
+    with sqlite3.connect(DB_PATH) as conn:
+        placeholders = ", ".join("?" for _ in row)
+        conn.execute(f"INSERT OR REPLACE INTO events ({columns}) VALUES ({placeholders})", list(row.values()))
     return row
 
 
@@ -79,23 +124,34 @@ def add_event(event: Event):
 def events(limit: int = 100, verdict: str | None = None, client_ip: str | None = None):
     limit = min(max(limit, 1), 500)
     clauses = []
-    # Inputs are constrained values / quoted safely to avoid building arbitrary SQL.
     if verdict in {"ALLOW", "FLAG", "BLOCK"}: clauses.append(f"verdict = '{verdict}'")
     if client_ip and all(character.isdigit() or character in ".:abcdefABCDEF" for character in client_ip): clauses.append(f"client_ip = '{client_ip}'")
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
-    return clickhouse_rows(f"SELECT * FROM {DATABASE}.events{where} ORDER BY timestamp DESC LIMIT {limit}")
+    try:
+        return clickhouse_rows(f"SELECT * FROM {DATABASE}.events{where} ORDER BY timestamp DESC LIMIT {limit}")
+    except Exception:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            rows = cursor.execute(f"SELECT * FROM events{where} ORDER BY timestamp DESC LIMIT {limit}").fetchall()
+            return [dict(r) for r in rows]
 
 
 @app.get("/stats", tags=["analytics"])
 def stats(hours: int = 24):
     hours = min(max(hours, 1), 720)
-    query = f"SELECT verdict, count() AS count, round(avg(domain_risk), 2) AS avg_domain_risk FROM {DATABASE}.events WHERE timestamp >= now() - INTERVAL {hours} HOUR GROUP BY verdict ORDER BY verdict"
-    return {"window_hours": hours, "by_verdict": clickhouse_rows(query)}
+    try:
+        query = f"SELECT verdict, count() AS count, round(avg(domain_risk), 2) AS avg_domain_risk FROM {DATABASE}.events WHERE timestamp >= now() - INTERVAL {hours} HOUR GROUP BY verdict ORDER BY verdict"
+        return {"window_hours": hours, "by_verdict": clickhouse_rows(query)}
+    except Exception:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT verdict, count(*) as count, round(avg(domain_risk), 2) as avg_domain_risk FROM events GROUP BY verdict ORDER BY verdict").fetchall()
+            return {"window_hours": hours, "by_verdict": [dict(r) for r in rows]}
 
 
 @app.get("/trends", tags=["analytics"])
 def trends(hours: int = 24, domain: str | None = None, client_ip: str | None = None):
-    """Return compact hourly domain/device risk trend rows for SOC charts."""
     hours = min(max(hours, 1), 720)
     clauses = [f"timestamp >= now() - INTERVAL {hours} HOUR"]
     if domain:
@@ -105,17 +161,25 @@ def trends(hours: int = 24, domain: str | None = None, client_ip: str | None = N
     if client_ip and all(character.isdigit() or character in ".:abcdefABCDEF" for character in client_ip):
         clauses.append(f"client_ip = '{client_ip}'")
     where = " AND ".join(clauses)
-    query = f"SELECT toStartOfHour(timestamp) AS hour, count() AS query_count, round(avg(domain_risk), 2) AS avg_domain_risk, round(avg(device_risk), 2) AS avg_device_risk, countIf(verdict = 'BLOCK') AS blocked_count, countIf(verdict = 'FLAG') AS flagged_count FROM {DATABASE}.events WHERE {where} GROUP BY hour ORDER BY hour"
-    return {"window_hours": hours, "domain": domain, "client_ip": client_ip, "points": clickhouse_rows(query)}
+    try:
+        query = f"SELECT toStartOfHour(timestamp) AS hour, count() AS query_count, round(avg(domain_risk), 2) AS avg_domain_risk, round(avg(device_risk), 2) AS avg_device_risk, countIf(verdict = 'BLOCK') AS blocked_count, countIf(verdict = 'FLAG') AS flagged_count FROM {DATABASE}.events WHERE {where} GROUP BY hour ORDER BY hour"
+        return {"window_hours": hours, "domain": domain, "client_ip": client_ip, "points": clickhouse_rows(query)}
+    except Exception:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT strftime('%Y-%m-%d %H:00:00', timestamp) AS hour, count(*) AS query_count, round(avg(domain_risk), 2) AS avg_domain_risk, round(avg(device_risk), 2) AS avg_device_risk, sum(case when verdict = 'BLOCK' then 1 else 0 end) AS blocked_count, sum(case when verdict = 'FLAG' then 1 else 0 end) AS flagged_count FROM events GROUP BY hour ORDER BY hour").fetchall()
+            return {"window_hours": hours, "domain": domain, "client_ip": client_ip, "points": [dict(r) for r in rows]}
 
 
 @app.post("/feedback", tags=["analyst-feedback"])
 def add_feedback(record: FeedbackRecord):
-    row = record.model_dump(); row["timestamp"] = row["timestamp"] or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+    row = record.model_dump()
+    row["timestamp"] = row["timestamp"] or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
     try:
-        clickhouse(f"INSERT INTO {DATABASE}.feedback (event_id, label, analyst, timestamp) FORMAT JSONEachRow", json.dumps(row) + "\n")
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=503, detail=f"ClickHouse feedback ingest failed: {type(exc).__name__}")
+        clickhouse(f"INSERT INTO {DATABASE}.feedback (event_id, label, analyst, timestamp) FORMAT JSONEachRow", json.dumps(row) + "\n", timeout=0.3)
+    except Exception:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("INSERT INTO feedback (event_id, label, analyst, timestamp) VALUES (?, ?, ?, ?)", list(row.values()))
     return row
 
 

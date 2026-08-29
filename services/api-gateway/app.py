@@ -145,7 +145,7 @@ def normalize_domain(value: str) -> str:
     return value
 
 
-def service_json(service: str, method: str, path: str, *, payload: dict | None = None, timeout: float = 1.0) -> tuple[dict | None, str | None]:
+def service_json(service: str, method: str, path: str, *, payload: dict | None = None, timeout: float = 4.0) -> tuple[dict | None, str | None]:
     """Bounded service call returning an explicit degradation reason instead of raising."""
     try:
         response = requests.request(method, SERVICES[service] + path, json=payload, timeout=timeout)
@@ -157,7 +157,7 @@ def service_json(service: str, method: str, path: str, *, payload: dict | None =
 
 def persist_event(event: dict[str, Any]) -> str | None:
     try:
-        response = requests.post(ANALYTICS + "/events", json=event, timeout=0.5)
+        response = requests.post(ANALYTICS + "/events", json=event, timeout=1.0)
         response.raise_for_status()
         return None
     except requests.RequestException as exc:
@@ -174,6 +174,14 @@ def load_allowlist(filename: str) -> set[str]:
 
 DOMAIN_ALLOWLIST = load_allowlist("dns_shield_allowlist.txt")
 DEVICE_ALLOWLIST = load_allowlist("device_allowlist.txt")
+
+def is_domain_allowed(domain: str) -> bool:
+    if domain in DOMAIN_ALLOWLIST:
+        return True
+    for allowed in DOMAIN_ALLOWLIST:
+        if domain.endswith("." + allowed):
+            return True
+    return False
 
 def decide_verdict(risk: int, threat_hit: bool, uncertainty_band: str | None) -> str:
     if threat_hit:
@@ -192,7 +200,7 @@ def query(request: Query) -> dict[str, Any]:
     started = time.perf_counter()
     domain = normalize_domain(request.domain)
 
-    if domain in DOMAIN_ALLOWLIST:
+    if is_domain_allowed(domain):
         verdict = "ALLOW"
         event = {
             "event_id": str(uuid.uuid4()), "domain": domain, "client_ip": request.client_ip,

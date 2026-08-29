@@ -1,0 +1,27 @@
+{
+  "schema_version": "dns-shield-lexical-v2",
+  "sample_count": 8000,
+  "length_mean": 15.058625,
+  "entropy_mean": 3.428172978384045,
+  "engineered_feature_means": {
+    "length": 15.058625,
+    "entropy": 3.4281729783840458,
+    "digit_ratio": 0.11548769709198535,
+    "vowel_ratio": 0.22333180674396197,
+    "consonant_ratio": 0.5679113361869907,
+    "unique_char_ratio": 0.7902191270143042,
+    "hyphen_ratio": 0.0,
+    "longest_consonant_run": 3.573375,
+    "longest_digit_run": 1.742375,
+    "label_count": 2.403625,
+    "has_digit": 0.554,
+    "punycode": 0.0,
+    "risky_tld": 0.134875,
+    "alexa_rank_simulated": 0.0,
+    "nrd_age_simulated": 0.0,
+    "min_levenshtein_to_brand": 9.346875,
+    "min_dameraulevenshtein_to_brand": 9.343875,
+    "has_homoglyph": 0.0,
+    "tld_risk_score": 0.144125
+  }
+}

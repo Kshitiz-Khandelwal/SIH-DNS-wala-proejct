@@ -1,7 +1,7 @@
 """Safe demo traffic generator; it only calls the local gateway API."""
 import argparse, os, requests
 # Works from the host CLI and from named Docker lab-simulation containers.
-BASE=os.getenv("GATEWAY_URL","http://localhost:8080")+"/v1/query"
+BASE = os.getenv("GATEWAY_URL", "http://localhost:8081") + "/v1/query"
 scenarios={
  "benign":["isro.gov.in","google.com","github.com"],
  "dga":["xq9m2kz7v4na.com","lq3zp89vbcx.net","ad7qxm91bz.io"],

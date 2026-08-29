@@ -17,7 +17,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="DNS Shield Lab Active Response", version="1.1.0")
-store = redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"), decode_responses=True)
+store = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), decode_responses=True, socket_connect_timeout=0.1, socket_timeout=0.1)
 SINKHOLE_IP = os.getenv("SINKHOLE_IP", "172.28.0.250")
 LAB_NETWORK_PREFIXES = tuple(filter(None, os.getenv("LAB_NETWORK_PREFIXES", "172.28.,10.200.").split(",")))
 ACTION_TTL_SECONDS = int(os.getenv("RESPONSE_ACTION_TTL_SECONDS", str(30 * 24 * 3600)))
