@@ -44,9 +44,18 @@ def init_sqlite():
             reasons TEXT,
             target_ip TEXT,
             source TEXT,
-            geo_json TEXT
+            geo_json TEXT,
+            pipeline_json TEXT,
+            ml_json TEXT,
+            behavior_json TEXT
         )
         """)
+        # Ensure migration columns exist
+        for col in ["pipeline_json", "ml_json", "behavior_json"]:
+            try:
+                conn.execute(f"ALTER TABLE events ADD COLUMN {col} TEXT")
+            except Exception:
+                pass
         conn.execute("""
         CREATE TABLE IF NOT EXISTS feedback (
             event_id TEXT,
@@ -87,6 +96,9 @@ class Event(BaseModel):
     target_ip: str = ""
     source: str = "active"
     geo_json: str = "{}"
+    pipeline_json: str = "[]"
+    ml_json: str = "{}"
+    behavior_json: str = "{}"
 
 
 class FeedbackRecord(BaseModel):
@@ -98,14 +110,17 @@ class FeedbackRecord(BaseModel):
 
 def clickhouse(query: str, data: str | None = None, timeout: float = 3) -> requests.Response:
     response = requests.post(CLICKHOUSE_URL, params={"query": query}, data=data, timeout=timeout)
-    response.raise_for_status()
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
     return response
 
 
-def clickhouse_rows(query: str) -> list[dict]:
+def clickhouse_rows(query: str, timeout: float = 3) -> list[dict]:
     try:
-        response = clickhouse(query + " FORMAT JSONEachRow")
-        return [json.loads(line) for line in response.text.splitlines() if line.strip()]
+        response = requests.post(CLICKHOUSE_URL, params={"query": query + " FORMAT JSON"}, timeout=timeout)
+        if response.status_code == 200:
+            return response.json().get("data", [])
+        raise HTTPException(status_code=response.status_code, detail=response.text)
     except requests.RequestException as exc:
         raise HTTPException(status_code=503, detail=f"ClickHouse unavailable: {type(exc).__name__}")
 
@@ -134,6 +149,35 @@ def add_event(event: Event):
         placeholders = ", ".join("?" for _ in row)
         conn.execute(f"INSERT OR REPLACE INTO events ({columns}) VALUES ({placeholders})", list(row.values()))
     return row
+
+
+@app.get("/events/{event_id}", tags=["analytics"])
+def get_single_event(event_id: str):
+    """Retrieve full event by ID or domain name."""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT * FROM events WHERE event_id = ? OR domain = ? ORDER BY timestamp DESC LIMIT 1", (event_id, event_id)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Event not found")
+        data = dict(row)
+        if "reasons" in data and isinstance(data["reasons"], str):
+            data["reasons"] = [r.strip() for r in data["reasons"].split("; ") if r.strip()]
+        if "pipeline_json" in data and data["pipeline_json"]:
+            try:
+                data["pipeline"] = json.loads(data["pipeline_json"])
+            except Exception:
+                data["pipeline"] = []
+        if "ml_json" in data and data["ml_json"]:
+            try:
+                data["ml"] = json.loads(data["ml_json"])
+            except Exception:
+                data["ml"] = None
+        if "behavior_json" in data and data["behavior_json"]:
+            try:
+                data["behavior"] = json.loads(data["behavior_json"])
+            except Exception:
+                data["behavior"] = None
+        return data
 
 
 @app.get("/events", tags=["analytics"])

@@ -5,6 +5,7 @@ runtime: failures are returned as degraded state and never make DNS resolution f
 """
 from __future__ import annotations
 
+import json
 import os
 import time
 import uuid
@@ -55,6 +56,7 @@ SERVICES = {
     "geo": os.getenv("GEO_URL", "http://localhost:8002"),
     "threat-intel": os.getenv("THREAT_INTEL_URL", "http://localhost:8003"),
     "active-response": os.getenv("ACTIVE_RESPONSE_URL", "http://localhost:8004"),
+    "analytics": os.getenv("ANALYTICS_STORE_URL", "http://localhost:8005"),
 }
 ML = SERVICES["ml"]
 BEHAVIORAL = SERVICES["behavioral"]
@@ -255,8 +257,11 @@ def query(request: Query) -> dict[str, Any]:
     try:
         cached = redis_client.hgetall(f"verdict:{domain}")
         if cached:
+            event_id = str(uuid.uuid4())
             PIPELINE_VERDICTS[cached["verdict"]] += 1
             return {
+                "event_id": event_id,
+                "id": event_id,
                 "domain": domain, "verdict": cached["verdict"], "domain_risk": int(cached["risk"]),
                 "device_risk": int(cached.get("device_risk", 0)), "confidence": cached.get("confidence", "LOW"),
                 "cache": "hit", "pipeline": [{"stage": "redis-cache", "status": "hit", "contribution": 0, "reason": "recent deterministic verdict"}],
@@ -353,6 +358,12 @@ def query(request: Query) -> dict[str, Any]:
         "verdict": verdict, "domain_risk": min(risk, 100), "device_risk": behavior.get("device_risk", 0) if behavior else 0,
         "confidence": confidence, "reasons": reasons, "target_ip": request.target_ip or "", "source": request.source,
         "geo_json": str(geo) if geo else "{}",
+        "pipeline": pipeline,
+        "ml": ml,
+        "behavior": behavior,
+        "pipeline_json": json.dumps(pipeline),
+        "ml_json": json.dumps(ml or {}),
+        "behavior_json": json.dumps(behavior or {}),
     }
 
     persist_error = persist_event(event)
@@ -393,6 +404,37 @@ def query(request: Query) -> dict[str, Any]:
     for dependency in degraded:
         DEGRADED_REQUESTS[dependency.split(":")[0]] += 1
     return event
+
+
+@app.get("/v1/events/{event_id}", tags=["analytics"])
+@app.get("/api/v1/events/{event_id}", tags=["analytics"])
+def get_single_event(event_id: str) -> dict[str, Any]:
+    """Return a single previously-recorded event by id or domain with full pipeline and ML detail."""
+    clean_id = event_id.strip()
+    try:
+        resp = requests.get(ANALYTICS + f"/events/{clean_id}", timeout=2.0)
+        if resp.status_code == 200:
+            res = resp.json()
+            if isinstance(res, dict) and ("event_id" in res or "domain" in res):
+                reasons_raw = res.get("reasons", [])
+                reasons_list = reasons_raw.split("; ") if isinstance(reasons_raw, str) else (reasons_raw or [])
+                res["reasons"] = reasons_list
+                res["id"] = res.get("event_id") or clean_id
+                res["risk_score"] = int(res.get("domain_risk") if res.get("domain_risk") is not None else (res.get("risk_score") or 0))
+                return res
+    except Exception:
+        pass
+
+    # If not found in analytics store, check if it's a domain name and query live pipeline
+    domain = clean_id.lower().rstrip(".")
+    if "." in domain or len(domain) > 3:
+        query_req = Query(domain=domain, client_ip="192.168.1.50")
+        live_result = query(query_req)
+        live_result["id"] = live_result.get("event_id")
+        live_result["risk_score"] = int(live_result.get("domain_risk") if live_result.get("domain_risk") is not None else 0)
+        return live_result
+
+    raise HTTPException(status_code=404, detail="Event not found")
 
 
 @app.get("/v1/events", tags=["analytics"])
