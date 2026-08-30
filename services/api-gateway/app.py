@@ -197,9 +197,33 @@ def is_domain_allowed(domain: str) -> bool:
             return True
     return False
 
-def decide_verdict(risk: int, threat_hit: bool, uncertainty_band: str | None) -> str:
+def decide_verdict(
+    risk: int, 
+    threat_hit: bool, 
+    uncertainty_band: str | None, 
+    has_behavior_corroboration: bool = False,
+    local_score: int = 0,
+    ml_score: int = 0
+) -> str:
+    """
+    Independent Corroboration Verdict Engine:
+    - Known Threat Feed IOCs -> Immediate BLOCK (100% confidence)
+    - Purely string-based co-firing (local-rules + ml-lexical) without behavioral anomaly -> Safely capped at FLAG
+    - High Composite Risk with behavioral/intel confirmation -> Confirmed BLOCK
+    - Moderate Risk -> FLAG
+    - Baseline Clean -> ALLOW
+    """
     if threat_hit:
         return "BLOCK"
+
+    # Anti-False-Positive Safety Gate: If risk is driven purely by string heuristics (hyphens, digits, entropy)
+    # without behavioral burst confirmation, downgrade auto-BLOCK to FLAG for SOC analyst review.
+    lexical_only = not has_behavior_corroboration and not threat_hit
+    if lexical_only and (local_score + ml_score) >= 71:
+        # If it's a severe brand homoglyph (local_score >= 50), allow BLOCK; otherwise triage as FLAG
+        if local_score < 50:
+            return "FLAG"
+
     # A single uncertain lexical signal is intentionally never sufficient to block.
     if risk >= 71 and uncertainty_band != "uncertain":
         return "BLOCK"
@@ -312,8 +336,16 @@ def query(request: Query) -> dict[str, Any]:
 
     risk = sum(item["contribution"] for item in pipeline)
     uncertainty_band = ml.get("uncertainty_band") if ml else None
-    verdict = decide_verdict(risk, threat_hit, uncertainty_band)
-    confidence = "HIGH" if threat_hit else ("HIGH" if risk >= 71 else ("MEDIUM" if risk >= 41 else "LOW"))
+    has_behavior_hit = bool(behavior and behavior.get("contribution", 0) > 0)
+    verdict = decide_verdict(
+        risk=risk,
+        threat_hit=threat_hit,
+        uncertainty_band=uncertainty_band,
+        has_behavior_corroboration=has_behavior_hit,
+        local_score=local_score,
+        ml_score=ml_contribution
+    )
+    confidence = "HIGH" if threat_hit else ("HIGH" if risk >= 71 and verdict == "BLOCK" else ("MEDIUM" if risk >= 41 or verdict == "FLAG" else "LOW"))
 
     reasons = [item["reason"] for item in pipeline if item["reason"]]
     event = {

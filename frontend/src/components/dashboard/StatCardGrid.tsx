@@ -18,41 +18,55 @@ export interface StatItem {
   trend?: string;
   trendDirection?: "up" | "down" | "neutral";
   variant: "allow" | "flag" | "block" | "neutral";
+  sparkline?: number[];
 }
 
 interface StatCardGridProps {
   items: StatItem[];
   hasLiveBlock?: boolean;
+  loading?: boolean;
 }
 
 const colorConfig = {
   allow: {
     topStripe: "bg-emerald-500",
-    text: "text-emerald-600",
-    iconBg: "bg-emerald-50 text-emerald-600 border-emerald-200",
-    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    text: "text-emerald-700",
+    iconBg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    badge: "bg-emerald-50 text-emerald-800 border-emerald-200",
     hoverBorder: "hover:border-emerald-300",
+    glowBg: "from-emerald-500/5 to-transparent",
+    sparkStroke: "#059669",
+    sparkFill: "rgba(5, 150, 105, 0.1)",
   },
   flag: {
-    topStripe: "bg-amber-400",
-    text: "text-amber-600",
-    iconBg: "bg-amber-50 text-amber-600 border-amber-200",
-    badge: "bg-amber-50 text-amber-700 border-amber-200",
+    topStripe: "bg-amber-500",
+    text: "text-amber-700",
+    iconBg: "bg-amber-50 text-amber-700 border-amber-200",
+    badge: "bg-amber-50 text-amber-800 border-amber-200",
     hoverBorder: "hover:border-amber-300",
+    glowBg: "from-amber-500/5 to-transparent",
+    sparkStroke: "#d97706",
+    sparkFill: "rgba(217, 119, 6, 0.1)",
   },
   block: {
     topStripe: "bg-rose-500",
-    text: "text-rose-600",
-    iconBg: "bg-rose-50 text-rose-600 border-rose-200",
-    badge: "bg-rose-50 text-rose-700 border-rose-200",
+    text: "text-rose-700",
+    iconBg: "bg-rose-50 text-rose-700 border-rose-200",
+    badge: "bg-rose-50 text-rose-800 border-rose-200",
     hoverBorder: "hover:border-rose-300",
+    glowBg: "from-rose-500/5 to-transparent",
+    sparkStroke: "#e11d48",
+    sparkFill: "rgba(225, 29, 72, 0.1)",
   },
   neutral: {
     topStripe: "bg-blue-500",
-    text: "text-blue-600",
-    iconBg: "bg-blue-50 text-blue-600 border-blue-200",
-    badge: "bg-blue-50 text-blue-700 border-blue-200",
+    text: "text-blue-700",
+    iconBg: "bg-blue-50 text-blue-700 border-blue-200",
+    badge: "bg-blue-50 text-blue-800 border-blue-200",
     hoverBorder: "hover:border-blue-300",
+    glowBg: "from-blue-500/5 to-transparent",
+    sparkStroke: "#2563eb",
+    sparkFill: "rgba(37, 99, 235, 0.1)",
   },
 };
 
@@ -63,7 +77,33 @@ const iconMap = {
   neutral: Activity,
 };
 
-export function StatCardGrid({ items, hasLiveBlock = false }: StatCardGridProps) {
+function MiniSparkline({ data, stroke, fill }: { data: number[]; stroke: string; fill: string }) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const height = 28;
+  const width = 80;
+
+  const points = data
+    .map((val, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((val - min) / range) * (height - 6) - 3;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const areaPoints = `0,${height} ${points} ${width},${height}`;
+
+  return (
+    <svg className="h-7 w-20 overflow-visible shrink-0" viewBox={`0 0 ${width} ${height}`}>
+      <polygon points={areaPoints} fill={fill} />
+      <polyline points={points} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function StatCardGrid({ items, hasLiveBlock = false, loading = false }: StatCardGridProps) {
   const [flashBlock, setFlashBlock] = useState(false);
 
   useEffect(() => {
@@ -92,10 +132,13 @@ export function StatCardGrid({ items, hasLiveBlock = false }: StatCardGridProps)
                 : "border-slate-200"
             )}
           >
+            {/* Ambient Radial Gradient Accent */}
+            <div className={cn("absolute inset-0 bg-gradient-to-br pointer-events-none opacity-40", conf.glowBg)} />
+
             {/* Vibrant Top Accent Stripe */}
             <div className={cn("absolute top-0 left-0 right-0 h-1", conf.topStripe)} />
 
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 relative z-10">
               <span className="text-[10px] font-mono uppercase font-bold text-slate-400 tracking-wider">
                 {item.label}
               </span>
@@ -104,25 +147,44 @@ export function StatCardGrid({ items, hasLiveBlock = false }: StatCardGridProps)
               </div>
             </div>
 
-            <div className="flex items-baseline gap-2.5">
-              <span className={cn("font-mono text-2xl font-bold tracking-tight tabular-nums", conf.text)}>
-                {typeof item.value === "number" ? item.value.toLocaleString() : item.value}
-              </span>
-              {item.trend && (
-                <span className={cn("inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-mono font-bold border", conf.badge)}>
-                  {item.trendDirection === "up" ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : item.trendDirection === "down" ? (
-                    <ArrowDownRight className="h-3 w-3" />
-                  ) : null}
-                  {item.trend}
-                </span>
-              )}
-            </div>
+            {loading ? (
+              <div className="space-y-2 py-1 relative z-10">
+                <div className="h-7 w-28 rounded-md bg-slate-100 animate-pulse" />
+                <div className="h-3.5 w-44 rounded-md bg-slate-100 animate-pulse" />
+              </div>
+            ) : (
+              <div className="relative z-10">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className={cn("font-mono text-2xl font-bold tracking-tight tabular-nums", conf.text)}>
+                      {typeof item.value === "number" ? item.value.toLocaleString() : item.value}
+                    </span>
+                    {item.trend && (
+                      <span className={cn("inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-mono font-bold border", conf.badge)}>
+                        {item.trendDirection === "up" ? (
+                          <ArrowUpRight className="h-3 w-3" />
+                        ) : item.trendDirection === "down" ? (
+                          <ArrowDownRight className="h-3 w-3" />
+                        ) : null}
+                        {item.trend}
+                      </span>
+                    )}
+                  </div>
 
-            <p className="text-[11px] text-slate-500 mt-2 font-medium leading-tight">
-              {item.sublabel}
-            </p>
+                  {item.sparkline && item.sparkline.length > 1 && (
+                    <MiniSparkline
+                      data={item.sparkline}
+                      stroke={conf.sparkStroke}
+                      fill={conf.sparkFill}
+                    />
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-500 mt-2 font-medium leading-tight">
+                  {item.sublabel}
+                </p>
+              </div>
+            )}
           </div>
         );
       })}
