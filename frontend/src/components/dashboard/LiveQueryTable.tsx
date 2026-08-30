@@ -140,8 +140,15 @@ export function LiveQueryTable({
                       <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap text-[11px]">
                         {formatTime(ev.timestamp || new Date().toISOString())}
                       </td>
-                      <td className="py-2.5 px-3 max-w-[260px]">
-                        <DomainCell domain={ev.domain} />
+                      <td className="py-2.5 px-3 max-w-[280px]">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <DomainCell domain={ev.domain} />
+                          {(ev.source === "simulator" || ev.id?.startsWith("eval-") || ev.id?.startsWith("sim-")) && (
+                            <span className="inline-flex items-center rounded bg-purple-50 px-1.5 py-0.2 font-mono text-[9px] font-bold text-purple-700 border border-purple-200 shadow-2xs">
+                              TEST
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3 text-slate-600 text-[11px] whitespace-nowrap">
                         {ev.client_ip || "10.0.0.42"}

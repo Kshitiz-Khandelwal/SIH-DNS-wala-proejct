@@ -66,7 +66,12 @@ export default function DashboardPage() {
       prevStatsRef.current = s;
 
       setStats(s);
-      setEvents(ev);
+      setEvents((prev) => {
+        const customItems = prev.filter((e) => e.source === "simulator" || e.id?.startsWith("sim-") || e.id?.startsWith("eval-"));
+        const serverIds = new Set(ev.map((e) => e.id || e.domain));
+        const uniqueCustom = customItems.filter((e) => !serverIds.has(e.id || e.domain));
+        return [...uniqueCustom, ...ev];
+      });
 
       // Append real data points to sparklines
       if (s) {
@@ -99,9 +104,15 @@ export default function DashboardPage() {
     try {
       setIsCustomQuerying(true);
       const res = await queryDomain(customDomain);
-      setSimulationResult(res);
-      setSelectedEvent(res);
-      setEvents((prev) => [res, ...prev.filter((e) => e.domain !== res.domain)]);
+      const testItem: QueryResult = {
+        ...res,
+        id: res.id || `eval-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        source: "simulator",
+      };
+      setSimulationResult(testItem);
+      setSelectedEvent(testItem);
+      setEvents((prev) => [testItem, ...prev.filter((e) => e.domain !== testItem.domain && e.id !== testItem.id)]);
       await loadData();
     } catch (e) {
       console.error("Custom query failed", e);
@@ -114,9 +125,15 @@ export default function DashboardPage() {
     try {
       setSimulating(type);
       const res = await runSimulator(type);
-      setSimulationResult(res);
-      setSelectedEvent(res);
-      setEvents((prev) => [res, ...prev.filter((e) => e.domain !== res.domain)]);
+      const simItem: QueryResult = {
+        ...res,
+        id: res.id || `sim-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        source: "simulator",
+      };
+      setSimulationResult(simItem);
+      setSelectedEvent(simItem);
+      setEvents((prev) => [simItem, ...prev.filter((e) => e.domain !== simItem.domain && e.id !== simItem.id)]);
       await loadData();
     } catch (e) {
       console.error("Simulation failed", e);
