@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronRight, ChevronDown, Search, ArrowRight, Activity, Database, Brain, ShieldAlert } from "lucide-react";
 import { VerdictBadge } from "@/components/VerdictBadge";
 import { DomainCell } from "@/components/DomainCell";
-import { formatTime } from "@/lib/utils";
+import { formatTime, sanitizeDomain } from "@/lib/utils";
 import type { QueryResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -192,7 +192,7 @@ export function LiveQueryTable({
                                 </h4>
                               </div>
                               <Link
-                                href={`/app/domain/${encodeURIComponent(ev.domain)}?id=${encodeURIComponent(ev.id)}`}
+                                href={`/app/domain/${encodeURIComponent(sanitizeDomain(ev.domain) || "localhost")}?id=${encodeURIComponent(ev.id)}&domain=${encodeURIComponent(sanitizeDomain(ev.domain) || "localhost")}`}
                                 className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:underline font-mono"
                               >
                                 Full Forensic Profile <ArrowRight className="h-3 w-3" />
