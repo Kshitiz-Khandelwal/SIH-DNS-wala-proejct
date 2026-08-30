@@ -12,9 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface StatItem {
-  title?: string;
-  caption?: string;
-  label?: string;
+  label: string;
   value: string | number;
   sublabel: string;
   trend?: string;
@@ -125,9 +123,9 @@ export function StatCardGrid({ items, hasLiveBlock = false, loading = false }: S
 
         return (
           <div
-            key={item.title || item.label}
+            key={item.label}
             className={cn(
-              "group relative overflow-hidden rounded-xl border bg-white p-4.5 shadow-2xs transition-all duration-200 hover:-translate-y-0.5",
+              "group relative overflow-hidden rounded-xl border bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5",
               conf.hoverBorder,
               isBlockItem && flashBlock
                 ? "border-rose-500 ring-2 ring-rose-200 bg-rose-50/20"
@@ -140,18 +138,11 @@ export function StatCardGrid({ items, hasLiveBlock = false, loading = false }: S
             {/* Vibrant Top Accent Stripe */}
             <div className={cn("absolute top-0 left-0 right-0 h-1", conf.topStripe)} />
 
-            <div className="flex items-start justify-between mb-2.5 relative z-10">
-              <div>
-                <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-                  {item.title || item.label}
-                </h4>
-                {item.caption && (
-                  <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-                    {item.caption}
-                  </span>
-                )}
-              </div>
-              <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg border shadow-2xs shrink-0", conf.iconBg)}>
+            <div className="flex items-center justify-between mb-3 relative z-10">
+              <span className="text-[10px] font-mono uppercase font-bold text-slate-400 tracking-wider">
+                {item.label}
+              </span>
+              <div className={cn("flex h-7 w-7 items-center justify-center rounded-lg border shadow-2xs", conf.iconBg)}>
                 <Icon className="h-4 w-4" />
               </div>
             </div>

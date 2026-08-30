@@ -144,11 +144,8 @@ export default function DevicesPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            Monitored devices
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            active endpoints on network
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            ACTIVE CLIENTS
           </span>
           <div className="font-mono text-3xl font-bold text-slate-900 mt-2">
             {devices.length}
@@ -159,11 +156,8 @@ export default function DevicesPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            Infected devices
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            isolated or C2 beacons
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            COMPROMISED HOSTS
           </span>
           <div className="font-mono text-3xl font-bold text-rose-700 mt-2">
             {compromisedCount}
@@ -174,11 +168,8 @@ export default function DevicesPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            At-risk devices
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            unusual query bursts
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            SUSPICIOUS HOSTS
           </span>
           <div className="font-mono text-3xl font-bold text-amber-700 mt-2">
             {suspiciousCount}
@@ -189,11 +180,8 @@ export default function DevicesPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            Clean devices
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            healthy baseline behavior
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            HEALTHY CLIENTS
           </span>
           <div className="font-mono text-3xl font-bold text-emerald-700 mt-2">
             {devices.length - compromisedCount - suspiciousCount}

@@ -110,26 +110,20 @@ export default function ThreatsPage() {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            Known malicious domains
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            active indicators cached
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            TOTAL CACHED IOCS
           </span>
           <div className="font-mono text-3xl font-bold text-slate-900 mt-2">
             {totalIoCs.toLocaleString()}
           </div>
           <p className="mt-3 text-xs text-slate-500 border-t border-slate-100 pt-2.5">
-            Synchronized across local memory zones
+            Synchronized across all memory zones
           </p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            Direct feed blocks
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            blocked by threat intel
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            MATCH HIT RATE (24H)
           </span>
           <div className="font-mono text-3xl font-bold text-blue-700 mt-2">
             7.4<span className="text-sm font-sans font-normal text-slate-500">%</span>
@@ -140,32 +134,26 @@ export default function ThreatsPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            Lookup response time
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            average cache speed
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            MEAN LOOKUP TIME
           </span>
           <div className="font-mono text-3xl font-bold text-emerald-700 mt-2">
             0.22 <span className="text-sm font-sans font-normal text-slate-500">ms</span>
           </div>
           <p className="mt-3 text-xs text-slate-500 border-t border-slate-100 pt-2.5">
-            Radix Tree in-memory lookup
+            Bloom Filter + Radix Tree cache
           </p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <h4 className="text-xs font-sans font-bold text-slate-800 tracking-tight">
-            Feed sync status
-          </h4>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-            threat data freshness
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+            FEED SYNC HEALTH
           </span>
           <div className="font-mono text-3xl font-bold text-emerald-700 mt-2">
             100<span className="text-sm font-sans font-normal text-slate-500">%</span>
           </div>
           <p className="mt-3 text-xs text-slate-500 border-t border-slate-100 pt-2.5">
-            All 5 feeds fully operational
+            Zero sync degradation detected
           </p>
         </div>
       </div>
