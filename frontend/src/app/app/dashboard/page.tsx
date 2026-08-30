@@ -9,6 +9,8 @@ import { AttackSimulatorCard } from "@/components/dashboard/AttackSimulatorCard"
 import { LiveQueryTable } from "@/components/dashboard/LiveQueryTable";
 import { ThreatDistribution } from "@/components/dashboard/ThreatDistribution";
 import { HighRiskList } from "@/components/dashboard/HighRiskList";
+import { RiskWaterfall } from "@/components/landing/RiskWaterfall";
+import { DomainMicroscope } from "@/components/landing/DomainMicroscope";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -145,7 +147,7 @@ export default function DashboardPage() {
       {/* 4. Telemetry Stream & Priority Threat Panes */}
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
         {/* Visual Centerpiece: Real-time Telemetry Stream with In-Place Row Accordion (8 cols) */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-8 space-y-3.5">
           <LiveQueryTable
             events={filteredEvents}
             totalCount={events.length}
@@ -161,6 +163,29 @@ export default function DashboardPage() {
         <div className="lg:col-span-4 space-y-3.5">
           <HighRiskList events={highRiskEvents} />
           <ThreatDistribution />
+        </div>
+      </div>
+
+      {/* 5. Deep Forensic Inspection: Waterfall & Lexical Microscope */}
+      <div className="pt-2">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+              DIAGNOSTIC FORENSICS
+            </span>
+            <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-900 mt-0.5">
+              Live Stage-by-Stage Attribution &amp; String Microscope
+            </h3>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden">
+            <RiskWaterfall />
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden">
+            <DomainMicroscope />
+          </div>
         </div>
       </div>
     </div>
