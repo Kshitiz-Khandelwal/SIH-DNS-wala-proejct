@@ -28,7 +28,33 @@ export default function QueuePage() {
     try {
       const [s, e, cfg] = await Promise.all([getStats(), getEvents(), getEndpoint()]);
       setStats(s);
-      setEvents(e);
+      setEvents((prev) => {
+        let cached: QueryResult[] = [];
+        if (typeof window !== "undefined") {
+          try {
+            const raw = sessionStorage.getItem("dns_shield_tested_queries");
+            if (raw) cached = JSON.parse(raw);
+          } catch {
+            // ignore
+          }
+        }
+        const customItems = [
+          ...cached,
+          ...prev.filter((item) => item.source === "simulator" || item.id?.startsWith("sim-") || item.id?.startsWith("eval-")),
+        ];
+        const seen = new Set<string>();
+        const uniqueCustom: QueryResult[] = [];
+        for (const item of customItems) {
+          const key = item.domain || item.id;
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueCustom.push(item);
+          }
+        }
+        const serverIds = new Set(e.map((item) => item.domain || item.id));
+        const filteredCustom = uniqueCustom.filter((item) => !serverIds.has(item.domain || item.id));
+        return [...filteredCustom, ...e];
+      });
       setEndpoint(cfg.endpoint);
       setError(null);
     } catch {

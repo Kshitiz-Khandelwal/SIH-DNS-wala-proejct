@@ -16,6 +16,29 @@ import { cn } from "@/lib/utils";
 
 const POLL_INTERVAL_MS = 4000;
 
+const STORAGE_KEY = "dns_shield_tested_queries";
+
+function getCachedTestedQueries(): QueryResult[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as QueryResult[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTestedQuery(item: QueryResult) {
+  if (typeof window === "undefined") return;
+  try {
+    const prev = getCachedTestedQueries();
+    const filtered = prev.filter((e) => e.domain !== item.domain && e.id !== item.id);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify([item, ...filtered].slice(0, 20)));
+  } catch {
+    // sessionStorage quota or disabled
+  }
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [events, setEvents] = useState<QueryResult[]>([]);
@@ -67,10 +90,24 @@ export default function DashboardPage() {
 
       setStats(s);
       setEvents((prev) => {
-        const customItems = prev.filter((e) => e.source === "simulator" || e.id?.startsWith("sim-") || e.id?.startsWith("eval-"));
-        const serverIds = new Set(ev.map((e) => e.id || e.domain));
-        const uniqueCustom = customItems.filter((e) => !serverIds.has(e.id || e.domain));
-        return [...uniqueCustom, ...ev];
+        const cached = getCachedTestedQueries();
+        const customItems = [
+          ...cached,
+          ...prev.filter((e) => e.source === "simulator" || e.id?.startsWith("sim-") || e.id?.startsWith("eval-"))
+        ];
+        // Deduplicate custom items
+        const seen = new Set<string>();
+        const uniqueCustom: QueryResult[] = [];
+        for (const item of customItems) {
+          const key = item.domain || item.id;
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueCustom.push(item);
+          }
+        }
+        const serverIds = new Set(ev.map((e) => e.domain || e.id));
+        const filteredCustom = uniqueCustom.filter((e) => !serverIds.has(e.domain || e.id));
+        return [...filteredCustom, ...ev];
       });
 
       // Append real data points to sparklines
@@ -110,6 +147,7 @@ export default function DashboardPage() {
         timestamp: new Date().toISOString(),
         source: "simulator",
       };
+      saveTestedQuery(testItem);
       setSimulationResult(testItem);
       setSelectedEvent(testItem);
       setEvents((prev) => [testItem, ...prev.filter((e) => e.domain !== testItem.domain && e.id !== testItem.id)]);
@@ -131,6 +169,7 @@ export default function DashboardPage() {
         timestamp: new Date().toISOString(),
         source: "simulator",
       };
+      saveTestedQuery(simItem);
       setSimulationResult(simItem);
       setSelectedEvent(simItem);
       setEvents((prev) => [simItem, ...prev.filter((e) => e.domain !== simItem.domain && e.id !== simItem.id)]);
