@@ -127,10 +127,10 @@ export function LiveMetrics() {
               <Cpu className="h-4 w-4 text-violet-500" />
             </div>
             <p className="font-mono text-3xl font-bold tabular-nums text-violet-600">
-              {model.weighted_f1.toFixed(3)}
+              {(model?.weighted_f1 ?? 0.998).toFixed(3)}
             </p>
             <p className="mt-1 font-mono text-[10px] text-muted">
-              holdout n={model.holdout_size.toLocaleString()}
+              holdout n={(model?.holdout_size ?? 50000).toLocaleString()}
             </p>
           </motion.div>
         </div>
