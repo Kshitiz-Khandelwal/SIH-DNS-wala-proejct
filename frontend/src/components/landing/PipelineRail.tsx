@@ -13,7 +13,8 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   XCircle,
-  Info
+  Info,
+  RotateCcw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -134,27 +135,48 @@ export function PipelineRail({
   onStageSelect,
   className
 }: PipelineRailProps) {
-  const [activeStep, setActiveStep] = useState(autoPlay ? 0 : stages.length - 1);
-  const [selectedStageId, setSelectedStageId] = useState<string>(stages[3]?.id || stages[0]?.id);
+  const [activeStep, setActiveStep] = useState(0);
+  const [selectedStageId, setSelectedStageId] = useState<string>(stages[0]?.id || "redis-cache");
+  const [isTraversing, setIsTraversing] = useState(true);
 
-  // Auto-play discrete traversal animation
+  // Restart discrete traversal animation whenever domain or stages change
   useEffect(() => {
+    setActiveStep(0);
+    setIsTraversing(true);
+    
+    // Select first stage initially
+    if (stages.length > 0) {
+      setSelectedStageId(stages[0].id);
+    }
+
     if (!autoPlay) {
       setActiveStep(stages.length - 1);
+      setIsTraversing(false);
       return;
     }
-    setActiveStep(0);
+
+    let step = 0;
     const interval = setInterval(() => {
-      setActiveStep((prev) => {
-        if (prev < stages.length - 1) {
-          return prev + 1;
+      step++;
+      if (step < stages.length) {
+        setActiveStep(step);
+        // Automatically highlight the stage currently being evaluated
+        if (stages[step]) {
+          setSelectedStageId(stages[step].id);
         }
-        return prev;
-      });
-    }, 600);
+      } else {
+        setIsTraversing(false);
+        // Pick the most interesting deciding stage (the one with the highest contribution or the last one)
+        const highestRiskStage = [...stages].sort((a, b) => b.contribution - a.contribution)[0];
+        if (highestRiskStage && highestRiskStage.contribution > 0) {
+          setSelectedStageId(highestRiskStage.id);
+        }
+        clearInterval(interval);
+      }
+    }, 450);
 
     return () => clearInterval(interval);
-  }, [stages, autoPlay]);
+  }, [domain, stages, autoPlay]);
 
   // Compute running accumulated score up to active step
   const runningScore = stages
@@ -193,6 +215,23 @@ export function PipelineRail({
   const finalVerdictStyle = getVerdictStyle(activeStep === stages.length - 1 ? verdict : currentVerdict);
   const VerdictIcon = finalVerdictStyle.icon;
 
+  function handleReplay() {
+    setActiveStep(0);
+    setIsTraversing(true);
+    setSelectedStageId(stages[0]?.id || "redis-cache");
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      if (step < stages.length) {
+        setActiveStep(step);
+        if (stages[step]) setSelectedStageId(stages[step].id);
+      } else {
+        setIsTraversing(false);
+        clearInterval(interval);
+      }
+    }, 450);
+  }
+
   return (
     <div className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-sm", className)}>
       {/* Top Meta Bar */}
@@ -203,8 +242,13 @@ export function PipelineRail({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-400">Target Query</span>
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-400">Inspecting Query</span>
               <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-mono text-slate-600">UDP/53</span>
+              {isTraversing && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-800 animate-pulse">
+                  Evaluating Stage {activeStep + 1}/7…
+                </span>
+              )}
             </div>
             <p className="font-mono text-base font-bold text-slate-900">{domain}</p>
           </div>
@@ -215,12 +259,17 @@ export function PipelineRail({
           <div className="text-right">
             <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400">Cumulative Risk</span>
             <div className="flex items-baseline gap-1 justify-end font-mono">
-              <span className={cn(
-                "text-xl font-bold transition-colors duration-300",
-                runningScore >= 71 ? "text-rose-600" : runningScore >= 41 ? "text-amber-600" : "text-emerald-600"
-              )}>
+              <motion.span 
+                key={runningScore}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                className={cn(
+                  "text-xl font-bold transition-colors duration-300",
+                  runningScore >= 71 ? "text-rose-600" : runningScore >= 41 ? "text-amber-600" : "text-emerald-600"
+                )}
+              >
                 {Math.min(runningScore, 100)}
-              </span>
+              </motion.span>
               <span className="text-xs text-slate-400">/100</span>
             </div>
           </div>
@@ -232,6 +281,15 @@ export function PipelineRail({
             <VerdictIcon className="h-4 w-4 shrink-0" />
             <span>{finalVerdictStyle.label}</span>
           </div>
+
+          <button
+            type="button"
+            onClick={handleReplay}
+            title="Replay Traversal Animation"
+            className="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
@@ -243,7 +301,7 @@ export function PipelineRail({
             className="h-full bg-emerald-500 rounded-full"
             initial={{ width: "0%" }}
             animate={{ width: `${(activeStep / (stages.length - 1)) * 100}%` }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           />
         </div>
 
@@ -253,6 +311,7 @@ export function PipelineRail({
             const Icon = stage.icon;
             const isCompleted = idx < activeStep;
             const isCurrent = idx === activeStep;
+            const isReached = idx <= activeStep;
             const isSelected = stage.id === selectedStageId;
             const hasRisk = stage.contribution > 0;
 
@@ -268,7 +327,7 @@ export function PipelineRail({
                   "relative flex flex-col items-center rounded-xl p-3 text-center transition-all text-left md:text-center",
                   "border bg-white hover:border-slate-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20",
                   isSelected ? "border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm" : "border-slate-200",
-                  isCurrent && "bg-slate-50/80"
+                  isCurrent && "bg-slate-50/80 shadow-xs"
                 )}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
@@ -279,35 +338,49 @@ export function PipelineRail({
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300",
                       isCurrent && "scale-110 shadow-md",
-                      hasRisk && isCompleted
+                      // Only show risk color if the packet has actually reached or passed this stage!
+                      isReached && hasRisk
                         ? "border-rose-300 bg-rose-50 text-rose-600"
                         : isCompleted
                         ? "border-emerald-300 bg-emerald-50 text-emerald-600"
                         : isCurrent
                         ? "border-emerald-500 bg-emerald-500 text-white shadow-emerald-500/20"
-                        : "border-slate-200 bg-slate-50 text-slate-400"
+                        : "border-slate-200 bg-slate-50 text-slate-300"
                     )}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
 
-                  {/* Score Delta Pill */}
-                  {stage.contribution > 0 && (
-                    <span className="absolute -top-1.5 -right-2 rounded-full bg-rose-600 px-1.5 py-0.2 font-mono text-[10px] font-bold text-white shadow-xs">
-                      +{stage.contribution}
-                    </span>
-                  )}
+                  {/* Score Delta Pill — ONLY visible once the evaluation has actually reached this stage! */}
+                  <AnimatePresence>
+                    {isReached && stage.contribution > 0 && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.5, y: 5 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute -top-1.5 -right-2 rounded-full bg-rose-600 px-1.5 py-0.2 font-mono text-[10px] font-bold text-white shadow-xs"
+                      >
+                        +{stage.contribution}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Stage Title */}
                 <div className="w-full">
                   <div className="flex items-center justify-between md:justify-center gap-1">
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className={cn(
+                      "font-mono text-[10px] font-bold uppercase tracking-wider",
+                      isReached ? "text-slate-700" : "text-slate-300"
+                    )}>
                       S{idx + 1}
                     </span>
                     <span className="font-mono text-[10px] text-slate-400 hidden md:inline">· {stage.latencyMs}ms</span>
                   </div>
-                  <p className="truncate text-xs font-semibold text-slate-900 mt-0.5">
+                  <p className={cn(
+                    "truncate text-xs font-semibold mt-0.5",
+                    isReached ? "text-slate-900" : "text-slate-400"
+                  )}>
                     {stage.shortName}
                   </p>
                 </div>
