@@ -43,18 +43,18 @@ export function LiveQueryTable({
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-2xs flex flex-col overflow-hidden">
       {/* Table Header Bar */}
-      <div className="p-3.5 border-b border-slate-100 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between bg-slate-50/50">
+      <div className="p-3 border-b border-slate-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-slate-50/50">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
           <div>
-            <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-900">
-              Live DNS Telemetry &amp; Decision Stream
+            <h3 className="text-xs font-sans font-bold text-slate-900 tracking-tight">
+              Live Query Feed
             </h3>
-            <span className="text-[11px] text-slate-500 font-mono">
-              {totalCount} queries in memory buffer &middot; click row to expand trace
+            <span className="text-[10px] text-slate-500 font-mono">
+              {totalCount} recent queries &middot; click row to inspect decision
             </span>
           </div>
         </div>
@@ -65,10 +65,10 @@ export function LiveQueryTable({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Filter domain or IP..."
+              placeholder="Search domain or IP..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-7.5 w-[180px] rounded-md border border-slate-200 bg-white pl-8 pr-2.5 text-xs font-mono text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none shadow-2xs transition"
+              className="h-7 w-[160px] sm:w-[190px] rounded-md border border-slate-200 bg-white pl-8 pr-2.5 text-xs font-mono text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none shadow-2xs transition"
             />
           </div>
 
@@ -80,7 +80,7 @@ export function LiveQueryTable({
                 type="button"
                 onClick={() => onFilterChange(tab)}
                 className={cn(
-                  "px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer",
+                  "px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer",
                   filter === tab
                     ? "bg-white text-slate-900 shadow-2xs font-bold"
                     : "text-slate-500 hover:text-slate-800"
@@ -99,19 +99,19 @@ export function LiveQueryTable({
           <thead>
             <tr className="border-b border-slate-100 font-mono text-[10px] uppercase text-slate-400 bg-slate-50/40">
               <th className="py-2 px-3 font-semibold w-8"></th>
-              <th className="py-2 px-3 font-semibold">Timestamp</th>
-              <th className="py-2 px-3 font-semibold">Queried FQDN</th>
-              <th className="py-2 px-3 font-semibold">Client Source</th>
-              <th className="py-2 px-3 font-semibold">Risk Score</th>
+              <th className="py-2 px-3 font-semibold">Time</th>
+              <th className="py-2 px-3 font-semibold">Domain</th>
+              <th className="py-2 px-3 font-semibold">Client IP</th>
+              <th className="py-2 px-3 font-semibold">Risk</th>
               <th className="py-2 px-3 font-semibold">Verdict</th>
-              <th className="py-2 px-3 text-right font-semibold">Drilldown</th>
+              <th className="py-2 px-3 text-right font-semibold">Forensics</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-mono text-xs">
             {events.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-10 text-center text-slate-400 font-mono text-xs">
-                  No matching telemetry records in current filter window.
+                  No matching queries in current filter window.
                 </td>
               </tr>
             ) : (
