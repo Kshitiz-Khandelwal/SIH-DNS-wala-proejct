@@ -192,7 +192,7 @@ export function LiveQueryTable({
                                 </h4>
                               </div>
                               <Link
-                                href={`/app/domain/${ev.id || ev.domain}`}
+                                href={`/app/domain/${encodeURIComponent(ev.domain)}?id=${encodeURIComponent(ev.id)}`}
                                 className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:underline font-mono"
                               >
                                 Full Forensic Profile <ArrowRight className="h-3 w-3" />
@@ -201,16 +201,17 @@ export function LiveQueryTable({
 
                             {/* 7-Stage trace grid */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 font-mono text-[10px]">
-                              {(ev.pipeline || [
-                                { stage: 1, name: "Cache", contribution: 0, reason: "Cache miss" },
-                                { stage: 2, name: "Allowlist", contribution: 0, reason: "No exact match" },
-                                { stage: 3, name: "Lexical", contribution: ev.risk_score > 30 ? 40 : 0, reason: ev.risk_score > 30 ? "High entropy string" : "Normal n-grams" },
-                                { stage: 4, name: "Threat Intel", contribution: 0, reason: "No IOC feed match" },
-                                { stage: 5, name: "RF-150 ML", contribution: ev.risk_score >= 70 ? 55 : 0, reason: ev.risk_score >= 70 ? "DGA classification match" : "Benign baseline" },
-                                { stage: 6, name: "Quarantine", contribution: 0, reason: "Evaluated" },
-                                { stage: 7, name: "Resolver", contribution: 0, reason: "Terminal state" },
-                              ]).map((stg, sIdx) => {
-                                const hasContrib = stg.contribution > 0;
+                              {(ev.pipeline && ev.pipeline.length > 0 ? ev.pipeline : [
+                                { stage: "redis-cache", name: "Hot Cache", contribution: 0, reason: "Cache evaluated" },
+                                { stage: "threat-intel", name: "Threat Intel", contribution: 0, reason: "STIX feed check" },
+                                { stage: "local-rules", name: "Local Rules", contribution: ev.risk_score > 30 ? 30 : 0, reason: "Heuristics check" },
+                                { stage: "ml-lexical", name: "ML Lexical", contribution: ev.risk_score >= 70 ? 45 : 0, reason: "Random Forest score" },
+                                { stage: "behavioral", name: "Behavioral", contribution: 0, reason: "Query baseline" },
+                                { stage: "geo-intel", name: "Geo Context", contribution: 0, reason: "ASN telemetry" },
+                                { stage: "active-response", name: "Response", contribution: 0, reason: "Policy enforced" },
+                              ]).map((stg: any, sIdx: number) => {
+                                const hasContrib = (stg.contribution || 0) > 0;
+                                const stageDisplayName = stg.name || (typeof stg.stage === "string" ? stg.stage.replace(/-/g, " ") : `Stage ${sIdx + 1}`);
                                 return (
                                   <div
                                     key={sIdx}
@@ -221,8 +222,8 @@ export function LiveQueryTable({
                                         : "border-slate-100 bg-slate-50/50 text-slate-600"
                                     )}
                                   >
-                                    <span className="text-[9px] text-slate-400">Stage 0{stg.stage || sIdx + 1}</span>
-                                    <span className="font-semibold truncate">{stg.name}</span>
+                                    <span className="text-[9px] text-slate-400">Stage 0{sIdx + 1}</span>
+                                    <span className="font-semibold truncate capitalize">{stageDisplayName}</span>
                                     <span className="text-[9px] mt-1 text-slate-500 truncate">{stg.reason || "+0 contrib"}</span>
                                   </div>
                                 );

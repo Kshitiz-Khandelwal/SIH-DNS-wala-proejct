@@ -29,3 +29,22 @@ export function formatDateTime(iso: string): string {
     hour12: false,
   });
 }
+
+/**
+ * Sanitizes arbitrary URL / domain inputs by stripping protocols, ports, and paths.
+ * E.g. "https://rnicrosoft.com:8080/login?q=1" -> "rnicrosoft.com"
+ * E.g. "http://localhost:3000/app/queue" -> "localhost"
+ */
+export function sanitizeDomain(input: string): string {
+  if (!input) return "";
+  let clean = input.trim().toLowerCase();
+  // Strip scheme (http://, https://, udp://, etc.)
+  clean = clean.replace(/^[a-zA-Z0-9+.-]+:\/\//, "");
+  // Strip path and query parameters
+  clean = clean.split("/")[0];
+  // Strip port
+  clean = clean.split(":")[0];
+  clean = clean.split("?")[0];
+  clean = clean.split("#")[0];
+  return clean.trim();
+}
