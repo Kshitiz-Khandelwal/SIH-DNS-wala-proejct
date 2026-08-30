@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import { getEvents, getStats, runSimulator } from "@/lib/api";
+import { getEvents, getStats, queryDomain, runSimulator } from "@/lib/api";
 import type { QueryResult, SimulatorType, StatsResponse } from "@/lib/types";
 import { StatCardGrid, type StatItem } from "@/components/dashboard/StatCardGrid";
 import { PipelineFlowVisualizer } from "@/components/dashboard/PipelineFlowVisualizer";
@@ -93,12 +93,30 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [loadData]);
 
+  const [isCustomQuerying, setIsCustomQuerying] = useState(false);
+
+  async function handleCustomQuery(customDomain: string) {
+    try {
+      setIsCustomQuerying(true);
+      const res = await queryDomain(customDomain);
+      setSimulationResult(res);
+      setSelectedEvent(res);
+      setEvents((prev) => [res, ...prev.filter((e) => e.domain !== res.domain)]);
+      await loadData();
+    } catch (e) {
+      console.error("Custom query failed", e);
+    } finally {
+      setIsCustomQuerying(false);
+    }
+  }
+
   async function handleSimulate(type: SimulatorType) {
     try {
       setSimulating(type);
       const res = await runSimulator(type);
       setSimulationResult(res);
       setSelectedEvent(res);
+      setEvents((prev) => [res, ...prev.filter((e) => e.domain !== res.domain)]);
       await loadData();
     } catch (e) {
       console.error("Simulation failed", e);
@@ -218,11 +236,13 @@ export default function DashboardPage() {
         isProcessing={simulating !== null}
       />
 
-      {/* 3. Controlled Synthetic Test Bench */}
+      {/* 3. Controlled Synthetic Test Bench & Live Domain Scanner */}
       <AttackSimulatorCard
         simulating={simulating}
         simulationResult={simulationResult}
         onSimulate={handleSimulate}
+        onCustomQuery={handleCustomQuery}
+        isCustomQuerying={isCustomQuerying}
       />
 
       {/* 4. Telemetry Stream & Priority Threat Panes */}

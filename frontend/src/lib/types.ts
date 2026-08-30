@@ -31,6 +31,9 @@ export interface QueryResult {
   risk_score: number;
   verdict: Verdict;
   pipeline: PipelineStage[];
+  reasons?: string[];
+  latency_ms?: number;
+  ml?: Record<string, unknown>;
   lexical_features?: LexicalFeatures;
   lexical_chars?: LexicalChar[];
   behavioral_context?: string;
