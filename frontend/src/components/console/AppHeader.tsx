@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Search, Shield, Zap, CheckCircle2, AlertTriangle, X, ExternalLink, ArrowRight } from "lucide-react";
+import { Bell, Search, Shield, Zap, CheckCircle2, AlertTriangle, X, ExternalLink, ArrowRight, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NotificationItem {
@@ -143,8 +144,18 @@ export function AppHeader() {
           </div>
         </div>
 
-        {/* Right: Quick Search Bar + Live QPS Counter + SLA */}
-        <div className="flex items-center gap-4">
+        {/* Right: Quick Search Bar + Landing Page Link + Live QPS Counter + SLA */}
+        <div className="flex items-center gap-3">
+          {/* Landing Page Quick Switch Button */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 px-3 py-1.5 font-mono text-xs font-semibold text-slate-700 transition-all shadow-2xs group"
+          >
+            <Globe className="h-3.5 w-3.5 text-emerald-600 group-hover:rotate-12 transition-transform" />
+            <span>Landing Page</span>
+            <ExternalLink className="h-3 w-3 text-slate-400" />
+          </Link>
+
           {/* Quick Command Search Bar (Functional Button) */}
           <button
             type="button"

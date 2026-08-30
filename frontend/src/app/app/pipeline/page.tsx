@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getEvents, getStats } from "@/lib/api";
-import type { QueryResult, PipelineStage } from "@/lib/types";
+import { getEvents } from "@/lib/api";
+import type { QueryResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Zap, Activity, CheckCircle2, ShieldAlert, Layers, Server, Cpu, Database, Network, ArrowRight } from "lucide-react";
 import { PipelineFlowStrip } from "@/components/PipelineFlowStrip";
+import { PipelineRail } from "@/components/landing/PipelineRail";
+import { VerdictComparison } from "@/components/landing/VerdictComparison";
 
 // ─── Exhaustive Stage Metadata & Documentation ───────────────
 const STAGE_SPECS = [
@@ -117,17 +118,10 @@ function statusColor(contribution: number): string {
   return "#64748b";
 }
 
-function statusLabel(contribution: number, isActive: boolean): string {
-  if (isActive) return "INSPECTING";
-  if (contribution === 0) return "CLEAN PASS";
-  if (contribution >= 70) return "CRITICAL BLOCK";
-  if (contribution >= 40) return "FLAGGED";
-  return "PASS";
-}
-
 export default function PipelinePage() {
   const [activeStage, setActiveStage] = useState(3);
   const [latestEvent, setLatestEvent] = useState<QueryResult | null>(null);
+  const [viewMode, setViewMode] = useState<"rail" | "spec" | "comparison">("rail");
 
   useEffect(() => {
     getEvents(50)
@@ -157,195 +151,272 @@ export default function PipelinePage() {
           </p>
         </div>
 
-        <div className="flex-1 space-y-2.5 overflow-y-auto p-4">
-          {STAGE_SPECS.map((stage, idx) => {
-            const isActive = activeStage === idx;
-            const stageContrib = latestEvent?.pipeline?.[idx]?.contribution ?? 0;
-            const label = statusLabel(stageContrib, isActive);
-            const color = statusColor(stageContrib);
+        {/* View Mode Switcher */}
+        <div className="p-3 border-b border-slate-100 flex gap-1.5 bg-slate-50/60">
+          <button
+            type="button"
+            onClick={() => setViewMode("rail")}
+            className={cn(
+              "flex-1 py-1.5 px-2 rounded-lg font-mono text-[11px] font-semibold transition-all cursor-pointer border text-center",
+              viewMode === "rail"
+                ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+            )}
+          >
+            Live Rail
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("comparison")}
+            className={cn(
+              "flex-1 py-1.5 px-2 rounded-lg font-mono text-[11px] font-semibold transition-all cursor-pointer border text-center",
+              viewMode === "comparison"
+                ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+            )}
+          >
+            Dual Lane
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("spec")}
+            className={cn(
+              "flex-1 py-1.5 px-2 rounded-lg font-mono text-[11px] font-semibold transition-all cursor-pointer border text-center",
+              viewMode === "spec"
+                ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+            )}
+          >
+            Deep Spec
+          </button>
+        </div>
+
+        {/* Stages List Items */}
+        <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+          {STAGE_SPECS.map((s, idx) => {
+            const isSelected = idx === activeStage;
+            const stageContrib = latestEvent?.pipeline?.[idx]?.contribution ?? (idx === 3 ? 31 : 0);
 
             return (
-              <div key={stage.num}>
-                {idx > 0 && (
-                  <div className="flex justify-start pl-[38px] py-0.5">
-                    <div
-                      className={cn(
-                        "stage-connector h-3 transition-colors duration-300",
-                        idx <= activeStage ? "bg-blue-300" : "",
-                      )}
-                    />
-                  </div>
+              <button
+                key={s.num}
+                type="button"
+                onClick={() => {
+                  setActiveStage(idx);
+                  if (viewMode !== "spec") setViewMode("spec");
+                }}
+                className={cn(
+                  "w-full text-left p-4 transition-all flex items-start justify-between gap-3 cursor-pointer",
+                  isSelected
+                    ? "bg-slate-100/70 border-l-4 border-emerald-600"
+                    : "hover:bg-slate-50/80"
                 )}
-                <button
-                  onClick={() => setActiveStage(idx)}
-                  className={cn(
-                    "w-full rounded-xl border p-4 text-left transition-all duration-150 shadow-2xs",
-                    isActive
-                      ? "border-blue-500 bg-blue-50/60 shadow-xs ring-2 ring-blue-100"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={cn("font-mono text-[11px] font-bold", isActive ? "text-blue-700" : "text-slate-400")}>
-                          STAGE {stage.num}
-                        </span>
-                        <span className="font-mono text-[10px] text-slate-500">:{stage.port}</span>
-                      </div>
-                      <div className={cn("text-xs font-bold mt-0.5 line-clamp-1", isActive ? "text-slate-900" : "text-slate-700")}>
-                        {stage.shortName}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-mono text-[10px] font-bold uppercase tracking-wider" style={{ color }}>
-                        {label}
-                      </div>
-                      <div className="font-mono text-[11px] font-bold mt-0.5 text-slate-600">
-                        {stage.latency}
-                      </div>
-                    </div>
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-slate-400">
+                      {s.num}
+                    </span>
+                    <span className="font-mono text-[10px] bg-slate-100 border border-slate-200 text-slate-700 rounded px-1 py-0.5">
+                      :{s.port}
+                    </span>
+                    <span className="font-mono text-[10px] text-emerald-700 font-semibold ml-auto">
+                      {s.latency}
+                    </span>
                   </div>
-                </button>
-              </div>
+
+                  <h4 className={cn("text-xs font-bold font-sans mt-1 truncate", isSelected ? "text-slate-900" : "text-slate-700")}>
+                    {s.shortName}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
+                    {s.service}
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: statusColor(stageContrib) }}
+                  />
+                  <span className="font-mono text-[10px] text-slate-400">
+                    +{stageContrib}%
+                  </span>
+                </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Right Column: Deep Stage Inspection & Spec */}
-      <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50/40">
-        {/* Header Strip */}
-        <div className="border-b border-slate-200 bg-white px-8 py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 font-mono text-xs text-slate-400 uppercase font-bold tracking-wider">
-                <span>Stage {spec.num} of 07</span>
-                <span>&bull;</span>
-                <span>Port :{spec.port}</span>
-                <span>&bull;</span>
-                <span className="text-blue-600">{spec.rfc}</span>
-              </div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 mt-1 font-sans">
-                {spec.name}
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold font-mono text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Service Online
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Body */}
-        <div className="p-8 space-y-6 w-full">
-          {/* Live Cascade Flow Diagram */}
-          <PipelineFlowStrip
-            stages={STAGE_SPECS.map((s, idx) => ({
-              num: s.num,
-              shortName: s.shortName.split(" ").slice(0, 2).join(" "),
-              contribution: latestEvent?.pipeline?.[idx]?.contribution ?? (idx === 3 ? 31 : 0),
-            }))}
-            activeIndex={activeStage}
-            onSelect={setActiveStage}
-          />
-
-          {/* Description Card */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
-              ENGINE ARCHITECTURE &amp; SPECIFICATION
-            </span>
-            <p className="mt-2 text-sm text-slate-700 leading-relaxed font-sans">
-              {spec.desc}
-            </p>
-
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs">
+      {/* Right Column: Dynamic View Container */}
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/40 overflow-y-auto">
+        {viewMode === "rail" && (
+          <div className="p-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div>
-                <span className="text-slate-400 font-mono block uppercase text-[10px]">Microservice ID</span>
-                <span className="font-mono font-bold text-slate-900 mt-0.5 block">{spec.service}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 font-mono block uppercase text-[10px]">Internal Protocol</span>
-                <span className="font-mono font-bold text-blue-600 mt-0.5 block">{spec.protocol}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 font-mono block uppercase text-[10px]">Benchmarked Latency</span>
-                <span className="font-mono font-bold text-emerald-700 mt-0.5 block">{spec.latency} (P99)</span>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                  REAL-TIME PIPELINE DIAGNOSTIC
+                </span>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 mt-0.5">
+                  Interactive Signal Flow &amp; Risk Accumulator
+                </h2>
               </div>
             </div>
+            <PipelineRail />
           </div>
+        )}
 
-          {/* Algorithm & Mathematical Foundation */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
-              MATHEMATICAL CORE &amp; ALGORITHM
-            </span>
-            <div className="mt-2 rounded-lg bg-slate-900 p-3 text-slate-100 font-mono text-xs">
-              <code>{spec.algorithm}</code>
-            </div>
-          </div>
-
-          {/* Data Contracts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
-                INGESTION PAYLOAD CONTRACT (INPUT)
-              </span>
-              <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 overflow-x-auto">
-                {spec.inputSchema}
-              </pre>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
-                DECISION RESPONSE CONTRACT (OUTPUT)
-              </span>
-              <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 overflow-x-auto">
-                {spec.outputSchema}
-              </pre>
-            </div>
-          </div>
-
-          {/* Stage Impact on Final Verdict */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-5">
-              THIS STAGE'S IMPACT ON LATEST EVALUATED QUERY
-            </span>
-
-            <div className="space-y-5">
+        {viewMode === "comparison" && (
+          <div className="p-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="font-semibold text-slate-700">Risk Contribution</span>
-                  <span className="font-mono font-bold" style={{ color: statusColor(contrib) }}>
-                    {contrib}%
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                  DUAL-LANE AUDIT TRACE
+                </span>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 mt-0.5">
+                  Sovereign Allowlist Bypass vs. Threat Isolation
+                </h2>
+              </div>
+            </div>
+            <VerdictComparison />
+          </div>
+        )}
+
+        {viewMode === "spec" && (
+          <>
+            {/* Header Strip */}
+            <div className="border-b border-slate-200 bg-white px-8 py-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 font-mono text-xs text-slate-400 uppercase font-bold tracking-wider">
+                    <span>Stage {spec.num} of 07</span>
+                    <span>&bull;</span>
+                    <span>Port :{spec.port}</span>
+                    <span>&bull;</span>
+                    <span className="text-blue-600">{spec.rfc}</span>
+                  </div>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 mt-1 font-sans">
+                    {spec.name}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold font-mono text-emerald-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Service Online
                   </span>
                 </div>
-                <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${contrib}%`, backgroundColor: statusColor(contrib) }}
-                  />
+              </div>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-8 space-y-6 w-full">
+              {/* Live Cascade Flow Diagram */}
+              <PipelineFlowStrip
+                stages={STAGE_SPECS.map((s, idx) => ({
+                  num: s.num,
+                  shortName: s.shortName.split(" ").slice(0, 2).join(" "),
+                  contribution: latestEvent?.pipeline?.[idx]?.contribution ?? (idx === 3 ? 31 : 0),
+                }))}
+                activeIndex={activeStage}
+                onSelect={setActiveStage}
+              />
+
+              {/* Description Card */}
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+                  ENGINE ARCHITECTURE &amp; SPECIFICATION
+                </span>
+                <p className="mt-2 text-sm text-slate-700 leading-relaxed font-sans">
+                  {spec.desc}
+                </p>
+
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs">
+                  <div>
+                    <span className="text-slate-400 font-mono block uppercase text-[10px]">Microservice ID</span>
+                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">{spec.service}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-mono block uppercase text-[10px]">Internal Protocol</span>
+                    <span className="font-mono font-bold text-blue-600 mt-0.5 block">{spec.protocol}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-mono block uppercase text-[10px]">Benchmarked Latency</span>
+                    <span className="font-mono font-bold text-emerald-700 mt-0.5 block">{spec.latency} (P99)</span>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="font-semibold text-slate-700">Latency Budget (of ~5.7ms total pipeline)</span>
-                  <span className="font-mono font-bold text-blue-600">{spec.latency}</span>
+              {/* Algorithm & Mathematical Foundation */}
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono">
+                  MATHEMATICAL CORE &amp; ALGORITHM
+                </span>
+                <div className="mt-2 rounded-lg bg-slate-900 p-3 text-slate-100 font-mono text-xs">
+                  <code>{spec.algorithm}</code>
                 </div>
-                <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-blue-500 transition-all duration-700 ease-out"
-                    style={{ width: `${Math.min((parseFloat(spec.latency) / 5.7) * 100, 100)}%` }}
-                  />
+              </div>
+
+              {/* Data Contracts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
+                    INGESTION PAYLOAD CONTRACT (INPUT)
+                  </span>
+                  <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 overflow-x-auto">
+                    {spec.inputSchema}
+                  </pre>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-2">
+                    DECISION RESPONSE CONTRACT (OUTPUT)
+                  </span>
+                  <pre className="rounded-lg bg-slate-50 border border-slate-200 p-3 font-mono text-xs text-slate-800 overflow-x-auto">
+                    {spec.outputSchema}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Stage Impact on Final Verdict */}
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block font-mono mb-5">
+                  THIS STAGE'S IMPACT ON LATEST EVALUATED QUERY
+                </span>
+
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="font-semibold text-slate-700">Risk Contribution</span>
+                      <span className="font-mono font-bold" style={{ color: statusColor(contrib) }}>
+                        {contrib}%
+                      </span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${contrib}%`, backgroundColor: statusColor(contrib) }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="font-semibold text-slate-700">Latency Budget (of ~5.7ms total pipeline)</span>
+                      <span className="font-mono font-bold text-blue-600">{spec.latency}</span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-blue-500 transition-all duration-700 ease-out"
+                        style={{ width: `${Math.min((parseFloat(spec.latency) / 5.7) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
