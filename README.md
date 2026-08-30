@@ -48,11 +48,11 @@ It intercepts DNS requests and evaluates them through a **7-stage detection pipe
 
 - **DGA training set**: `data/dga_dataset.csv` — 10,000 domains, balanced 5,000 benign / 5,000 malicious across 6 DGA families (matsnu, conficker, kraken, cryptolocker, generic, suppobox).
 - **Engineered features**: 19 (Shannon entropy, digit/vowel/consonant ratios, longest digit/consonant run, Damerau-Levenshtein distance to a 39-brand dictionary including Indian institutions, homoglyph detection, TLD risk score, plus character 2-4gram TF-IDF).
-- **10,000-Domain Standard In-Distribution Validation** (`python test_10k_domains.py`):
-  - **Overall Accuracy**: **99.95%**
-  - **Precision (Malicious)**: **100.00%** (0 false alarms on 5,000 benign domains)
-  - **Recall (Malicious)**: **99.90%** (4,995 out of 5,000 in-distribution attacks blocked)
-  - **False Positive Rate**: **0.00%** (on canonical root domains)
+- **10,000-Domain Standard Validation** (`data/dga_dataset.csv`):
+  - **True Holdout Test Accuracy (20% holdout / 2,000 unseen strings)**: **99.70%** (verified leak-free split)
+  - **Full-Set Re-Evaluation (`python test_10k_domains.py`)**: **99.95%** (includes memorized 80% train partition; see audit report)
+  - **Precision (Malicious)**: **100.00%** (0 false alarms on canonical benign root domains)
+  - **Recall (Malicious)**: **99.70%** on holdout test set
   - **ROC-AUC**: **100.00%**
 - **100,000+ Domain Leak-Free Zero-Day Evaluation** (`python benchmark_100k.py` on 110,150 domains):
   - **Strict Leakage Audit**: $\text{eval\_domains} \cap \text{train\_domains} = \emptyset$ (**0 overlapping strings / 100% disjoint**)
@@ -60,6 +60,7 @@ It intercepts DNS requests and evaluates them through a **7-stage detection pipe
   - **In-Distribution Holdout Recall**: **97.69%** (14,653 / 15,000 unseen strings from native 6 families)
   - **Benign Stress Test FPR**: **98.00%** on complex synthetic multi-hyphenated / marketing-style domains
   - **Full Provenance & Report**: See [`PROVENANCE.md`](PROVENANCE.md) and [`docs/100K_HONEST_BENCHMARK_REPORT.md`](docs/100K_HONEST_BENCHMARK_REPORT.md)
+
 - **Latency & Throughput Profile**:
   - **Hot-Path Redis Cache**: **< 0.5 ms** (easily satisfies the sub-10ms real-time DNS resolution SLA).
   - **Cold-Path Lexical Extraction**: **~30–35 ms** on single-thread CPU for un-cached full 19-feature extraction + 150-tree Random Forest evaluation.
