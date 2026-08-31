@@ -4,13 +4,13 @@ const FORECAST_URL = process.env.FORECAST_SERVICE_URL || "http://localhost:8007"
 
 export async function GET() {
   try {
-    const res = await fetch(`${FORECAST_URL}/forecast/timeline`, { cache: "no-store" });
+    const res = await fetch(`${FORECAST_URL}/forecast/hosts`, { cache: "no-store" });
     if (!res.ok) {
-      throw new Error(`Forecast service error: ${res.status}`);
+      throw new Error(`Forecast hosts error: ${res.status}`);
     }
     const data = await res.json();
     return NextResponse.json(data);
   } catch (err: any) {
-    return NextResponse.json({ error: true, message: err.message }, { status: 502 });
+    return NextResponse.json({ error: true, hosts: [] }, { status: 502 });
   }
 }
