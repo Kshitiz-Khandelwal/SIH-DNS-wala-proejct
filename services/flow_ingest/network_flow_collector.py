@@ -259,6 +259,14 @@ class NetworkFlowCollector:
             for f in flows
         ]
 
+    def reset_host_session(self, host_ip: str):
+        """Cleanly purge all session buffers and active flow records for a host."""
+        if host_ip in self.host_sessions:
+            del self.host_sessions[host_ip]
+        keys_to_del = [k for k, f in self.active_flows.items() if f.src_ip == host_ip or f.dst_ip == host_ip]
+        for k in keys_to_del:
+            del self.active_flows[k]
+
     def get_all_active_hosts(self) -> List[str]:
         return list(self.host_sessions.keys())
 

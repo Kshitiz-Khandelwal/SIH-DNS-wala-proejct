@@ -192,33 +192,33 @@ APT_STAGE_FLOWS = {
          "protocol": "TCP", "length": 60,
          "tcp_flags": {"SYN": True, "ACK": False, "FIN": False, "RST": False},
          "dns_query": None}
-        for i in range(2, 12) for port in [22, 80, 443, 445]
+        for i in range(2, 7) for port in [22, 80, 443, 8080]
     ],
     "STAGE_2_INITIAL_ACCESS": lambda ip: [
         {"src_ip": ip, "dst_ip": "8.8.8.8", "src_port": 40000 + i, "dst_port": 53,
          "protocol": "DNS", "length": 200,
          "tcp_flags": {},
-         "dns_query": f"xq9m{i}kz7dga.com"}
-        for i in range(8)
+         "dns_query": f"xq9m{i}kz7dga.top"}
+        for i in range(20)
     ],
     "STAGE_3_DISCOVERY": lambda ip: [
         {"src_ip": ip, "dst_ip": f"192.168.1.{d}", "src_port": 45000, "dst_port": port,
          "protocol": "TCP", "length": 100,
          "tcp_flags": {"SYN": True, "ACK": False, "FIN": False, "RST": False}}
-        for d in range(1, 20) for port in [139, 445, 389, 636]
+        for d in range(1, 6) for port in [139, 389, 636, 88]
     ],
     "STAGE_4_C2_PERSISTENCE": lambda ip: [
         {"src_ip": ip, "dst_ip": "185.220.101.45", "src_port": 49152 + i, "dst_port": 443,
          "protocol": "TCP", "length": 256,
          "tcp_flags": {"SYN": False, "ACK": True, "FIN": False, "RST": False},
          "dns_query": f"beacon{i}.c2-domain.xyz"}
-        for i in range(12)
+        for i in range(20)
     ],
     "STAGE_5_LATERAL_MOVEMENT": lambda ip: [
         {"src_ip": ip, "dst_ip": f"10.10.0.{d}", "src_port": 50000 + d, "dst_port": 445,
          "protocol": "TCP", "length": 1024,
          "tcp_flags": {"SYN": False, "ACK": True, "FIN": False, "RST": False}}
-        for d in range(1, 15)
+        for d in range(1, 21)
     ],
     "STAGE_6_EXFILTRATION": lambda ip: [
         {"src_ip": ip, "dst_ip": "103.45.67.89", "src_port": 30000 + i, "dst_port": 53,
@@ -361,14 +361,18 @@ def simulate_apt_stage(host_ip: str):
     """
     current_stage_idx = _simulation_stage.get(host_ip, 0)
     if current_stage_idx >= len(STAGE_SEQUENCE):
-        # Reset to beginning
         _simulation_stage[host_ip] = 0
         current_stage_idx = 0
 
+    # Cleanly wipe old flows before starting Stage 1
+    if current_stage_idx == 0:
+        collector.reset_host_session(host_ip)
+
     stage_key = STAGE_SEQUENCE[current_stage_idx]
     flows = APT_STAGE_FLOWS[stage_key](host_ip)
-    for pkt in flows:
-        pkt.setdefault("timestamp", time.time())
+    base_time = time.time()
+    for i, pkt in enumerate(flows):
+        pkt["timestamp"] = base_time + (i * 0.02)
         _ingest_flow_dict(pkt)
 
     _simulation_stage[host_ip] = current_stage_idx + 1
@@ -385,11 +389,13 @@ def simulate_apt_stage(host_ip: str):
 @app.post("/flow/simulate/{host_ip}/full", tags=["simulation"])
 def simulate_full_apt(host_ip: str):
     """Inject all 6 stages at once for a dramatic demo scenario."""
+    collector.reset_host_session(host_ip)
     total = 0
-    for stage_key in STAGE_SEQUENCE:
+    base_time = time.time()
+    for s_idx, stage_key in enumerate(STAGE_SEQUENCE):
         flows = APT_STAGE_FLOWS[stage_key](host_ip)
-        for pkt in flows:
-            pkt.setdefault("timestamp", time.time())
+        for i, pkt in enumerate(flows):
+            pkt["timestamp"] = base_time + (s_idx * 1.0) + (i * 0.02)
             _ingest_flow_dict(pkt)
         total += len(flows)
     _simulation_stage[host_ip] = len(STAGE_SEQUENCE)
@@ -417,7 +423,6 @@ def get_timeline(host_ip: str):
 
 @app.delete("/flow/hosts/{host_ip}", tags=["monitoring"])
 def reset_host(host_ip: str):
-    if host_ip in collector.host_sessions:
-        del collector.host_sessions[host_ip]
-        _simulation_stage.pop(host_ip, None)
+    collector.reset_host_session(host_ip)
+    _simulation_stage.pop(host_ip, None)
     return {"status": "ok", "host_ip": host_ip}

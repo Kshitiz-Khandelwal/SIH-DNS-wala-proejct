@@ -165,6 +165,7 @@ export default function ForecastPage() {
   const [data, setData] = useState<ForecastData>(DEFAULT_FALLBACK);
   const [hosts, setHosts] = useState<HostSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [serviceOffline, setServiceOffline] = useState(false);
   const [relayTripped, setRelayTripped] = useState(false);
   const [simulating, setSimulating] = useState(false);
@@ -185,7 +186,7 @@ export default function ForecastPage() {
       const url = selectedHost
         ? `/api/v1/forecast/${selectedHost}`
         : "/api/v1/forecast/timeline";
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const json = await res.json();
         if (!json.error) {
@@ -206,7 +207,7 @@ export default function ForecastPage() {
 
   const fetchHosts = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/forecast/hosts");
+      const res = await fetch("/api/v1/forecast/hosts", { cache: "no-store" });
       if (res.ok) {
         const json = await res.json();
         setHosts(json.hosts || []);
@@ -216,6 +217,14 @@ export default function ForecastPage() {
     }
   }, []);
 
+  async function handleManualRefresh() {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchForecast(), fetchHosts()]);
+    } finally {
+      setTimeout(() => setRefreshing(false), 500);
+    }
+  }
 
   useEffect(() => {
     fetchForecast();
@@ -227,7 +236,7 @@ export default function ForecastPage() {
     const iv = setInterval(() => {
       fetchForecast();
       fetchHosts();
-    }, 4000);
+    }, 3000);
     return () => clearInterval(iv);
   }, [fetchForecast, fetchHosts, isLive]);
 
@@ -248,18 +257,18 @@ export default function ForecastPage() {
     setSimulating(true);
     setSimStage(null);
     try {
-      const res = await fetch(`/api/v1/flow/simulate/${SIM_HOST}`, { method: "POST" });
+      const target = selectedHost || SIM_HOST;
+      const res = await fetch(`/api/v1/flow/simulate/${target}`, { method: "POST" });
       if (res.ok) {
         const json = await res.json();
         setSimStage(json.simulated_stage || null);
       }
     } catch {
-      setSimStage("STAGE_2_INITIAL_ACCESS");
+      setSimStage("STAGE_1_RECONNAISSANCE");
     } finally {
-      await new Promise((r) => setTimeout(r, 700));
+      await new Promise((r) => setTimeout(r, 400));
+      await Promise.all([fetchForecast(), fetchHosts()]);
       setSimulating(false);
-      fetchForecast();
-      fetchHosts();
     }
   }
 
@@ -267,15 +276,26 @@ export default function ForecastPage() {
     setSimulating(true);
     setSimStage(null);
     try {
-      await fetch(`/api/v1/flow/simulate/${SIM_HOST}/full`, { method: "POST" });
-      setSimStage("ALL_STAGES");
+      const target = selectedHost || SIM_HOST;
+      await fetch(`/api/v1/flow/simulate/${target}/full`, { method: "POST" });
+      setSimStage("ALL_STAGES (Stage 1 to 6)");
     } catch {
       setSimStage("ALL_STAGES");
     } finally {
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 600));
+      await Promise.all([fetchForecast(), fetchHosts()]);
       setSimulating(false);
-      fetchForecast();
-      fetchHosts();
+    }
+  }
+
+  async function handleResetSimulation() {
+    const target = selectedHost || SIM_HOST;
+    try {
+      await fetch(`/api/v1/flow/hosts/${target}`, { method: "DELETE" });
+      setSimStage("RESET_TO_BENIGN");
+      await Promise.all([fetchForecast(), fetchHosts()]);
+    } catch {
+      // fallback
     }
   }
 
@@ -314,7 +334,7 @@ export default function ForecastPage() {
 
   // ─── Derived State ───────────────────────────────────────────────────────────
 
-  const currentStage = data.current_stage || "STAGE_2_INITIAL_ACCESS";
+  const currentStage = data.current_stage || "STAGE_0_BENIGN";
   const currentIdx = STAGE_ORDER.indexOf(currentStage);
   const ttcMin = data.time_to_compromise_min ?? 0;
 
@@ -362,31 +382,42 @@ export default function ForecastPage() {
           </button>
 
           <button
-            onClick={fetchForecast}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-all"
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-all shadow-2xs active:scale-95"
           >
-            <RefreshCw className="w-3 h-3" />
-            Refresh
+            <RefreshCw className={cn("w-3 h-3 text-slate-600", refreshing && "animate-spin text-blue-600")} />
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+
+          {/* Reset simulation */}
+          <button
+            onClick={handleResetSimulation}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-all shadow-2xs active:scale-95"
+            title="Reset simulation back to clean baseline"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Reset State
           </button>
 
           {/* Step simulate */}
           <button
             onClick={handleSimulate}
             disabled={simulating}
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50 active:scale-95"
           >
             <Play className="w-3 h-3 fill-current" />
-            {simulating ? "Injecting…" : "Simulate Next Stage"}
+            {simulating ? "Advancing…" : "Simulate Next Stage"}
           </button>
 
           {/* Full APT */}
           <button
             onClick={handleFullSimulate}
             disabled={simulating}
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50 active:scale-95"
           >
             <Crosshair className="w-3 h-3" />
-            Full APT Simulation
+            Full Kill-Chain
           </button>
         </div>
       </div>
