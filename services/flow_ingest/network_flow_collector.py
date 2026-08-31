@@ -253,7 +253,9 @@ class NetworkFlowCollector:
                 "protocol": f.protocol,
                 "start_time": f.start_time,
                 "last_time": f.last_time,
-                "dns_queries": f.dns_queries,
+                "dns_queries": list(f.dns_queries),
+                "total_bytes": f.total_bytes,
+                "syn_count": f.syn_count,
                 "features": f.compute_features()
             }
             for f in flows

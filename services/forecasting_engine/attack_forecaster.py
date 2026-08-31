@@ -148,32 +148,45 @@ class AttackForecastingEngine:
                 "c2_query_count": 0.0
             }
 
-        total_bytes = sum(f.get("features", {}).get("total_bytes", f.get("length", 100)) for f in flows)
-        total_syn = sum(1 for f in flows if (f.get("tcp_flags") or {}).get("SYN"))
-        dns_counts = sum(1 for f in flows if f.get("dns_query") or f.get("protocol") == "DNS")
+        total_bytes = sum(f.get("total_bytes", f.get("features", {}).get("total_bytes", 100)) for f in flows)
+        total_syn = sum(f.get("syn_count", 1 if (f.get("tcp_flags") or {}).get("SYN") or f.get("features", {}).get("syn_ratio", 0) > 0.3 else 0) for f in flows)
+        dns_counts = sum(1 for f in flows if f.get("dns_queries") or f.get("dns_query") or f.get("protocol") == "DNS")
         unique_ports = len(set(f.get("dst_port", 0) for f in flows))
 
         tunnel_markers = 0
         dga_queries = 0
         c2_queries = 0
+        discovery_ports = 0
+        lateral_flows = 0
+
         for f in flows:
             queries = []
             if f.get("dns_query"):
                 queries.append(f["dns_query"])
-            queries.extend(f.get("dns_queries", []))
+            if isinstance(f.get("dns_queries"), list):
+                queries.extend(f["dns_queries"])
 
             for q in queries:
+                if not q or not isinstance(q, str):
+                    continue
                 q_low = q.lower()
-                if "==" in q or ".exfil." in q_low or "exfiltrate" in q_low:
+                if "==" in q_low or ".exfil." in q_low or "exfiltrate" in q_low or len(q_low) > 40:
                     tunnel_markers += 1
+                elif any(k in q_low for k in ["beacon", "c2-domain", "c2."]):
+                    c2_queries += 1
                 elif any(k in q_low for k in ["dga", "seed", ".top", ".xyz", ".biz"]):
                     dga_queries += 1
-                elif any(k in q_low for k in ["beacon", "c2-domain", "c2"]):
-                    c2_queries += 1
 
-        discovery_ports = sum(1 for f in flows if f.get("dst_port") in [139, 389, 636, 88])
-        # Lateral movement is established SMB data sessions (not SYN probes) or internal subnet pivoting
-        lateral_flows = sum(1 for f in flows if f.get("dst_port") == 445 and (f.get("dst_ip", "").startswith("10.") or f.get("dst_ip", "").startswith("192.168.")) and not (f.get("tcp_flags") or {}).get("SYN", False) and f.get("length", 0) > 200)
+            dst_port = f.get("dst_port", 0)
+            dst_ip = f.get("dst_ip", "")
+
+            # Discovery: LDAP 389/636, Kerberos 88, NetBIOS 139
+            if dst_port in [139, 389, 636, 88]:
+                discovery_ports += 1
+
+            # Lateral Movement: Port 445 on internal subnets
+            if dst_port == 445 and (dst_ip.startswith("10.") or dst_ip.startswith("192.168.")):
+                lateral_flows += 1
 
         iats = [f.get("features", {}).get("iat_mean", 0) for f in flows if f.get("features", {}).get("iat_mean", 0) > 0]
         heartbeat_reg = 0.0
@@ -183,7 +196,7 @@ class AttackForecastingEngine:
             if variance < 2.0 and mean_iat > 5.0:
                 heartbeat_reg = 0.9
         elif c2_queries > 0:
-            heartbeat_reg = 0.85
+            heartbeat_reg = 0.90
 
         return {
             "syn_ratio": min(1.0, float(total_syn) / max(1.0, len(flows))),
@@ -202,44 +215,62 @@ class AttackForecastingEngine:
         """Run temporal forecasting inference on a host's active traffic sequence."""
         now = time.time()
         feats = self._extract_aggregate_features(flows)
-        # Step 1: Infer Current Stage based on the most recent sliding window of flows
-        recent_flows = flows[-25:] if len(flows) > 25 else flows
-        recent_feats = self._extract_aggregate_features(recent_flows)
+        # Step 1: Infer Current Stage based on majority indicators in the active sliding window (last 20 flows)
+        recent_flows = flows[-20:] if len(flows) >= 20 else flows
 
-        scores = {
-            "STAGE_0_BENIGN": 0.1,
-            "STAGE_1_RECONNAISSANCE": 0.0,
-            "STAGE_2_INITIAL_ACCESS": 0.0,
-            "STAGE_3_DISCOVERY": 0.0,
-            "STAGE_4_C2_PERSISTENCE": 0.0,
-            "STAGE_5_LATERAL_MOVEMENT": 0.0,
-            "STAGE_6_EXFILTRATION": 0.0
+        c_exfil = 0
+        c_lateral = 0
+        c_c2 = 0
+        c_disc = 0
+        c_dga = 0
+        c_recon = 0
+
+        for f in recent_flows:
+            queries = []
+            if f.get("dns_query"):
+                queries.append(f["dns_query"])
+            if isinstance(f.get("dns_queries"), list):
+                queries.extend(f["dns_queries"])
+
+            has_exfil = any("==" in q.lower() or ".exfil." in q.lower() or "exfiltrate" in q.lower() for q in queries)
+            has_c2 = any("beacon" in q.lower() or "c2" in q.lower() for q in queries) or f.get("dst_ip") == "185.220.101.45"
+            has_dga = any("dga" in q.lower() or ".top" in q.lower() or ".xyz" in q.lower() for q in queries)
+            dst_port = f.get("dst_port", 0)
+            dst_ip = f.get("dst_ip", "")
+            f_syn = f.get("features", {}).get("syn_ratio", 0.0) or (1.0 if (f.get("tcp_flags") or {}).get("SYN") else 0.0)
+
+            if has_exfil:
+                c_exfil += 1
+            elif dst_port == 445 and (dst_ip.startswith("10.") or dst_ip.startswith("192.168.")):
+                c_lateral += 1
+            elif has_c2:
+                c_c2 += 1
+            elif dst_port in [139, 389, 636, 88]:
+                c_disc += 1
+            elif has_dga:
+                c_dga += 1
+            elif f_syn > 0.4 or dst_port in [22, 80, 8080]:
+                c_recon += 1
+
+        stage_counts = {
+            "STAGE_6_EXFILTRATION": c_exfil,
+            "STAGE_5_LATERAL_MOVEMENT": c_lateral,
+            "STAGE_4_C2_PERSISTENCE": c_c2,
+            "STAGE_3_DISCOVERY": c_disc,
+            "STAGE_2_INITIAL_ACCESS": c_dga,
+            "STAGE_1_RECONNAISSANCE": c_recon,
         }
 
-        # Stage 6: DNS Tunneling / Bulk Exfiltration
-        if recent_feats["dns_tunnel_markers"] >= 1:
-            scores["STAGE_6_EXFILTRATION"] = 0.96
-        # Stage 5: Lateral Movement (internal port 445 SMB pivoting)
-        elif recent_feats["lateral_flow_count"] >= 3:
-            scores["STAGE_5_LATERAL_MOVEMENT"] = 0.94
-        # Stage 4: C2 Persistence (beaconing / heartbeat regularity or c2 domain query)
-        elif recent_feats["c2_query_count"] >= 1 or recent_feats["c2_heartbeat_regularity"] > 0.5:
-            scores["STAGE_4_C2_PERSISTENCE"] = 0.92
-        # Stage 3: Internal Subnet Discovery (LDAP 389/636, Kerberos 88, NetBIOS 139)
-        elif recent_feats["discovery_port_count"] >= 2:
-            scores["STAGE_3_DISCOVERY"] = 0.90
-        # Stage 2: Initial Access (DGA queries / phishing lookups)
-        elif recent_feats["dga_query_count"] >= 1:
-            scores["STAGE_2_INITIAL_ACCESS"] = 0.88
-        # Stage 1: Reconnaissance (SYN port scans across diverse ports)
-        elif recent_feats["syn_ratio"] > 0.3 or recent_feats["unique_ports"] >= 3:
-            scores["STAGE_1_RECONNAISSANCE"] = 0.85
-        else:
-            scores["STAGE_0_BENIGN"] = 0.92
+        # Pick the stage with the highest active indicator count in the sliding window
+        max_stage = max(stage_counts, key=stage_counts.get)
+        max_count = stage_counts[max_stage]
 
-        # Pick best stage
-        current_stage = max(scores, key=scores.get)
-        confidence = min(0.99, max(scores.values()))
+        if max_count > 0:
+            current_stage = max_stage
+            confidence = min(0.98, 0.85 + (max_count / max(1.0, len(recent_flows))) * 0.13)
+        else:
+            current_stage = "STAGE_0_BENIGN"
+            confidence = 0.95
 
         # Overall threat score (0 to 100)
         stage_idx = STAGES.index(current_stage)
