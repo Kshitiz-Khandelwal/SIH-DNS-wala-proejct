@@ -291,24 +291,31 @@ class AttackForecastingEngine:
         trans = self.transition_matrix.get(current_stage, {"STAGE_0_BENIGN": 1.0})
         next_likely_stage = max(trans, key=trans.get)
         next_prob = trans[next_likely_stage]
+        next_idx = STAGES.index(next_likely_stage) if next_likely_stage in STAGES else 0
+
+        # Dynamically scaled horizon time estimates derived from TTC and stage velocity
+        velocity_mod = locals().get("velocity_modifier", 1.0)
+        time_to_next = round(max(0.0, stage_durations[next_idx] * velocity_mod), 1) if stage_idx > 0 else 0.0
 
         # Project +15m
         h15 = StagePrediction(
             stage_id=next_likely_stage,
             stage_label=STAGE_METADATA[next_likely_stage]["label"],
             probability=round(min(0.98, next_prob * confidence + 0.1), 3),
-            estimated_time_to_stage_min=12.5,
+            estimated_time_to_stage_min=round(min(15.0, time_to_next), 1) if stage_idx > 0 else 0.0,
             confidence_cone=(round(max(0.0, next_prob - 0.15), 2), round(min(1.0, next_prob + 0.1), 2))
         )
 
         # Project +30m (next step in Markov chain)
         trans_h30 = self.transition_matrix.get(next_likely_stage, {"STAGE_0_BENIGN": 1.0})
         stage_30 = max(trans_h30, key=trans_h30.get)
+        stage_30_idx = STAGES.index(stage_30) if stage_30 in STAGES else 0
+        time_to_h30 = round(max(0.0, (stage_durations[next_idx] + stage_durations[stage_30_idx]) * velocity_mod), 1) if stage_idx > 0 else 0.0
         h30 = StagePrediction(
             stage_id=stage_30,
             stage_label=STAGE_METADATA[stage_30]["label"],
             probability=round(min(0.95, trans_h30[stage_30] * 0.9), 3),
-            estimated_time_to_stage_min=28.0,
+            estimated_time_to_stage_min=round(min(30.0, time_to_h30), 1) if stage_idx > 0 else 0.0,
             confidence_cone=(round(max(0.0, trans_h30[stage_30] - 0.2), 2), round(min(1.0, trans_h30[stage_30] + 0.15), 2))
         )
 
@@ -318,13 +325,11 @@ class AttackForecastingEngine:
             stage_id=culmination_stage,
             stage_label=STAGE_METADATA[culmination_stage]["label"],
             probability=round(0.85 if stage_idx >= 2 else 0.90, 3),
-            estimated_time_to_stage_min=55.0,
+            estimated_time_to_stage_min=round(min(60.0, time_to_compromise_min), 1) if stage_idx > 0 else 0.0,
             confidence_cone=(0.70, 0.95)
         )
 
         # Step 3: Explainability — Deterministic Additive Feature Attribution Weights
-        # (Note: Exact TreeSHAP is used in ml-inference for lexical models; for kill-chain
-        # state inference, normalized additive feature attribution weights are computed)
         feature_attributions = [
             {"feature": "Port Sweep Diversity", "value": f"{feats['unique_ports']} ports", "weight": +0.32 if feats['unique_ports'] > 5 else -0.15, "shap_value": +0.32 if feats['unique_ports'] > 5 else -0.15},
             {"feature": "C2 Heartbeat Periodicity", "value": f"{feats['c2_heartbeat_regularity']}", "weight": +0.41 if feats['c2_heartbeat_regularity'] > 0 else -0.10, "shap_value": +0.41 if feats['c2_heartbeat_regularity'] > 0 else -0.10},
@@ -332,11 +337,24 @@ class AttackForecastingEngine:
             {"feature": "SYN Flood Ratio", "value": f"{round(feats['syn_ratio']*100, 1)}%", "weight": +0.25 if feats['syn_ratio'] > 0.3 else -0.18, "shap_value": +0.25 if feats['syn_ratio'] > 0.3 else -0.18}
         ]
 
-        # Step 4: Blast Radius Nodes
-        blast_radius = [
-            f"192.168.1.{int(hash(host_ip + str(i)) % 250) + 2}"
-            for i in range(1, 4)
-        ] if stage_idx >= 3 else []
+        # Step 4: Blast Radius Nodes derived from observed internal traffic and adjacent subnet topology
+        observed_internal_targets = []
+        for f in flows:
+            dst = f.get("dst_ip", "")
+            if dst and dst != host_ip and (dst.startswith("10.") or dst.startswith("192.168.") or dst.startswith("172.")):
+                if dst not in observed_internal_targets:
+                    observed_internal_targets.append(dst)
+
+        if observed_internal_targets:
+            blast_radius = observed_internal_targets[:5]
+        elif stage_idx >= 3:
+            # Subnet neighbor projection based on host prefix
+            parts = host_ip.split(".")
+            prefix = ".".join(parts[:3]) if len(parts) == 4 else "192.168.1"
+            base_octet = int(parts[3]) if len(parts) == 4 and parts[3].isdigit() else 100
+            blast_radius = [f"{prefix}.{(base_octet + offset) % 254 + 1}" for offset in [1, 2, 5, 10]]
+        else:
+            blast_radius = []
 
         # Step 5: Preemptive Action Recommendations & Hardware Relay Trip Trigger (Software Emulation)
         preemptive_actions = []

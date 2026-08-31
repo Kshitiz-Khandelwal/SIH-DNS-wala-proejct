@@ -177,14 +177,37 @@ services:
     networks:
     - lab
     restart: unless-stopped
+  flow-ingest:
+    build: ../services/flow_ingest
+    env_file: ../.env
+    ports:
+    - 8006:8006
+    networks:
+    - lab
+    restart: unless-stopped
+  forecasting-engine:
+    build: ../services/forecasting_engine
+    env_file: ../.env
+    ports:
+    - 8007:8007
+    depends_on:
+    - flow-ingest
+    networks:
+    - lab
+    restart: unless-stopped
   dashboard:
     build: ../frontend
     environment:
     - NEXT_PUBLIC_API_URL=http://localhost:8080
+    - GATEWAY_URL=http://api-gateway:8080
+    - FORECAST_SERVICE_URL=http://forecasting-engine:8007
+    - FLOW_SERVICE_URL=http://flow-ingest:8006
     ports:
     - 3000:3000
     depends_on:
     - api-gateway
+    - forecasting-engine
+    - flow-ingest
     networks:
     - lab
     restart: unless-stopped
