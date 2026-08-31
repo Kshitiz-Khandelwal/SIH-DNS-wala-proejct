@@ -40,133 +40,55 @@ function toastMessage(action: FeedbackAction): string {
   }
 }
 
-function buildStageDetails(event: QueryResult): StageDetail[] {
-  const risk = event.risk_score ?? 0;
+function formatPipelineStages(rawPipeline: any[], event: QueryResult): StageDetail[] {
+  const risk = (event as any).domain_risk ?? event.risk_score ?? 0;
   const isBlock = event.verdict === "BLOCK";
   const isFlag = event.verdict === "FLAG";
 
-  const rawPipeline = event.pipeline || [];
-
-  const stageIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    "redis-cache": Database,
-    "threat-intel": ShieldAlert,
-    "local-rules": FileCheck2,
-    "ml-lexical": BrainCircuit,
-    "behavioral": Activity,
-    "geo-intel": Globe2,
-    "active-response": ZapOff,
-  };
-
-  if (rawPipeline.length > 0) {
-    return rawPipeline.map((p: any, idx: number) => {
-      const stageKey = typeof p.stage === "string" ? p.stage : `stage-${idx}`;
-      const Icon = stageIcons[stageKey] || Database;
-      const contrib = typeof p.contribution === "number" ? p.contribution : 0;
-      return {
-        id: stageKey,
-        name: p.name || stageKey.replace(/-/g, " ").toUpperCase(),
-        shortName: p.shortName || stageKey.replace(/-/g, " "),
-        category: (idx === 0 ? "pre-filter" : idx === 1 ? "intelligence" : idx === 2 ? "rules" : idx === 3 ? "inference" : idx === 4 ? "behavior" : idx === 5 ? "enrichment" : "response") as any,
-        icon: Icon,
-        contribution: contrib,
-        status: (contrib > 0 ? (isBlock ? "hit" : "flagged") : "clean") as any,
-        reason: p.reason || (contrib > 0 ? `Risk contribution +${contrib}` : "Evaluated clean"),
-        latencyMs: typeof p.latency_ms === "number" ? p.latency_ms : (idx === 3 ? 31.2 : 0.2),
-        details: p.details || { "Status": contrib > 0 ? "Flagged" : "Normal" },
-      };
-    });
-  }
-
-  // Proportional breakdown matching event.risk_score
-  const localContrib = risk >= 70 ? 30 : (risk >= 40 ? 20 : 0);
-  const mlContrib = Math.max(0, risk - localContrib);
-
-  return [
-    {
-      id: "redis-cache",
-      name: "Redis Hot Cache / Allowlist",
-      shortName: "Hot Cache",
-      category: "pre-filter",
-      icon: Database,
-      contribution: 0,
-      status: "clean",
-      reason: "No cached verdict; sovereign allowlist check passed in 0.08ms",
-      latencyMs: 0.1,
-      details: { "Cache Hit": "false", "Sovereign Root": "evaluating" }
-    },
-    {
-      id: "threat-intel",
-      name: "Threat Intel / STIX Feed",
-      shortName: "Threat Intel",
-      category: "intelligence",
-      icon: ShieldAlert,
-      contribution: 0,
-      status: "clean",
-      reason: "No exact match in active STIX feed window",
-      latencyMs: 0.4,
-      details: { "IOC Matched": "false" }
-    },
-    {
-      id: "local-rules",
-      name: "Deterministic Local Rules",
-      shortName: "Local Rules",
-      category: "rules",
-      icon: FileCheck2,
-      contribution: localContrib,
-      status: localContrib > 0 ? "flagged" : "clean",
-      reason: localContrib > 0 ? `Brand homoglyph / pattern matched (+${localContrib})` : "Passed baseline pattern checks",
-      latencyMs: 0.2,
-      details: { "Rule Match": localContrib > 0 ? "true" : "false" }
-    },
-    {
-      id: "ml-lexical",
-      name: "ML Lexical Engine (RF-150 / TreeSHAP)",
-      shortName: "ML Lexical",
-      category: "inference",
-      icon: BrainCircuit,
-      contribution: mlContrib,
-      status: mlContrib > 30 ? "hit" : (mlContrib > 0 ? "flagged" : "clean"),
-      reason: mlContrib > 0 ? `TreeSHAP score elevation (+${mlContrib})` : "Lexical features within normal range",
-      latencyMs: 18.4,
-      details: { "Inference": "RF-150 TreeSHAP" }
-    },
-    {
-      id: "behavioral",
-      name: "Sliding-Window Behavioral Tracking",
-      shortName: "Behavioral",
-      category: "behavior",
-      icon: Activity,
-      contribution: 0,
-      status: "normal",
-      reason: "Query velocity within baseline",
-      latencyMs: 1.8,
-      details: { "Query Rate": "Normal" }
-    },
-    {
-      id: "geo-intel",
-      name: "Geo & Sovereign ASN Enrichment",
-      shortName: "Geo Context",
-      category: "enrichment",
-      icon: Globe2,
-      contribution: 0,
-      status: "normal",
-      reason: "Enriched with ASN and sovereign territory metadata",
-      latencyMs: 0.9,
-      details: { "Geo Status": "Enriched" }
-    },
-    {
-      id: "active-response",
-      name: "Zero-Trust Active Response",
-      shortName: "Response",
-      category: "response",
-      icon: ZapOff,
-      contribution: 0,
-      status: isBlock ? "quarantined" : "clean",
-      reason: isBlock ? "Automated DNS sinkhole policy enforced" : "Forwarded to authoritative resolver",
-      latencyMs: 0.6,
-      details: { "Verdict": event.verdict }
+  const stageMap = new Map<string, any>();
+  (rawPipeline || []).forEach((p: any) => {
+    if (p && typeof p.stage === "string") {
+      stageMap.set(p.stage, p);
     }
+  });
+
+  const canonical7 = [
+    { id: "redis-cache", name: "Redis Hot Cache / Allowlist", shortName: "Hot Cache", category: "pre-filter", icon: Database, defaultLatency: 0.1, defaultReason: "No unexpired verdict; sovereign allowlist check passed in 0.08ms" },
+    { id: "threat-intel", name: "Threat Intel / STIX Feed", shortName: "Threat Intel", category: "intelligence", icon: ShieldAlert, defaultLatency: 0.2, defaultReason: "No exact match in active threat intelligence feeds" },
+    { id: "local-rules", name: "Deterministic Local Rules", shortName: "Local Rules", category: "rules", icon: FileCheck2, defaultLatency: 0.2, defaultReason: "Passed baseline deterministic rules" },
+    { id: "ml-lexical", name: "ML Lexical Engine (RF-150 / TreeSHAP)", shortName: "ML Lexical", category: "inference", icon: BrainCircuit, defaultLatency: 28.4, defaultReason: "Lexical features within normal range" },
+    { id: "behavioral", name: "Sliding-Window Behavioral Tracking", shortName: "Behavioral", category: "behavior", icon: Activity, defaultLatency: 0.2, defaultReason: "Query velocity within baseline" },
+    { id: "geo-intel", name: "Geo & Sovereign ASN Enrichment", shortName: "Geo Context", category: "enrichment", icon: Globe2, defaultLatency: 0.3, defaultReason: "Sovereign jurisdiction & ASN context verified" },
+    { id: "active-response", name: "Zero-Trust Active Response", shortName: "Active Response", category: "response", icon: ZapOff, defaultLatency: 0.2, defaultReason: isBlock ? "Automated DNS sinkhole policy enforced (0.0.0.0)" : (isFlag ? "Flagged for SOC analyst review" : "Forwarded to authoritative resolver") },
   ];
+
+  return canonical7.map((c) => {
+    const raw = stageMap.get(c.id);
+    const Icon = c.icon;
+    const contrib = raw && typeof raw.contribution === "number" ? raw.contribution : 0;
+    let status = raw?.status || "clean";
+    let reason = raw?.reason || c.defaultReason;
+    const latency = raw && typeof raw.latency_ms === "number" ? raw.latency_ms : c.defaultLatency;
+
+    if (!raw) {
+      if (c.id === "active-response") {
+        status = isBlock ? "quarantined" : (isFlag ? "flagged" : "clean");
+      }
+    }
+
+    return {
+      id: c.id,
+      name: raw?.name || c.name,
+      shortName: raw?.shortName || c.shortName,
+      category: c.category as any,
+      icon: Icon,
+      contribution: contrib,
+      status: (contrib > 0 ? (isBlock ? "hit" : "flagged") : status) as any,
+      reason: reason,
+      latencyMs: latency,
+      details: raw?.details || { "Status": contrib > 0 ? "Flagged" : (status === "quarantined" ? "Sinkhole" : "Normal") },
+    };
+  });
 }
 
 export default function DomainDeepDivePage() {
@@ -184,8 +106,8 @@ export default function DomainDeepDivePage() {
     const targetDomain = sanitizeDomain(rawTarget) || sanitizeDomain(queryDomainParam) || "isro.gov.in";
 
     // 1. First check sessionStorage
-    if (typeof window !== "undefined") {
-      try {
+    try {
+      if (typeof window !== "undefined") {
         const raw = sessionStorage.getItem("dns_shield_tested_queries");
         if (raw) {
           const cachedList = JSON.parse(raw) as QueryResult[];
@@ -198,9 +120,9 @@ export default function DomainDeepDivePage() {
             return;
           }
         }
-      } catch {
-        // ignore
       }
+    } catch {
+      // ignore
     }
 
     // 2. Query backend
@@ -268,7 +190,7 @@ export default function DomainDeepDivePage() {
 
   const rawMl = (activeEvent as unknown as Record<string, unknown>).ml as Record<string, unknown> | undefined;
   const mlFeatures = rawMl?.features as Record<string, unknown> | undefined;
-  const stages = buildStageDetails(activeEvent);
+  const stages = formatPipelineStages(activeEvent.pipeline || [], activeEvent);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
