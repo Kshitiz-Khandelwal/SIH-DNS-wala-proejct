@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const FLOW_INGEST_URL = process.env.FLOW_INGEST_URL || "http://localhost:8006";
+const FLOW_INGEST_URL = process.env.FLOW_INGEST_URL || process.env.FLOW_SERVICE_URL || "http://localhost:8006";
 
 export async function DELETE(
   request: NextRequest,

@@ -201,7 +201,9 @@ services:
     - NEXT_PUBLIC_API_URL=http://localhost:8080
     - GATEWAY_URL=http://api-gateway:8080
     - FORECAST_SERVICE_URL=http://forecasting-engine:8007
+    - FORECAST_ENGINE_URL=http://forecasting-engine:8007
     - FLOW_SERVICE_URL=http://flow-ingest:8006
+    - FLOW_INGEST_URL=http://flow-ingest:8006
     ports:
     - 3000:3000
     depends_on:

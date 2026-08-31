@@ -368,7 +368,7 @@ class AttackForecastingEngine:
             {"feature": "SYN Flood Ratio", "value": f"{round(feats['syn_ratio']*100, 1)}%", "weight": +0.25 if feats['syn_ratio'] > 0.3 else -0.18, "shap_value": +0.25 if feats['syn_ratio'] > 0.3 else -0.18}
         ]
 
-        # Step 4: Blast Radius Nodes derived from observed internal traffic and adjacent subnet topology
+        # Step 4: Blast Radius Nodes derived strictly from observed internal flow telemetry
         observed_internal_targets = []
         for f in flows:
             dst = f.get("dst_ip", "")
@@ -376,16 +376,7 @@ class AttackForecastingEngine:
                 if dst not in observed_internal_targets:
                     observed_internal_targets.append(dst)
 
-        if observed_internal_targets:
-            blast_radius = observed_internal_targets[:5]
-        elif stage_idx >= 3:
-            # Subnet neighbor projection based on host prefix
-            parts = host_ip.split(".")
-            prefix = ".".join(parts[:3]) if len(parts) == 4 else "192.168.1"
-            base_octet = int(parts[3]) if len(parts) == 4 and parts[3].isdigit() else 100
-            blast_radius = [f"{prefix}.{(base_octet + offset) % 254 + 1}" for offset in [1, 2, 5, 10]]
-        else:
-            blast_radius = []
+        blast_radius = observed_internal_targets[:5]
 
         # Step 5: Preemptive Action Recommendations & Hardware Relay Trip Trigger (Software Emulation)
         preemptive_actions = []
