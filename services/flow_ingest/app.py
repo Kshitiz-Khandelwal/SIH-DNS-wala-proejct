@@ -27,9 +27,12 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# Ensure project root is on path for shared modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-from services.flow_ingest.network_flow_collector import NetworkFlowCollector, FlowRecord
+# Support both isolated Docker container build and full monorepo pathing
+try:
+    from network_flow_collector import NetworkFlowCollector, FlowRecord
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+    from services.flow_ingest.network_flow_collector import NetworkFlowCollector, FlowRecord
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("flow-ingest")

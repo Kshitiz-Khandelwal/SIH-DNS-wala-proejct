@@ -180,6 +180,9 @@ services:
   flow-ingest:
     build: ../services/flow_ingest
     env_file: ../.env
+    environment:
+    - GATEWAY_URL=http://api-gateway:8080
+    - ANALYTICS_STORE_URL=http://analytics-store:8005
     ports:
     - 8006:8006
     networks:
@@ -188,6 +191,10 @@ services:
   forecasting-engine:
     build: ../services/forecasting_engine
     env_file: ../.env
+    environment:
+    - FLOW_INGEST_URL=http://flow-ingest:8006
+    - FLOW_SERVICE_URL=http://flow-ingest:8006
+    - ANALYTICS_STORE_URL=http://analytics-store:8005
     ports:
     - 8007:8007
     depends_on:

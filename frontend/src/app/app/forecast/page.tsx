@@ -244,11 +244,27 @@ export default function ForecastPage() {
 
   async function handleToggleRelay() {
     const nextState = !relayTripped;
-    setRelayTripped(nextState);
     try {
-      await fetch(`/api/v1/hardware/trip-relay?action=${nextState ? "ENGAGE" : "RELEASE"}`, { method: "POST" });
+      const res = await fetch(`/api/v1/hardware/trip-relay?action=${nextState ? "ENGAGE" : "RELEASE"}`, { method: "POST" });
+      if (res.ok) {
+        setRelayTripped(nextState);
+      } else {
+        const stateRes = await fetch("/api/v1/hardware/trip-relay");
+        if (stateRes.ok) {
+          const stateJson = await stateRes.json();
+          setRelayTripped(stateJson.relay_tripped ?? false);
+        }
+      }
     } catch {
-      // UI state already updated
+      try {
+        const stateRes = await fetch("/api/v1/hardware/trip-relay");
+        if (stateRes.ok) {
+          const stateJson = await stateRes.json();
+          setRelayTripped(stateJson.relay_tripped ?? false);
+        }
+      } catch {
+        // preserve current state on complete offline
+      }
     }
   }
 
@@ -262,9 +278,12 @@ export default function ForecastPage() {
       if (res.ok) {
         const json = await res.json();
         setSimStage(json.simulated_stage || null);
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        setSimStage(`Simulation Error: ${errJson.message || res.statusText || "Service Unreachable"}`);
       }
-    } catch {
-      setSimStage("STAGE_1_RECONNAISSANCE");
+    } catch (err: any) {
+      setSimStage(`Simulation Failed: ${err.message || "Network Error"}`);
     } finally {
       await new Promise((r) => setTimeout(r, 400));
       await Promise.all([fetchForecast(), fetchHosts()]);
@@ -277,10 +296,15 @@ export default function ForecastPage() {
     setSimStage(null);
     try {
       const target = selectedHost || SIM_HOST;
-      await fetch(`/api/v1/flow/simulate/${target}/full`, { method: "POST" });
-      setSimStage("ALL_STAGES (Stage 1 to 6)");
-    } catch {
-      setSimStage("ALL_STAGES");
+      const res = await fetch(`/api/v1/flow/simulate/${target}/full`, { method: "POST" });
+      if (res.ok) {
+        setSimStage("ALL_STAGES (Stage 1 to 6)");
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        setSimStage(`Full Simulation Error: ${errJson.message || res.statusText || "Service Unreachable"}`);
+      }
+    } catch (err: any) {
+      setSimStage(`Full Simulation Failed: ${err.message || "Network Error"}`);
     } finally {
       await new Promise((r) => setTimeout(r, 600));
       await Promise.all([fetchForecast(), fetchHosts()]);
@@ -291,11 +315,15 @@ export default function ForecastPage() {
   async function handleResetSimulation() {
     const target = selectedHost || SIM_HOST;
     try {
-      await fetch(`/api/v1/flow/hosts/${target}`, { method: "DELETE" });
-      setSimStage("RESET_TO_BENIGN");
+      const res = await fetch(`/api/v1/flow/hosts/${target}`, { method: "DELETE" });
+      if (res.ok) {
+        setSimStage("RESET_TO_BENIGN");
+      } else {
+        setSimStage("Reset failed (Host unreachable)");
+      }
       await Promise.all([fetchForecast(), fetchHosts()]);
-    } catch {
-      // fallback
+    } catch (err: any) {
+      setSimStage(`Reset Failed: ${err.message || "Network Error"}`);
     }
   }
 

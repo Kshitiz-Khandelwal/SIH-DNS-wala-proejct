@@ -25,12 +25,20 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-from services.forecasting_engine.attack_forecaster import (
-    AttackForecastingEngine,
-    STAGE_METADATA,
-    STAGES,
-)
+# Support both isolated Docker container build and full monorepo pathing
+try:
+    from attack_forecaster import (
+        AttackForecastingEngine,
+        STAGE_METADATA,
+        STAGES,
+    )
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+    from services.forecasting_engine.attack_forecaster import (
+        AttackForecastingEngine,
+        STAGE_METADATA,
+        STAGES,
+    )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("forecasting-engine")
