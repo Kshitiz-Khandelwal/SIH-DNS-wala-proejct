@@ -136,10 +136,17 @@ export function AppHeader() {
   return (
     <>
       <header className="sticky top-0 h-16 w-full z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200 flex justify-between items-center px-8 shadow-2xs">
-        {/* Left: Title + status */}
+        {/* Left: Breadcrumbs + Title + status */}
         <div className="flex items-center gap-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900 tracking-tight leading-none font-display">{pageTitle}</h2>
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400 mb-1">
+              <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+              <span>/</span>
+              <Link href="/app/dashboard" className="hover:text-blue-600 transition-colors">Console</Link>
+              <span>/</span>
+              <span className="text-slate-700 font-semibold">{pageTitle.split(" ")[0]}</span>
+            </nav>
+            <h1 className="text-base font-bold text-slate-900 tracking-tight leading-none font-display">{pageTitle}</h1>
             <p className="text-[11px] text-slate-500 mt-1">Sub-millisecond cheap-to-expensive detection plane telemetry.</p>
           </div>
         </div>

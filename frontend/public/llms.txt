@@ -1,0 +1,43 @@
+# DNS Shield — Autonomous Explainable DNS Threat Defense & APT Forecasting
+
+> Enterprise-grade DNS security and network telemetry forecasting system designed for Smart India Hackathon (SIH 2026).
+
+## Overview
+DNS Shield is a cyber threat defense platform that combines a 7-Stage Real-Time DNS Inspection Pipeline (PS1) with a Multi-Stage Temporal APT Kill-Chain Forecasting Engine (PS2). It protects enterprise and critical infrastructure networks by intercepting malicious queries (DGA, tunneling, phishing) and forecasting attack stage progressions (15–60 min time horizon) before data exfiltration occurs.
+
+## Core Capabilities
+1. **Explainable DNS Inspection Pipeline (PS1)**:
+   - 7 sequential defense layers: Whitelist cache -> Lexical entropy analysis -> Threat intelligence IOCHash -> LightGBM/Random Forest ML classifier -> Sequence analyzer -> SHAP/LIME explainer -> Dynamic policy actuator.
+   - Decision states: `ALLOW` (benign), `FLAG` (quarantine + deep packet inspection), `BLOCK` (sinkhole / immediate RST).
+2. **Temporal APT Kill-Chain Forecaster (PS2)**:
+   - Evaluates multi-stage cyberattacks mapped to 6 MITRE ATT&CK stages: Reconnaissance (TA0043), Initial Access (TA0001), Discovery (TA0007), C2 Persistence (TA0011), Lateral Movement (TA0008), and Data Exfiltration (TA0010).
+   - Powered by a 2-layer Recurrent Neural Sequence Model (GRU) trained on chronological network flow telemetry (CTU-13 dataset).
+   - Generates multi-horizon probability trajectories (+15m, +30m, +45m, +60m) and Time-to-Compromise (TTC) remaining time budgets.
+   - Provides sequence permutation feature attributions (Risk Accelerants vs Risk Mitigants).
+3. **Automated Response & Device Fleet Management**:
+   - Dynamic host quarantine and policy deployment.
+   - Network blast-radius visualization and lateral traversal containment.
+   - Simulated hardware air-gap relay signaling for emergency isolation.
+
+## Security Console Routes
+- `/`: Public security architecture overview, live threat telemetry, and feature explanations.
+- `/login`: SOC analyst authentication portal.
+- `/app/dashboard`: Real-time SOC operations overview, throughput meters, threat feed stream.
+- `/app/forecast`: Flagship PS2 multi-stage APT kill-chain forecaster, live stage progression, and horizon cones.
+- `/app/threats`: Active threat intelligence ledger, IOC matching, and domain verdicts.
+- `/app/pipeline`: Interactive 7-stage DNS inspection engine sandbox with live parameter injection.
+- `/app/xai`: Model interpretability suite with SHAP force plots, waterfall attributions, and decision trees.
+- `/app/models`: ML model performance benchmarking, precision-recall curves, and drift detection.
+- `/app/devices`: Device fleet health, risk scoring, and zero-trust policy distribution.
+- `/app/quarantine`: Isolated host containment bay and remediation workflows.
+- `/app/analytics`: Historical threat intelligence trends and protocol distribution.
+- `/app/reports`: Automated executive and compliance shift reports.
+
+## Technical Architecture
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Lucide Icons.
+- **Backend Microservices**: FastAPI (Python 3.11+), PyTorch (Temporal GRU), Scikit-learn, LightGBM, SHAP, DPKT (PCAP parsing).
+- **Service Mesh**: API Gateway (Port 8081), Flow Ingest Service (Port 8006), Forecasting Engine (Port 8007), Analytics Store (Port 8000).
+
+## Repository & Documentation
+- Source: GitHub (`Kshitiz-Khandelwal/SIH-DNS-wala-proejct`)
+- Documentation: `/sitemap.xml`, `/robots.txt`, `/llms.txt`
