@@ -1,9 +1,10 @@
 """DNS Shield X-Forecast — GRU Temporal Attack Sequence Forecaster (CORRECTED)
-Fixes applied vs. original:
-  Fix A: Genuine chronological split, zero shuffling or random permutations.
-  Fix B (Option 1): Per-scenario chronological split (Train: 70%, Val: 15%, Test: 15%),
-                    ensuring unseen future sequences are evaluated chronologically across all captures.
-  Fix C & D: Multi-scenario CTU-13 dataset with 6-stage MITRE kill-chain coverage.
+Fixes applied vs. the original two scripts:
+  Fix A: genuine chronological split, no random permutation anywhere.
+  Fix B (Option 1): split WITHIN each CTU-13 scenario first, then union train/val/test
+          across scenarios, so train and test both see both underlying capture sessions
+          instead of the model being tested on an entirely different capture than it
+          trained on.
 """
 import os
 import sys
@@ -15,11 +16,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import classification_report, precision_recall_fscore_support, confusion_matrix
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-try:
-    from services.forecasting_engine.temporal_feature_extractor import extract_flow_features, FEATURE_NAMES
-except ImportError:
-    from temporal_feature_extractor import extract_flow_features, FEATURE_NAMES
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+from services.forecasting_engine.temporal_feature_extractor import extract_flow_features
 
 STAGE_MAP = {
     "STAGE_0_BENIGN": 0,
@@ -34,34 +32,30 @@ STAGE_NAMES = list(STAGE_MAP.keys())
 
 
 def label_flow(row):
-    """Map CTU-13 bidirectional flow records to 7 MITRE ATT&CK Kill-Chain stages."""
     lbl = str(row.get('Label', '')).lower()
     proto = str(row.get('Proto', '')).lower()
-    dport_str = str(row.get('Dport', ''))
+    dport = str(row.get('Dport', ''))
     tot_pkts = float(row.get('TotPkts', 1))
     dur = float(row.get('Dur', 0))
-    src = str(row.get('SrcAddr', ''))
 
-    if "botnet" in lbl or "147.32.84.165" in src:
-        if "attack" in lbl or "ddos" in lbl or ("icmp" in proto and tot_pkts > 5):
-            return 6  # STAGE_6_EXFILTRATION / IMPACT
-        elif dport_str in ['3389', '445', '88']:
-            return 5  # STAGE_5_LATERAL_MOVEMENT (RDP / SMB)
-        elif dport_str in ['135', '161', '2869', '389', '636', '137', '138', '139']:
-            return 3  # STAGE_3_DISCOVERY (RPC, NetBIOS, SNMP, SSDP)
-        elif "cc" in lbl or "c&c" in lbl or "irc" in lbl or "custom-encryption" in lbl or dport_str in ['6667', '8000', '8080']:
-            return 4  # STAGE_4_C2_PERSISTENCE
-        elif "attempt" in lbl or "scan" in lbl or "portscan" in lbl or dport_str.startswith("0x") or (proto == "tcp" and tot_pkts <= 2 and dur < 0.05):
-            return 1  # STAGE_1_RECONNAISSANCE / ATTEMPT
-        elif dport_str in ['53', '80', '443'] or "dns" in lbl or "http" in lbl:
-            return 2  # STAGE_2_INITIAL_ACCESS
+    if "botnet" in lbl or "147.32.84.165" in str(row.get('SrcAddr', '')):
+        if "portscan" in lbl or "scan" in lbl or (proto == "tcp" and tot_pkts <= 2 and dur < 0.05):
+            return 1
+        elif "cc" in lbl or "c&c" in lbl or "irc" in lbl or dport in ['6667', '80', '443']:
+            return 4
+        elif "attack" in lbl or "ddos" in lbl or "icmp" in proto:
+            return 6
+        elif dport in ['445', '139', '389', '88']:
+            return 5
+        elif dport in ['22', '21', '25', '8080']:
+            return 3
         else:
             return 2
-    return 0  # STAGE_0_BENIGN
+    return 0
 
 
 def chronological_split_per_scenario(df, ratios=(0.70, 0.15, 0.15)):
-    """Fix B (Option 1): Split within each CTU-13 scenario chronologically, then union."""
+    """Fix B Option 1: split inside each scenario, then union across scenarios."""
     parts = {"train": [], "val": [], "test": []}
     for scenario_id, group in df.groupby("Scenario"):
         group = group.sort_values("StartTime").reset_index(drop=True)
@@ -96,20 +90,10 @@ class TemporalSequenceDataset(Dataset):
 class TemporalAttackGRU(nn.Module):
     def __init__(self, input_dim=16, hidden_dim=64, num_layers=2, num_classes=7):
         super().__init__()
-        self.gru = nn.GRU(
-            input_dim,
-            hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=0.15 if num_layers > 1 else 0.0,
-        )
+        self.gru = nn.GRU(input_dim, hidden_dim, num_layers=num_layers, batch_first=True,
+                           dropout=0.15 if num_layers > 1 else 0.0)
         self.ln = nn.LayerNorm(hidden_dim)
-        self.head = nn.Sequential(
-            nn.Linear(hidden_dim, 32),
-            nn.ReLU(),
-            nn.Dropout(0.15),
-            nn.Linear(32, num_classes),
-        )
+        self.head = nn.Sequential(nn.Linear(hidden_dim, 32), nn.ReLU(), nn.Dropout(0.15), nn.Linear(32, num_classes))
 
     def forward(self, x):
         out, _ = self.gru(x)
@@ -117,18 +101,17 @@ class TemporalAttackGRU(nn.Module):
 
 
 def main():
-    print("=" * 80)
-    print("PS 26153: CORRECTED TEMPORAL GRU TRAINING (GENUINE CHRONOLOGICAL SPLIT)")
-    print("=" * 80)
+    print("=" * 78)
+    print("CORRECTED TRAINING RUN — genuine chronological, per-scenario split")
+    print("=" * 78)
 
-    data_path = os.path.join("data", "ctu13_multistage_flows.csv")
-    df = pd.read_csv(data_path, low_memory=False)
+    df = pd.read_csv("data/ctu13_multistage_flows.csv", low_memory=False)
     df['StartTime'] = pd.to_datetime(df['StartTime'])
 
     train_df, val_df, test_df = chronological_split_per_scenario(df)
-    print(f"[+] Per-Scenario Chronological Split: Train={len(train_df)}, Val={len(val_df)}, Test={len(test_df)}")
-    print(f"    Train Scenarios: {dict(train_df['Scenario'].value_counts())}")
-    print(f"    Test Scenarios:  {dict(test_df['Scenario'].value_counts())}")
+    print(f"[+] Per-scenario chronological split: Train={len(train_df)}, Val={len(val_df)}, Test={len(test_df)}")
+    print(f"    Train scenarios: {dict(train_df['Scenario'].value_counts())}")
+    print(f"    Test scenarios:  {dict(test_df['Scenario'].value_counts())}")
 
     def featurize(d):
         feats = np.vstack([extract_flow_features(row) for _, row in d.iterrows()])
@@ -139,18 +122,14 @@ def main():
     X_val, y_val = featurize(val_df)
     X_test, y_test = featurize(test_df)
 
-    print(f"\n--- Stage Distribution Across Partitions ---")
-    train_counts = dict(zip(*np.unique(y_train, return_counts=True)))
-    val_counts = dict(zip(*np.unique(y_val, return_counts=True)))
-    test_counts = dict(zip(*np.unique(y_test, return_counts=True)))
-    for i, name in enumerate(STAGE_NAMES):
-        print(f"  {name:<26}: Train={train_counts.get(i, 0):>5} | Val={val_counts.get(i, 0):>5} | Test={test_counts.get(i, 0):>5}")
+    print(f"    Train class counts: {dict(zip(*np.unique(y_train, return_counts=True)))}")
+    print(f"    Val class counts:   {dict(zip(*np.unique(y_val, return_counts=True)))}")
+    print(f"    Test class counts:  {dict(zip(*np.unique(y_test, return_counts=True)))}")
 
     seq_len = 10
     train_ds = TemporalSequenceDataset(X_train, y_train, seq_len)
     val_ds = TemporalSequenceDataset(X_val, y_val, seq_len)
     test_ds = TemporalSequenceDataset(X_test, y_test, seq_len)
-
     train_loader = DataLoader(train_ds, batch_size=256, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=256, shuffle=False)
     test_loader = DataLoader(test_ds, batch_size=256, shuffle=False)
@@ -165,16 +144,12 @@ def main():
     criterion = nn.CrossEntropyLoss(weight=weights_t.to(device))
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.003, weight_decay=1e-4)
 
-    print(f"\n[*] Training GRU (Epochs=10, Batch=256, SeqLen=10, Device={device})...")
-    print(f"{'Epoch':<8} | {'Train Loss':<12} | {'Val Loss':<12} | {'Val Acc':<10} | {'Time':<8}")
-    print("-" * 60)
+    print(f"\n[*] Training (Epochs=10, Batch=256, SeqLen=10)...")
+    print(f"{'Epoch':<8} | {'Train Loss':<12} | {'Val Loss':<12} | {'Val Acc':<10}")
     best_val_loss = float("inf")
-    model_dir = os.path.join("services", "forecasting_engine", "models")
-    os.makedirs(model_dir, exist_ok=True)
-    model_path = os.path.join(model_dir, "temporal_gru_forecaster.pt")
+    model_path = "temporal_gru_corrected.pt"
 
     for epoch in range(1, 11):
-        t0 = time.time()
         model.train()
         total_train_loss = 0.0
         for X_b, y_b in train_loader:
@@ -196,16 +171,14 @@ def main():
                 correct_val += (torch.argmax(logits, dim=1) == y_b).sum().item()
         avg_val_loss = total_val_loss / len(val_ds)
         val_acc = correct_val / len(val_ds)
-        elapsed = time.time() - t0
-        print(f"{epoch:<8} | {avg_train_loss:<12.4f} | {avg_val_loss:<12.4f} | {val_acc*100:<9.2f}% | {elapsed:.2f}s")
+        print(f"{epoch:<8} | {avg_train_loss:<12.4f} | {avg_val_loss:<12.4f} | {val_acc*100:<9.2f}%")
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             torch.save(model.state_dict(), model_path)
 
-    print(f"\n[+] Saved optimal model weights to {model_path}")
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    print(f"\n[+] Loading best checkpoint for held-out evaluation")
+    model.load_state_dict(torch.load(model_path))
     model.eval()
-
     all_preds, all_targets = [], []
     with torch.no_grad():
         for X_b, y_b in test_loader:
@@ -214,24 +187,22 @@ def main():
             all_targets.extend(y_b.numpy())
     all_preds, all_targets = np.array(all_preds), np.array(all_targets)
 
-    print("\n" + "=" * 80)
-    print("HELD-OUT CHRONOLOGICAL TEST SET EVALUATION (Unseen Future Sequences)")
-    print("=" * 80)
+    print("\n" + "=" * 78)
+    print("HELD-OUT TEST SET EVALUATION (genuine future data, per-scenario chronological)")
+    print("=" * 78)
     unique_present = np.unique(np.concatenate([all_targets, all_preds]))
     names = [f"Stage {i}: {STAGE_NAMES[i]}" for i in unique_present]
     print(classification_report(all_targets, all_preds, labels=unique_present, target_names=names, digits=4, zero_division=0))
 
     p, r, f1, _ = precision_recall_fscore_support(all_targets, all_preds, average='weighted', zero_division=0)
-    print(f"Weighted Precision: {p*100:.2f}%")
-    print(f"Weighted Recall:    {r*100:.2f}%")
-    print(f"Weighted F1-Score:  {f1*100:.2f}%")
+    print(f"Weighted Precision: {p*100:.2f}%  Recall: {r*100:.2f}%  F1: {f1*100:.2f}%")
 
     cm = confusion_matrix(all_targets, all_preds, labels=list(range(7)))
     benign_total = cm[0, :].sum()
     benign_fp = cm[0, 1:].sum()
     fpr = (benign_fp / max(1, benign_total)) if benign_total > 0 else 0.0
-    print(f"Benign False Positive Rate (FPR): {fpr*100:.4f}% ({benign_fp} false alarms out of {benign_total} benign test flows)")
-    print("=" * 80)
+    print(f"Benign FPR: {fpr*100:.4f}% ({benign_fp}/{benign_total})")
+    print("=" * 78)
 
 
 if __name__ == "__main__":
