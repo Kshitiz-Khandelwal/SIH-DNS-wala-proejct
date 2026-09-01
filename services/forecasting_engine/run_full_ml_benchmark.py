@@ -1,14 +1,15 @@
-"""DNS Shield X-Forecast — Unified ML Benchmark & K-Step Rollout (CORRECTED)
+"""DNS Shield X-Forecast — Unified ML Benchmark & K-Step Rollout (DETERMINISTIC & SEEDED)
 Evaluates:
   1. Logistic Regression Baseline vs. Temporal GRU Forecaster
   2. Strict Chronological Per-Scenario Held-Out Test Evaluation (Zero Temporal Leakage)
   3. K-Step Multi-Horizon (+15m, +30m, +45m, +60m) Attack Trajectory Forecasts on Held-Out Sequences
   4. Permutation Feature Attribution on Sequential Windows
+  5. Deterministic Seeding: random.seed(42), np.random.seed(42), torch.manual_seed(42)
 """
 import os
 import sys
 import time
-import json
+import random
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
@@ -17,11 +18,19 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, precision_recall_fscore_support, confusion_matrix
 
+# Deterministic Seeding
+random.seed(42)
+np.random.seed(42)
+torch.manual_seed(42)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(42)
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 try:
     from services.forecasting_engine.temporal_feature_extractor import extract_flow_features, FEATURE_NAMES
     from services.forecasting_engine.train_temporal_gru import (
         TemporalAttackGRU,
+        TemporalSequenceDataset,
         label_flow,
         chronological_split_per_scenario,
         STAGE_MAP,
@@ -31,6 +40,7 @@ except ImportError:
     from temporal_feature_extractor import extract_flow_features, FEATURE_NAMES
     from train_temporal_gru import (
         TemporalAttackGRU,
+        TemporalSequenceDataset,
         label_flow,
         chronological_split_per_scenario,
         STAGE_MAP,
@@ -40,14 +50,13 @@ except ImportError:
 
 def run_benchmark():
     print("=" * 85)
-    print("PS 26153: REPRODUCIBLE ML BENCHMARK & MULTI-HORIZON EVALUATION")
+    print("PS 26153: REPRODUCIBLE ML BENCHMARK & MULTI-HORIZON EVALUATION (SEEDED)")
     print("=" * 85)
 
     data_path = os.path.join("data", "ctu13_multistage_flows.csv")
     df = pd.read_csv(data_path, low_memory=False)
     df['StartTime'] = pd.to_datetime(df['StartTime'])
 
-    # Fix A & Fix B: Genuine Chronological Per-Scenario Split (70% Train, 15% Val, 15% Test)
     train_df, val_df, test_df = chronological_split_per_scenario(df, ratios=(0.70, 0.15, 0.15))
     print(f"[+] Loaded {len(df)} total flows across {len(df['Scenario'].unique())} CTU-13 scenarios.")
     print(f"    Train: {len(train_df)} | Val: {len(val_df)} | Test: {len(test_df)}")
@@ -63,16 +72,13 @@ def run_benchmark():
     X_test_mat, y_test_mat = featurize(test_df)
 
     seq_len = 10
-    def build_sequences(X_mat, y_mat):
-        seqs, targets = [], []
-        for i in range(len(X_mat) - seq_len):
-            seqs.append(X_mat[i:i + seq_len])
-            targets.append(y_mat[i + seq_len])
-        return np.array(seqs, dtype=np.float32), np.array(targets, dtype=np.int64)
+    train_ds = TemporalSequenceDataset(X_train_mat, y_train_mat, seq_len, oversample=False)
+    test_ds = TemporalSequenceDataset(X_test_mat, y_test_mat, seq_len, oversample=False)
 
-    X_train_seq, y_train_seq = build_sequences(X_train_mat, y_train_mat)
-    X_val_seq, y_val_seq = build_sequences(X_val_mat, y_val_mat)
-    X_test_seq, y_test_seq = build_sequences(X_test_mat, y_test_mat)
+    X_train_seq = train_ds.X_seq.numpy()
+    y_train_seq = train_ds.y_seq.numpy()
+    X_test_seq = test_ds.X_seq.numpy()
+    y_test_seq = test_ds.y_seq.numpy()
 
     # Flattened representation for Logistic Regression (Baseline)
     X_train_flat = X_train_seq.reshape(len(X_train_seq), -1)
@@ -145,11 +151,9 @@ def run_benchmark():
     print("\n" + "-" * 85)
     print("5. MULTI-HORIZON K-STEP ATTACK TRAJECTORY ROLLOUTS (HELD-OUT TEST SEQUENCES)")
     print("-" * 85)
-    
-    # Select 4 representative sequences from held-out test data
-    # (Benign, Initial Access, Discovery, and Exfiltration sequences)
+
     test_indices = []
-    for target_stage in [0, 2, 3, 6]:
+    for target_stage in [0, 1, 2, 6]:
         matches = np.where(y_test_seq == target_stage)[0]
         if len(matches) > 0:
             test_indices.append(matches[len(matches) // 2])
@@ -157,15 +161,14 @@ def run_benchmark():
     for sample_idx in test_indices:
         actual_stage = y_test_seq[sample_idx]
         seq_window = X_test_seq[sample_idx:sample_idx + 1]
-        
+
         with torch.no_grad():
             curr_logits = gru_model(torch.tensor(seq_window, dtype=torch.float32))
             curr_probs = torch.softmax(curr_logits, dim=1).numpy()[0]
             pred_stage = int(np.argmax(curr_probs))
-        
+
         print(f"\n[*] Held-Out Test Window [Index {sample_idx}]: Actual Stage = {STAGE_NAMES[actual_stage]} | Predicted = {STAGE_NAMES[pred_stage]} (Conf: {curr_probs[pred_stage]*100:.1f}%)")
-        
-        # Rollout across K-steps (+15m, +30m, +45m, +60m)
+
         current_seq = seq_window.copy()
         for k, minutes in enumerate([15, 30, 45, 60], start=1):
             with torch.no_grad():
@@ -175,13 +178,12 @@ def run_benchmark():
                 conf = step_probs[next_stage_idx]
                 lower_cone = max(0.0, conf - 0.12)
                 upper_cone = min(1.0, conf + 0.08)
-            
+
             print(f"    t = +{minutes:>2} min [Step {k}]: Forecast = {STAGE_NAMES[next_stage_idx]:<25} | Prob = {conf*100:>5.1f}% | Confidence Cone = [{lower_cone:.2f}, {upper_cone:.2f}]")
-            
-            # Autoregressively advance the sliding sequence window with transition dynamics
+
             simulated_next_flow = current_seq[0, -1, :].copy()
-            simulated_next_flow[0] = min(simulated_next_flow[0] + 0.1, 8.0)  # duration
-            simulated_next_flow[5] = min(simulated_next_flow[5] + 0.15, 16.0) # bytes/sec
+            simulated_next_flow[0] = min(simulated_next_flow[0] + 0.1, 8.0)
+            simulated_next_flow[5] = min(simulated_next_flow[5] + 0.15, 16.0)
             current_seq = np.concatenate([current_seq[:, 1:, :], simulated_next_flow.reshape(1, 1, 16)], axis=1)
 
     print("\n" + "-" * 85)
@@ -195,7 +197,7 @@ def run_benchmark():
     attributions = []
     for f_idx, feat_name in enumerate(FEATURE_NAMES):
         perturbed = sample_seq.copy()
-        perturbed[0, :, f_idx] = 0.0  # zero out feature across the entire sequence window
+        perturbed[0, :, f_idx] = 0.0
         with torch.no_grad():
             pert_pred = torch.softmax(gru_model(torch.tensor(perturbed, dtype=torch.float32)), dim=1).numpy()[0]
             pert_threat_prob = 1.0 - pert_pred[0]
