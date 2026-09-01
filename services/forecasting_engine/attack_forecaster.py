@@ -10,8 +10,20 @@ and preemptive defensive triggers.
 import time
 import math
 import logging
+import os
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Tuple, Any
+
+import torch
+import torch.nn as nn
+import numpy as np
+
+try:
+    from temporal_feature_extractor import extract_flow_features, FEATURE_NAMES
+    from train_temporal_gru import TemporalAttackGRU
+except ImportError:
+    from services.forecasting_engine.temporal_feature_extractor import extract_flow_features, FEATURE_NAMES
+    from services.forecasting_engine.train_temporal_gru import TemporalAttackGRU
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("attack-forecaster")
@@ -129,7 +141,18 @@ class AttackForecastingEngine:
             "STAGE_5_LATERAL_MOVEMENT": {"STAGE_5_LATERAL_MOVEMENT": 0.10, "STAGE_6_EXFILTRATION": 0.90},
             "STAGE_6_EXFILTRATION": {"STAGE_6_EXFILTRATION": 0.95, "STAGE_0_BENIGN": 0.05}
         }
-        logger.info("Initialized Temporal Attack Forecasting Engine with 7-Stage Kill-Chain Matrix")
+        # Load trained PyTorch GRU neural model
+        self.device = torch.device("cpu")
+        self.gru_model = TemporalAttackGRU(input_dim=16, hidden_dim=64, num_classes=7).to(self.device)
+        model_path = os.path.join(os.path.dirname(__file__), "models", "temporal_gru_forecaster.pt")
+        if os.path.exists(model_path):
+            try:
+                self.gru_model.load_state_dict(torch.load(model_path, map_location=self.device))
+                self.gru_model.eval()
+                logger.info(f"[+] Loaded neural GRU forecasting model from {model_path}")
+            except Exception as e:
+                logger.warning(f"Could not load GRU weights: {e}")
+        logger.info("Initialized Temporal Attack Forecasting Engine with Neural GRU + Markov Rollout Matrix")
 
     def _extract_aggregate_features(self, flows: List[Dict[str, Any]]) -> Dict[str, float]:
         """Combine multi-flow features over a temporal sliding window."""

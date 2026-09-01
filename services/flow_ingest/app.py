@@ -427,5 +427,5 @@ def get_timeline(host_ip: str):
 @app.delete("/flow/hosts/{host_ip}", tags=["monitoring"])
 def reset_host(host_ip: str):
     collector.reset_host_session(host_ip)
-    _simulation_stage.pop(host_ip, None)
+    _simulation_stage[host_ip] = 0
     return {"status": "ok", "host_ip": host_ip}
